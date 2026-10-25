@@ -59,9 +59,9 @@ def inside?(path, root)
   path == root || path.to_s.start_with?("#{root}/")
 end
 
-def capture(args, root: nil)
+def capture(args, root: nil, env: {})
   options = root ? { chdir: root.to_s } : {}
-  Open3.popen3(*args, **options) do |input, output, error, process|
+  Open3.popen3(env, *args, **options) do |input, output, error, process|
     input.close
     stdout = Thread.new { output.read }
     stderr = Thread.new { error.read }
@@ -181,7 +181,7 @@ def verify(root, reports)
       matches = candidates.any? { |candidate| inside?(candidate, root) && candidate.exist? }
       inline << { file: relative, target: raw, package: matches, external_source_or_config: external_paths.include?(token) }
     end
-    stdout, _stderr, code = capture(['wc', '-w', path.to_s])
+    stdout, _stderr, code = capture(['wc', '-w', path.to_s], env: { 'LC_ALL' => 'C.UTF-8' })
     check.call("wc #{relative}", code.zero? && Integer(stdout.split.first) == words(text))
   end
   bad_links = links.reject { |link| %i[inside exists anchor].all? { |key| link[key] } }
