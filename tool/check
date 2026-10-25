@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -uo pipefail
+cd -- "$(dirname -- "$0")/.." || exit 1
+for command in ruby bash awk sed grep sort find wc mktemp diff; do
+    command -v "$command" >/dev/null || { printf 'Missing command: %s\n' "$command" >&2; exit 1; }
+done
+reports=$(mktemp -d -t nomos-check.XXXXXXXX) || exit 1
+printf 'Reports: %s\n' "$reports"
+status=0
+run_check() {
+    name=$1
+    shift
+    "$@" > "$reports/$name.log" 2>&1
+    code=$?
+    cat "$reports/$name.log"
+    printf '%s exit %s\n' "$name" "$code"
+    [ "$code" -eq 0 ] || status=1
+}
+run_check style bash tool/check-style.sh
+run_check evidence ruby tool/check-evidence.rb
+run_check recount ruby tool/recount.rb --check --report-dir "$reports"
+run_check verify ruby tool/verify.rb --report-dir "$reports"
+exit "$status"
