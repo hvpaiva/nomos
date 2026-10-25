@@ -1,0 +1,23 @@
+Ruby said: undefined method `it' for nil.
+
+Ships on 2026-10-25.
+
+Run `keryx send x tomorrow` first.
+
+## Checks run
+
+x
+
+## What I did not check
+
+x
+
+## State left behind
+
+x
+
+## Repeating the probes
+
+x
+
+nomos v0 review findings

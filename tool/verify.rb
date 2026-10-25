@@ -94,6 +94,9 @@ def verify(root, reports)
     cards/reviewer.md cards/qa.md cards/auditor.md cards/writer.md templates/first-prompt.md
     templates/brief.md templates/report.md templates/handover.md templates/review-brief.md
     templates/review-findings.md templates/plan-review.md templates/audit-brief.md templates/escalation.md
+    hooks/pre-send.rb test/pre_send_test.rb
+    test/fixtures/pre-send/claude.json test/fixtures/pre-send/codex.json test/fixtures/pre-send/cursor.json
+    test/fixtures/pre-send/flagged.txt test/fixtures/pre-send/excluded.txt test/fixtures/pre-send/backtick.txt
     tool/check tool/recount.rb tool/verify.rb tool/check-style.sh tool/check-evidence.rb .github/workflows/ci.yml
   ]
   missing = required.reject { |name| root.join(name).file? }

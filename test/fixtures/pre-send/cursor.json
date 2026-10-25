@@ -1,0 +1,1 @@
+{"hook_event_name":"beforeShellExecution","command":"keryx ask reader 'Tomorrow {the revision}' --within 30m","cwd":"/tmp","sandbox":false}

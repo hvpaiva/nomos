@@ -22,3 +22,8 @@ jobs:
         env:
           LC_ALL: C
           LANG: C
+      - uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
+        with:
+          ruby-version: '3.3'
+      - name: Check the pre-send hook on Ruby 3.3
+        run: ruby test/pre_send_test.rb

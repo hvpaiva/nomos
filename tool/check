@@ -16,6 +16,7 @@ run_check() {
     printf '%s exit %s\n' "$name" "$code"
     [ "$code" -eq 0 ] || status=1
 }
+run_check pre-send ruby test/pre_send_test.rb
 run_check style bash tool/check-style.sh
 run_check evidence ruby tool/check-evidence.rb
 run_check recount ruby tool/recount.rb --check --report-dir "$reports"

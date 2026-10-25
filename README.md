@@ -15,8 +15,8 @@ and versioned harness notes. Each rule carries the incident that produced it, it
 confidence. The project is maintained and versioned, and a rule enters only with its case, reason
 and confidence.
 
-nomos is transport-agnostic, with keryx as the reference binding. It is a set of documents, not a
-framework or runtime.
+nomos is transport-agnostic, with keryx as the reference binding. It is a set of documents with optional
+tools, not a framework or runtime. No team needs a tool to follow the protocol.
 
 The protocol is [version 0](protocol.md). The cards and templates identify themselves as nomos v0.
 [CHANGELOG.md](CHANGELOG.md) records changes to the package.
@@ -76,6 +76,7 @@ carry these rules.
 
 | File | Use |
 |---|---|
+| [hooks/pre-send.rb](hooks/pre-send.rb) | Optional message checks before keryx sends, with Claude Code, Codex and Cursor adapters |
 | [protocol.md](protocol.md) | Rules every team member can rely on, including delegation, messages, reports and session life cycles |
 | [playbook.md](playbook.md) | Recipes for implementation, review, audits, research and document work |
 | [harness-notes.md](harness-notes.md) | Observed behavior of Claude Code, Codex and Cursor, with versions and evidence |
@@ -96,7 +97,7 @@ The templates are [first prompt](templates/first-prompt.md), [brief](templates/b
 [plan review](templates/plan-review.md), [audit brief](templates/audit-brief.md) and
 [escalation](templates/escalation.md).
 
-[tool/check](tool/check) runs [the style check](tool/check-style.sh),
+[tool/check](tool/check) runs [the pre-send tests](test/pre_send_test.rb), [the style check](tool/check-style.sh),
 [the evidence check](tool/check-evidence.rb), [the reading recount](tool/recount.rb) and
 [the package verifier](tool/verify.rb). [CI](.github/workflows/ci.yml) runs the same entry point.
 

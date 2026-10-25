@@ -7,6 +7,7 @@ The format follows Keep a Changelog. Before the first release, all entries are u
 
 ### Added
 
+- An optional pre-send hook for keryx messages, with Claude Code, Codex and Cursor adapters and tests.
 - nomos protocol v0 for team identity, delegation, requests, reports, review and handover.
 - A playbook of team recipes and versioned notes on Claude Code, Codex and Cursor.
 - A getting-started guide with a reading map and a first-team acceptance exercise.

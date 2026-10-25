@@ -1,0 +1,1 @@
+{"hook_event_name":"PreToolUse","tool_name":"Bash","turn_id":"example-turn","cwd":"/tmp","tool_input":{"command":"keryx reply example-request 'Tomorrow {the revision}'"}}

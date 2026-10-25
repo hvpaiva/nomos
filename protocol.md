@@ -575,17 +575,19 @@ what held was a check that every session runs (M10, M45). The transport refuses 
 renames (3.3, 3.6, 3.8), spawn composes the first prompt and waits for the readback (4.3, 9.2), the
 transport's status lists overdue and undecided items (5.5, 5.6), a stop hook reminds of unanswered mail
 (9.1, 9.3), and the transport notifies a session and its director as its context nears the criterion
-(9.5). A pre-send hook per form flags relative dates, missing headings, leftover placeholders and
-findings without a rank or evidence class (5.7, 6.4, 7.2, 8.1). It reads its form's own fields, outside
-code and quoted text, and asks the sender to confirm rather than refusing what a literal match cannot
-judge. It also compares each absolute time in a body with the send time and flags one ahead of it
-for the sender to confirm; a future deadline can be valid. The third acceptance leader repeated
-the error despite 5.7 in its digest, following the second leader, the protocol director and the
-keryx team's orchestrators. A text rule alone has not held. This comparison is a proposed check,
-not an implemented keryx feature. (LOG, 2026-10-23 04:25; LOG, acceptance 2, message times; LOG, field
-PR 26, context and times; LOG, acceptance 3, 2026-10-23, message times; LOG, field PR 24, message
-times; low for the proposed check, seven more message lapses and a separate log case)
-`keryx.md` says where each check runs in keryx.
+(9.5). The optional `hooks/pre-send.rb` flags relative dates, missing headings, leftover
+placeholders and findings without a rank or evidence class (5.7, 6.4, 7.2, 8.1). It reads supported
+forms' own headings, outside code and quoted text, and refuses the first attempt with its flags,
+then accepts the sender's confirmation through `NOMOS_PRESEND_CONFIRMED=1`; it never asks a human to
+approve what a literal match cannot judge. It also compares each absolute time in a body with the
+send time and flags one more than five minutes ahead of it for the sender to confirm; a future
+deadline can be valid. The third acceptance leader repeated the error despite 5.7 in its digest,
+following the second leader, the protocol director and the keryx team's orchestrators. A text rule
+alone has not held. The optional nomos hook implements this comparison; it is not a keryx feature.
+(LOG, 2026-10-23 04:25; LOG, acceptance 2, message times; LOG, field PR 26, context and times; LOG,
+acceptance 3, 2026-10-23, message times; LOG, field PR 24, message times; low for the check, seven
+more message lapses and a separate log case) `keryx.md` says where each check runs in keryx.
+`bootstrap.md` section 4 names the supported forms, parser limits and hook setup.
 
 **11.3** Each template names the protocol version in its title, and a filled form ends with a line that
 names the form and the version, such as "nomos v0 brief", since its first line belongs to the outcome.

@@ -242,12 +242,133 @@ Checks that can be mechanical go in hooks, which every session runs whatever it 
   under Codex and Cursor. That guide names `~/.codex/hooks.json` or the project's `.codex/hooks.json` for Codex, and
   `~/.cursor/hooks.json` or the project's `.cursor/hooks.json` for Cursor. Check the instructions
   shipped with your version before editing. Section 8 tests the hook only where you installed it.
-- A pre-send hook on the shell commands `keryx send`, `keryx ask` and `keryx reply` can refuse a body
-  with a brace placeholder left in it, a relative day word, or a finding without a rank. The protocol's
-  check table lists what to check and where. One script can serve every harness's hook, with a flag for
-  each harness's input format.
+- The optional [pre-send hook](hooks/pre-send.rb) checks bodies before `keryx send`, `keryx ask` and
+  `keryx reply`. It needs Ruby 3.2 or later on the PATH the harness gives the hook, and only its
+  standard library. Alternatively, prefix the hook command with the absolute path to a compatible
+  Ruby interpreter, for example `/usr/bin/ruby /absolute/nomos/hooks/pre-send.rb --harness claude`.
+  Ruby 3.0 and 3.1 pass with an agent-readable warning and `--check` exits 2; a Ruby older than 3.0
+  cannot parse the script, so the hook fails without that warning.
+  The [binding's check
+  table](keryx.md#checks-and-packaging) says which checks belong to nomos and which to keryx.
+  Wire it as shown below only when the principal's delegation permits the settings change.
 - A writing rule the principal has had to correct twice becomes a write hook the same way (playbook,
   Turning a repeated correction into a check).
+
+The hook checks brace placeholders, relative dates and future timestamps outside fenced code, inline
+code and lines quoted with `>`. It reads a filled form's last nonempty line, such as `nomos v0 brief`,
+and loads headings from `templates/` beside the script. It checks fixed headings of brief, audit
+brief, review brief, escalation and review findings; headings containing placeholders are skipped.
+Report sections may be omitted under that template's guidance, and multipart first prompt, plan
+review and handover forms have no heading check. Review findings also require a rank and evidence
+class for each numbered finding in the template's opening findings list, or under a `## Findings`
+heading. Numbered steps in other sections are excluded. Optional sections remain optional.
+
+A flag refuses that attempt and tells the sending agent its line and text. The sender corrects the
+body or resends the same command prefixed with `NOMOS_PRESEND_CONFIRMED=1` to confirm the flags. This
+confirms only the message check and grants no authority to send. It never opens a human approval
+prompt. The hook stores no state and never executes the command itself. Without flags, Claude and
+Codex receive no decision; Cursor receives `permission: allow` so its normal checks can continue.
+
+Merge the following entry into the harness's existing configuration, preserving its other hooks.
+Replace `/absolute/nomos` with this checkout's absolute path. Claude Code uses
+`~/.claude/settings.json` or the project's `.claude/settings.json`.
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "Bash",
+      "hooks": [{"type": "command", "command": "/absolute/nomos/hooks/pre-send.rb --harness claude"}]
+    }]
+  }
+}
+```
+
+Codex uses `~/.codex/hooks.json` or the project's `.codex/hooks.json`. In `/hooks`, inspect and trust
+that one PreToolUse hook, never "Trust all" (HN20). Installing this repository does not trust a hook.
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [{
+      "matcher": "Bash",
+      "hooks": [{"type": "command", "command": "/absolute/nomos/hooks/pre-send.rb --harness codex"}]
+    }]
+  }
+}
+```
+
+Cursor uses `~/.cursor/hooks.json` or the project's `.cursor/hooks.json`. Its matcher narrows the
+hook to commands containing a keryx invocation, including one inside a compound command; the script
+then checks the executable and subcommand.
+
+```json
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [{
+      "matcher": "(^|[;&|\\s])([^\\s;&|]*/)?keryx\\s",
+      "command": "/absolute/nomos/hooks/pre-send.rb --harness cursor"
+    }]
+  }
+}
+```
+
+The contracts were checked on 2026-10-25 with installed Claude Code 2.1.310, Codex 0.164.0 and Cursor
+agent 2026.10.22-27dcf5f, against the [Claude hooks reference](https://code.claude.com/docs/en/hooks),
+[Codex hooks reference](https://developers.openai.com/codex/hooks) and
+[Cursor hooks reference](https://cursor.com/docs/hooks). These are current references, not version
+snapshots. Cursor's permission behavior was also read in that installed version's `4097.index.js`
+(line 1, the shell hook caller) and `index.js` (line 414, the hook requirement setter and shell
+permission checks). The Cursor adapter relies on `allow` from beforeShellExecution being
+non-authoritative, leaving the shell's own permission checks in place. That behavior was read in
+this version's code, without an installed hook test, and must be re-checked for each Cursor version
+before wiring this adapter. Check the contract of another harness version before wiring it.
+
+For a manual check, run the command below. Exit 0 means no flags, 1 means flags, and 2 means the
+check could not finish. Add `--words FILE` to either mode for a UTF-8 file with extra relative-time
+words or phrases, one per line. English terms are built in; explicit vocabulary lists are ignored.
+
+```sh
+ruby hooks/pre-send.rb --check MESSAGE_FILE
+```
+
+The shell parser handles literal inline text or `--file` bodies, leading environment assignments,
+`--as`, executable paths and compound commands separated by `&&`, `||`, `;` or `|`. It follows a
+literal initial `cd DIR &&` for a later relative file path. Other directory changes leave inline,
+stdin and absolute-file bodies checkable; a relative file then passes with a warning. Unquoted
+shell comments are excluded. Output redirections to `/dev/null` and descriptor duplications such as
+`2>&1` are supported. Literal here-documents with quoted delimiters supply `--file -` bodies or
+inline text in `"$(cat <<'EOF' ... EOF)"`; `<<-` strips leading tabs. Other shell substitutions,
+variables, subshells and input redirections are not evaluated.
+
+An unreadable file, unsupported shell input or hook failure passes with a warning on stderr and
+in the adapter output. Claude Code and Codex receive `hookSpecificOutput.additionalContext` with
+`hookEventName: PreToolUse` and no permission decision, as documented in their hook references
+above. Cursor receives `agent_message` and `user_message` beside `allow`; delivery of those warning
+fields has not been tested in a live harness. Use `--check` on the resolved body file in those cases.
+Body files must be regular UTF-8 files. These checks are a reminder, not a shell interpreter or an
+authority gate.
+
+For Codex, relative `--file` paths resolve against the session's `cwd` from the hook input, unless
+the command starts with the supported literal `cd DIR &&`. The Codex reference's common input
+fields define `cwd` as the session directory; neither that reference nor the checked adapter
+format establishes a separate shell-call workdir field. Use an absolute body-file path when the
+shell call runs in a different directory.
+
+Recognized times use two-digit `HH:MM`, optionally `:SS` and a decimal fraction after the seconds.
+An optional `YYYY-MM-DD` date is joined directly by `T` or one space. The zone is required, with
+optional whitespace before it. Zones are uppercase `Z`, `UTC` or `GMT`, optionally followed by an
+offset, or an offset alone in `+HH`, `-HH`, `+HHMM`, `-HHMM`, `+HH:MM` or `-HH:MM` form. A time without
+a date uses the current date in that zone. A bare `HH:MM-HH:MM` is a range, not a negative offset;
+its endpoint is checked when followed by a zone. Attach a negative `HH:MM` offset only to a time
+with a date or seconds, or separate it with whitespace.
+
+Date-only values, dates joined by a comma or the word `at`, named zones such as `BRT`, one-digit
+hours and 12-hour clocks are not recognized as complete timestamps. A separate time and zone in
+that text can still match using the current date. Only times more than five minutes ahead of the
+check are flagged; a deadline can correctly be in the future. Section names or prose quoting a
+relative date can still need confirmation. A flag is not proof of a mistake.
 
 ## 5. Write your local layer
 

@@ -43,14 +43,18 @@ case. The package checks cannot decide that for you.
 
 ## Check a change
 
-From the repository root, with Ruby 4.0 or later, Bash and the standard Unix tools `awk`, `sed`,
+From the repository root, with Ruby 4.0 or later and its bundled minitest, Bash and the standard Unix tools `awk`, `sed`,
 `grep`, `sort`, `find`, `wc` and `diff` available, run the same entry point as CI.
 
 ```sh
 tool/check
 ```
 
-The checks read the package and fail on a style violation, an unresolved evidence citation, a card
+The checks run `test/pre_send_test.rb` against the optional `hooks/pre-send.rb`, using fixtures in
+`test/fixtures/pre-send/` and isolated temporary files. They send no mail and change no harness
+settings. Keep its runtime dependencies in Ruby's standard library and its tests in minitest.
+
+The checks also read the package and fail on a style violation, an unresolved evidence citation, a card
 or digest over its word limit, a broken internal link, a source command that fails to read its
 section, or a reading map whose counts have drifted. Generated reports go to a temporary directory;
 the command prints its path. It leaves the repository unchanged and runs every check even if one

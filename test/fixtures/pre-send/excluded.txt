@@ -1,0 +1,15 @@
+The change is saved.
+
+> Tomorrow, {the revision}, 2099-01-01 18:00 UTC.
+   > Another quote about yesterday.
+
+```ruby
+puts 'tomorrow {the revision} 2099-01-01 18:00 UTC'
+```
+
+~~~~text
+Today {the revision}
+```
+~~~~
+
+An inline example `tomorrow {the revision}` and `` `yesterday` ``.
