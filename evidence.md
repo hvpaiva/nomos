@@ -1724,22 +1724,49 @@ nothing waits to be forwarded from the sending host. Until that passes, or when 
 unreachable, its record keeps its own orchestrator's session as the channel. A human address on
 another host is a third party under 4.6 unless a record names it. The inbox's holder carries the
 principal's words verbatim, decides nothing and answers no request itself. Messages from that
-address carry decisions only within the receiver's existing delegation. What field 5 reserves to
-the principal and any record change under field 8 and 4.4 require the principal's word in the
-orchestrator's own session. R05 is to name this relay case beside "your user" and "a peer".
+address were then limited to decisions within the receiver's existing delegation. What field 5
+reserved to the principal and any record change under field 8 and 4.4 required the principal's word
+in the orchestrator's own session. R05 was to name this relay case beside "your user" and "a peer".
 
 At 10:27 the principal granted adoption through the inbox. The director asked for confirmation in
 its own session because adoption changed the root record. At 10:33 the principal confirmed there
 after the additional confirmation step. Pending questions then went to the inbox as requests. The
 10:38 entry records answers received through the inbox that still required the principal's word
 in the session for a reserved act or a record change. The director gathered them into the next
-in-session confirmation instead of asking for another trip. That refinement keeps the authority
-boundary while avoiding a separate confirmation for each answer.
+in-session confirmation instead of asking for another trip. That refinement was intended to keep
+the authority boundary while avoiding a separate confirmation for each answer.
 
 Sourced from the principal-inbox ruling and the run log entries of 2026-10-23 at 10:25, 10:27,
 10:33 and 10:38 UTC-3. Confidence low, one arrangement, partly run. These entries establish the
 extra confirmation and its cost; they do not establish a cross-host round trip or a completed
-batched confirmation. Protocol 10.2 and the keryx binding carry the rule and its refinement.
+batched confirmation. The 2026-10-25 principal-inbox case withdrew this arrangement's in-session
+step; protocol 10.2 and the keryx binding now carry that correction.
+
+### LOG, 2026-10-25 UTC-3, principal inbox
+
+At 10:24 UTC-3 the director asked the principal a publication question in its session and through
+the principal's inbox. It recommended choices for the public history and push, the license, a
+standing answer to a startup dialog, publication order and the timezone used in cases. Publication
+was held for the principal's word in the director's session. At 11:34 the log recorded the
+principal's instruction, through the inbox, that decisions needing the principal wait while other
+work continued.
+
+At 13:57 the principal answered through the inbox. The principal said they would never come to the
+director's session, that a message from their inbox was their word, and that the director had
+invented a limit they had not set. The principal approved the recommendations, said the publication
+order was not the director's concern and left the cases' timezone free. The director dropped the
+in-session step and pushed at 13:59. A later check failure was fixed and pushed, with checks green
+at 14:04. Two days before, the principal had already said that they spoke only through the inbox
+and that the inbox was them.
+
+This is a counterexample to the 2026-10-23 arrangement. A message from the principal's own transport
+address named in the root record is the principal's word for reserved acts and record changes too.
+The principal never has to repeat it in the orchestrator's session.
+
+Sourced from the charter decisions on the principal's inbox and its correction, and the run log
+entries of 2026-10-25 at 10:24, 11:34 and 14:06 UTC-3. Confidence low, one counterexample with a
+publication following the inbox answer. Protocol 4.4, 4.6 and 10.2 and the keryx binding carry the
+correction.
 
 ### LOG, benchmark run, 2026-10-24 00:00 to 00:13 UTC
 

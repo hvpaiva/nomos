@@ -79,12 +79,12 @@ to it. Harness startup is separate from reading cost but remains inside the sess
 | QA | At start | `cards/member.md` + `cards/qa.md` | 749 | 2,700 to 3,080 |
 | Auditor | At start | `cards/member.md` + `cards/auditor.md` | 786 | 2,830 to 3,230 |
 | Writer | At start | `cards/member.md` + `cards/writer.md` | 755 | 2,720 to 3,100 |
-| Orchestrator | At start | `cards/orchestrator.md` (600), `orchestrator.md` (2,495), bootstrap sections 7 and 8 (2,162), harness notes for all three harnesses (1,479); omit notes for harnesses not being spawned | 6,736 | 24,250 to 27,620 |
+| Orchestrator | At start | `cards/orchestrator.md` (600), `orchestrator.md` (2,500), bootstrap sections 7 and 8 (2,162), harness notes for all three harnesses (1,479); omit notes for harnesses not being spawned | 6,741 | 24,270 to 27,640 |
 | Harness start, outside nomos | Record the context stamped on the first readback | On 2026-10-23, third-run Claude Code 50.2K at its first turn and 60.9K after join and skill; first-run Claude Code 50.9K and 61.8K after join, skill and inbox; first-run Codex about 23K on its readback | Not a word count | Observed context, not a text estimate |
 | Whoever fills this form | Only when filling it | `templates/audit-brief.md` | 781 | 2,820 to 3,210 |
 | Whoever fills this form | Only when filling it | `templates/brief.md` | 1,243 | 4,480 to 5,100 |
-| Whoever fills this form | Only when filling it | `templates/escalation.md` | 347 | 1,250 to 1,430 |
-| Whoever fills this form | Only when filling it | `templates/first-prompt.md` | 1,706 | 6,150 to 7,000 |
+| Whoever fills this form | Only when filling it | `templates/escalation.md` | 335 | 1,210 to 1,380 |
+| Whoever fills this form | Only when filling it | `templates/first-prompt.md` | 1,719 | 6,190 to 7,050 |
 | Whoever fills this form | Only when filling it | `templates/handover.md` | 1,521 | 5,480 to 6,240 |
 | Whoever fills this form | Only when filling it | `templates/plan-review.md` | 420 | 1,520 to 1,730 |
 | Whoever fills this form | Only when filling it | `templates/report.md` | 494 | 1,780 to 2,030 |
@@ -93,7 +93,7 @@ to it. Harness startup is separate from reading cost but remains inside the sess
 | Claude Code member | Only the note needed for its own harness | `harness-notes.md`, Claude Code | 50 to 201 per note | 180 to 830 per note |
 | Codex member | Only the note needed for its own harness | `harness-notes.md`, Codex | 34 to 256 per note | 130 to 1,050 per note |
 | Cursor member | Only the note needed for its own harness | `harness-notes.md`, Cursor | 77 to 154 per note | 280 to 640 per note |
-| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 30,197 in catalog | 108,710 to 123,810 in catalog |
+| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 30,487 in catalog | 109,760 to 125,000 in catalog |
 
 The largest initial member load is 786 words, `cards/member.md` plus `cards/auditor.md`, below the 800-word
 limit. The common card has 494 words; role cards have implementer 273, reviewer 280, qa 255, auditor 292, writer 261; the orchestrator card has 600.
@@ -281,7 +281,8 @@ When nomos says "the local layer", it means these instructions.
    Every team uses that same address. Follow [protocol 10.2](protocol.md#10-the-human) and
    [the keryx binding's human channel](keryx.md#the-human) for its relay and message rules. Keep this
    session as the channel until section 8 proves the route, and whenever the inbox host is
-   unreachable. Reserved acts and record changes still need the principal's word in this session.
+   unreachable. A message from the principal's own inbox named in the root record is the
+   principal's word for reserved acts and record changes too.
    When the team commits, name the author and committer identity its commits carry and how it is
    applied, through repository-local configuration by a named authorized actor or exact per-commit
    flags granted to the committing members. The second and third reading-only runs correctly

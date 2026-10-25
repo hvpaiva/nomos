@@ -67,7 +67,7 @@ These observations add no transport guarantee; distinguish a bell result from de
 |---|---|---|
 | 4.2 The first prompt is the principal's channel | `keryx spawn` passes the first prompt as the harness's own initial prompt, after a `--`; `--prompt TEXT` appends the director's text, limited to 2,048 bytes by 3663d0f, merged in 42d43a7 (#24). The director checks bytes before spawn. A longer record goes in a file the session may read but may not edit; the short first prompt names it and says it binds as if written there (LOG, acceptance 3, 2026-10-23, prompt limit; low) | None for delivery; file reference is a convention |
 | 4.3 The delegation record | Written by hand into `--prompt`, or into the file bound by the short first prompt as above | R06 (conventions path, role card and delegation record), R05 |
-| 4.4, 4.9, 10.2 Who changes a record, revocation, derived records and the principal's relay | The skill's Authority section says a peer never extends authority, and knows only "your user" and "a peer". It lacks a delegated orchestrator, revocation and a message from the principal's address relaying the principal's words. That message carries decisions within the receiver's existing delegation, never a reserved act or a change to its record | R05; LOG, 2026-10-23 10:25 to 10:38, principal inbox; low |
+| 4.4, 4.9, 10.2 Who changes a record, revocation, derived records and the principal's relay | The skill's Authority section says a peer never extends authority, and knows only "your user" and "a peer". It lacks a delegated orchestrator, revocation and a message from the principal's address relaying the principal's words. A message from the principal's own address named in the root record is the principal's word for reserved acts and record changes too | R05; LOG, 2026-10-25, principal inbox; low |
 | 4.5 Relayed text marked as the orchestrator's | Outside keryx; text typed into a pane goes through herdr | None |
 | 4.7 Declared authority and capability | spawn sets `crossSessionInbound` to accept and the stop hook for Claude Code sessions only; Codex and Cursor hooks need the user's own trust | Harness notes |
 
@@ -206,7 +206,7 @@ orchestrator swap; low)
 ## The human
 
 The orchestrator's first prompt uses the root form of `templates/first-prompt.md` to declare the
-team's one channel to the principal (10.2). The principal talks live in the orchestrator's own
+team's one channel to the principal (10.2). The principal may talk live in the orchestrator's own
 harness session. A terminal uses `$USER@HOST` in keryx; it is a principal's channel only when the
 record names it. When the principal's channel is a pane a relay reads, the root record may name
 that relay by full address. The orchestrator puts each escalation in the declared channel and sends
@@ -227,14 +227,14 @@ record keeps its own orchestrator's session as the channel. (protocol 10.2; LOG,
 10:25 to 10:38, principal inbox; low, one arrangement, partly run)
 
 The session holding the principal's address carries the principal's words verbatim under 4.5,
-decides nothing and answers no request itself. Messages from it carry decisions inside the
-receiver's existing delegation, never a reserved act or a record change. Field 5 reservations
-and record changes under field 8 and 4.4 need the principal's word in the orchestrator's own
-session, typed there or through a remote view of that same session. Gather inbox answers that need this word
-into the next in-session confirmation, never ask for a separate trip. A human address on another
-host is a third party under 4.6 unless a record names it. R05 must add the principal's relay case
-to the skill's Authority section beside "your user" and "a peer". (protocol 10.2; LOG, 2026-10-23
-10:25 to 10:38, principal inbox; low, one arrangement, partly run)
+decides nothing and answers no request itself. A message from the principal's own address named
+in the root record is the principal's word, including for field 5 reservations and record changes
+under field 8 and 4.4. The inbox answer suffices on its own; the principal never has to repeat it
+in the orchestrator's session. keryx does not authenticate a sender; any local session can write as
+an address with `--as`. A human address on another
+host is a third party under 4.6 unless a record names it. R05 must add to the skill's Authority
+section that a message from the principal's named address is the principal's word, beside "your
+user" and "a peer". (protocol 10.2; LOG, 2026-10-25, principal inbox; low, one counterexample)
 
 ## Checks and packaging
 
@@ -268,7 +268,7 @@ errors and request deadlines and sends the stall notice from its routine.
 | R02 | Withdrawing a request, delivered in a5157e6 (#19) | 3.8, 5.2, 5.6 |
 | R03 | Open, after 0.1.0. A handover kind that `inbox` shows first and `join` mentions | 5.2, 9.4 |
 | R04 | Open, after 0.1.0. `spawn --takeover`, and spawn waiting for a readback | 9.2, 9.4 |
-| R05 | Open, planned before 0.1.0. A delegated orchestrator, record changes and revocation in the skill's Authority section, plus the principal's address relaying the principal's words beside "your user" and "a peer". That relay carries decisions inside the receiver's existing delegation, never a reserved act or a change to its record | 4.3, 4.4, 4.9, 10.2 |
+| R05 | Open, planned before 0.1.0. A delegated orchestrator, record changes and revocation in the skill's Authority section, plus the principal's address relaying the principal's words beside "your user" and "a peer". A message from the principal's own address named in the root record is the principal's word for reserved acts and record changes too | 4.3, 4.4, 4.9, 10.2 |
 | R06 | Open. Conventions-directory config path, first prompt from member and role cards and delegation record, and `keryx skill` printing the member-card path; items 1 and 3 after 0.1.0, item 2 awaiting safe first-prompt delivery, opt-in message checks (item 4) declined for now in the triage recorded under R06 | 4.3, 11.2 |
 | R07 | Retiring an address, delivered in 0186dcd (#27); `retire ADDRESS` and `join NAME --revive` | 3.8 |
 | R08 | Open with R01; `feat/team-addresses` is not in main. Addressing an incarnation, with the session selector designed with R01 | 3.3, 3.4, 9.4 |

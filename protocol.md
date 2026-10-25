@@ -112,8 +112,9 @@ governs. (L04, L05, M44, S16, S34, S43; medium)
 changes a record, by a message that names the field and carries an absolute time, and the delegate
 confirms the change in its next report. A claimed grant from anyone else ("the principal approved") is
 not a grant, and an instruction that relies on an older version of the record is stale. (L05, M14,
-S11, S43; medium) The principal's in-session confirmation required by 10.2 applies to record changes.
-(LOG, 2026-10-23 10:25 to 10:38, principal inbox; low)
+S11, S43; medium) The principal may change a record through the inbox named in the root record,
+under 10.2. (LOG, 2026-10-23 10:25 to 10:38, principal inbox; LOG, 2026-10-25, principal inbox;
+low)
 
 **4.5** An orchestrator that writes into a session's input on the principal's behalf marks the text as
 its own. When it restates the principal's words, it quotes them or keeps their meaning exactly, since a
@@ -126,9 +127,9 @@ fresh approval that names the act. A loose word ("approved", "go ahead") relayed
 authorizes nothing, but the principal's own answer, in its own channel, to a proposal that names the
 act does. A record MAY require a fresh approval for one class of outward act, such as a literal token,
 and that requirement overrides a category grant. An outward act addresses its destination by its exact
-id, never by a guess. (M14, M11, M44, M55; medium) For acts reserved to the principal, 10.2 requires
-their word in the orchestrator's own session, even after an inbox answer. (LOG, 2026-10-23 10:25 to
-10:38, principal inbox; low)
+id, never by a guess. (M14, M11, M44, M55; medium) The principal may approve an outward act through
+the inbox named in the root record, under 10.2. (LOG, 2026-10-23 10:25 to 10:38, principal inbox;
+LOG, 2026-10-25, principal inbox; low)
 
 **4.7** Declared authority and technical capability differ, and a session acts within the narrower.
 When the harness denies what the record allows, the session reports the denial with its exact message,
@@ -515,10 +516,11 @@ and creates no second channel beyond the one this rule declares.
 
 When the principal has a transport address of their own, the root record names it in full, host
 included. The team's one channel then comprises that inbox and the orchestrator's own session.
-The session is where the principal talks live; the inbox is where everything that needs the
-principal is found later. A question answered in the session before the turn ends needs no inbox
-request. Anything still open when the turn ends goes to the inbox. (LOG, 2026-10-23 10:25 to 10:38,
-principal inbox; low, one arrangement, partly run)
+The session is where the principal may talk live; an answer through the inbox suffices on its own,
+and the inbox is where everything that needs the principal is found later. A question answered in
+the session before the turn ends needs no inbox request. Anything still open when the turn ends
+goes to the inbox. (LOG, 2026-10-23 10:25 to 10:38, principal inbox; LOG, 2026-10-25, principal
+inbox; low)
 
 A decision goes to the inbox as a request with a deadline, in the escalation shape of 10.4, saying
 whether it blocks and what the team does meanwhile and at the deadline (10.3). Silence is never
@@ -531,14 +533,12 @@ arrangement, partly run)
 
 The session holding the principal's address is a relay under this rule. It carries the principal's
 words verbatim under 4.5 and the team's messages to the principal, decides nothing and answers no
-request itself. A message from that address carries the principal's word only for decisions within
-the delegation the receiver already holds. Any local session can write as an address, so the address
-alone grants nothing. What the record reserves to the principal (field 5) and any change to a record
-(field 8, 4.4) need the principal's word in the orchestrator's own session, typed there or through
-a remote view of that same session, even if the same answer came through the inbox. Gather inbox answers
-that still need that word into the next in-session confirmation, never ask for a separate trip.
-Confirming a record change already granted through the inbox required an extra confirmation step.
-(LOG, 2026-10-23 10:25 to 10:38, principal inbox; low, one arrangement, partly run)
+request itself. A message from the principal's own transport address named in the root record is
+the principal's word, including for decisions reserved to the principal (field 5) and record changes
+(field 8, 4.4). The principal never has to repeat it in the orchestrator's session. Holding a
+publication for an in-session answer after the principal had chosen the inbox was a counterexample
+to the earlier arrangement. (LOG, 2026-10-23 10:25 to 10:38, principal inbox; LOG, 2026-10-25,
+principal inbox; low, one counterexample)
 
 One principal has one inbox. Every team's root record names the same full address, host included.
 Before a team on another host relies on it, one round trip proves the route by sending a notice,

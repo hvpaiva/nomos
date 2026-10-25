@@ -6,8 +6,8 @@
 > transcripts. The principal decides looking at what is in front of them, so the whole escalation goes
 > where they read when deciding, not in output that a question dialog then hides.
 >
-> A reserved act or record change needs the principal's word in the orchestrator's own session,
-> even after an inbox answer (10.2). Gather such answers into the next in-session confirmation.
+> A message from the principal's own inbox named in the root record is the principal's word
+> for reserved acts and record changes too (10.2).
 >
 > Escalate only what is reserved to the principal, outside the plan, or a blocker the team cannot
 > resolve within its authority. A design question inside the plan is the orchestrator's to decide.
@@ -41,6 +41,6 @@ answer matters.}
 waiting, since silence is not assent.}
 
 {How to answer, such as "reply 1 or 2", or the exact words that authorize an outward-facing act.
-For a reserved act or record change, ask for the principal's word in the orchestrator's own session.}
+The principal answers in the channel the escalation came through.}
 
 nomos v0 escalation
