@@ -180,6 +180,10 @@ everything else. A request states what its reply must carry. Without that statem
 the answer to the question asked. (L09, S06, S40; high for the transport kinds; N16; LOG,
 2026-10-26 06:50 to 06:59, request replies; low for the reply contract)
 
+A request to a human carries one ask (10.6), and its reply is read under 10.9, since a reply that
+names no option closes the request without deciding it. (LOG, 2026-10-26, bundled asks; LOG,
+2026-10-26, answers without a choice; low)
+
 **5.2** nomos adds a small vocabulary on top, as conventions. Any reply closes its request in the
 transport, and the work item keeps its own state.
 
@@ -578,12 +582,115 @@ for the answer, low for the question)
 recommendation), and all of it goes where the principal reads when deciding, not in output that a
 question dialog hides. (S31, M30, M38; low)
 
+**10.5** A message an agent sends a human has one of seven kinds, chosen by what it asks the human to
+do now, not by the transport kind the sender picked. Four are asks and three are not. (LOG,
+2026-10-26, human messages; low, one corpus with provisional labels)
+
+| Kind | When it applies | Carried as |
+|---|---|---|
+| `decision` | A decision reserved to the principal (4.3, field 5), the escalation of 10.4 | request with a deadline |
+| `choice` | Named alternatives the team could pick itself, where it wants the human's preference | request with a deadline |
+| `question` | Information or an observation only the human has, with no fixed set of answers | request with a deadline |
+| `action` | Something the human must do (run a command, test on a device, answer a dialog) and report on | request with a deadline |
+| `suggestion` | An optional proposal the human may take or ignore, with nothing waiting on it | message |
+| `notice` | Something the human should see under 10.2 and need not answer, including a commitment under 5.3 | message, or reply to the human's message or work request |
+| `result` | The outcome of something the human asked for | reply when the request calls for a result under 5.3, or a message naming the request after a commitment reply |
+
+An ask MUST go as a request with a deadline, since an ask carried by a message or a reply is not
+tracked and its answer closes no request for that ask. Progress that needs nothing from the human
+stays out of the inbox under 10.2; what 10.2 admits is a `notice`. Messages to a human carry no
+bracketed tag, since the block's kind takes the place of the tags of 5.2 and the first line stays
+in the human's language. The kinds of 5.2 stay as they are between agents. A work request from a
+human still gets the commitment reply of 5.3, as a `notice` naming the request; the outcome follows
+as a `result` message naming it. (LOG, 2026-10-26, human messages; LOG, 2026-10-26 06:50 to 06:59,
+request replies; LOG, 2026-10-26 09:17, asks sent as notes; low, designed on one corpus and two
+request-reply incidents)
+
+**10.6** A request to a human MUST carry exactly one ask. Independent decisions go as separate
+requests. A choice where the human may pick several options is one ask. A reply closes a request
+(5.1), so a bundled request answered in part closes in the transport while one of its decisions
+stays open, and nothing tracks it. Asking in a note instead leaves even that one ask untracked.
+(LOG, 2026-10-26, bundled asks; LOG, 2026-10-26 09:17, asks sent as notes; low, three bundled
+cases, one partial answer and one ask sent as a note)
+
+**10.7** A message to a human MAY carry a block that a reader's page draws as a component, and
+an ask MUST carry one. The body's first line is the title, in plain words, at most 80 characters,
+not a heading, list, quote or fence. The block starts on line 2, the only place a reader looks
+for it. It is a fenced code block with the info string `nomos`, holding one JSON object, at most
+16 lines including the fences and 1,024 bytes. Both limits bind even when every field fits its
+own limit. It holds no HTML and no time or date. Unknown keys are ignored. A changed field
+meaning takes a new info string, such as `nomos-1`, with no version key. (LOG, 2026-10-26, inbox
+page; low, title placement observed on one page, block and limits designed)
+
+A block that does not parse, is over a limit, names an unknown kind or breaks a field or ask rule
+stays in the body as a code box and the message renders as plain text, with no answer buttons.
+An unknown info string also falls back to text. A block in a message to an agent is inert, read as
+text rather than an answer component. A draft forwarded for review sits inside a longer fence,
+so its block is not on the body's line 2. (LOG, 2026-10-26, inbox page; low, designed)
+
+The text below the block MUST stand alone, so the human can answer from it when the block is
+ignored. An ask's text lists each option with its number, its label and its id, says what waits,
+what the team does meanwhile and what it does if no answer comes, and states the deadline once,
+equal to the request's. The transport holds the deadline; it is repeated in the text and never
+in the block, which has no `due`, `deadline` or `title` field. When the block and the text disagree,
+the text governs and the sender sends a correction with `replaces`. (10.3; LOG, 2026-10-26,
+inbox page; LOG, 2026-10-26, human messages; low, designed)
+
+| Field | Type | Kinds | Meaning |
+|---|---|---|---|
+| `kind` | one of the seven, or `"answer"` under 10.9 | all, required | Picks the component; `answer` is the human's reply, not an eighth agent kind |
+| `files` | array of at most 3 `{"path", "label"}`, absolute or `~/` paths | all, optional | Regular text files a reader can open; folders go in the text, and the page's configured roots still govern access |
+| `links` | array of at most 3 `{"url", "label"}`, `https` | all, optional | Links to show |
+| `replaces` | transport message id | all, optional | The earlier message or request this one supersedes; the sender withdraws a replaced request |
+| `options` | array of `{"id", "label"}`, ids of 1 to 24 lowercase ASCII letters, digits and hyphens, starting with a letter, and unique, labels of 1 to 60 characters in the human's language | `choice` and `decision` required, 2 to 6; `question` optional; `action` none | The answers the human can pick, in the order of their numbers in the text |
+| `select` | `"one"` or `"many"`, default `"one"` | asks with options | Whether several options may be picked |
+| `recommended` | an option id, or an array for `"many"` | asks with options, optional | The team's recommendation; absent when there is none, it is conditional or teams disagree, and the text says which |
+| `text` | `"optional"` or `"required"` | asks | Whether words must accompany an answer; default `"optional"` with options, `"required"` without; `action` uses the fixed failure-only requirement below |
+| `blocks` | non-blank string of at most 80 characters, or `null` | asks, required | What waits for the answer; `null` means nothing waits |
+| `meanwhile` | non-blank string of at most 80 characters | asks, required | What the team does while it waits |
+| `if_silent` | non-blank string of at most 80 characters | asks, required | What the team does when the deadline passes with no answer |
+| `default` | an option id | `choice` only, optional | The option that `if_silent` amounts to |
+| `follows` | transport request id | `result` required, others optional | The request this answers or continues |
+| `outcome` | `"done"`, `"partial"` or `"failed"` | `result`, required | The result's state |
+| `answer` | an option id, an array of ids for `"many"`, an action outcome, or `"take"` or `"skip"` for a suggestion | `answer`, optional for a reply in words only | The human's choice, checked against the original message under 10.9 |
+
+An answer with an option and no words is complete unless `text` is `"required"`. Without options,
+a question needs words. An `action` has no options and uses the fixed answers `done`, `failed`
+and `declined`; only `failed` requires words to report what went wrong. (LOG, 2026-10-26, human
+messages; LOG, 2026-10-26, inbox page; low, designed)
+
+**10.8** Silence never decides a `decision`. Its `if_silent` MUST be waiting or keeping things as
+they are, and it MUST NOT carry a `default`. A `choice` MAY name a `default` only when that option
+is reversible and inside the team's authority. The difference lets the human see, before answering,
+whether silence lets the team act. Whether an act is reserved is read in the delegation record, not
+in the block. (5.6, 10.2; LOG, 2026-10-26, human messages; low, designed)
+
+**10.9** The human's answer is a reply to the request, or to the message for a suggestion. A reader's
+page writes a label on line 1, the `nomos` block on line 2 with `"kind": "answer"`, then the human's
+words verbatim, possibly empty. Line 1 is the page's, not the human's words. It is the chosen
+option's exact label, the labels joined by "; " for `select: many` and cut at 80 characters, or
+the outcome word in the human's language for an action. The block's `answer` holds one option id,
+an array of ids for `select: many`, `done`, `failed` or `declined` for an action, or `take` or `skip`
+for a suggestion. An answer in words only omits `answer`. The asker reads the block on line 2
+and accepts only ids it sent, or the fixed answers for the original kind. An unknown id counts
+as no choice. The human's words are always read, and a condition in them binds the chosen option.
+(LOG, 2026-10-26, answers without a choice; LOG, 2026-10-26, inbox page; low, designed)
+
+Without a block, words count as a choice when they name exactly one option without doubt, such
+as its id, number or label anywhere in the answer, or "the recommended one" when the ask had one
+recommendation. Anything else decides nothing. A reply that names no option to a `choice` or a
+`decision` closes the request and decides nothing. For a `decision` the asker sends a new request
+with `follows` naming the old one and says what is still open. What the team then does reaches the
+human as a `result` or `notice` naming the request. (5.5, 5.6; LOG, 2026-10-26, answers without a
+choice; low, two replies without a choice and the principal's unambiguous choices in words)
+
 ## 11. Conformance, checks and versioning
 
 **11.1** A session conforms to nomos v0 when it follows every MUST and MUST NOT in this document, which
-are in 3.2, 3.6, 3.8, 4.3, 4.4, 4.6, 4.9, 5.3, 5.5, 5.6, 6.5, 8.2, 9.1, 9.2 and 9.4. A team conforms when
-every member does and its messages use the kinds of 5.2. The other rules say how a conforming team
-meets those, and a team that departs from one says so in its first prompts.
+are in 3.2, 3.6, 3.8, 4.3, 4.4, 4.6, 4.9, 5.3, 5.5, 5.6, 6.5, 8.2, 9.1, 9.2, 9.4, 10.5, 10.6, 10.7 and 10.8.
+A team conforms when every member does and its messages use the kinds of 5.2 between agents and
+10.5 to humans. The other rules say how a conforming team meets those, and a team that departs
+from one says so in its first prompts.
 
 **11.2** A rule that lives only in a document sessions may not read has failed again and again, and
 what held was a check that every session runs (M10, M45). The transport refuses bad addresses and
@@ -615,3 +722,5 @@ its old trace beside the new one. `bootstrap.md` says how each harness loads the
 - Addressing an incarnation (3.3, 9.4) and the reserved scopes (3.7) wait on R08 and R01, and
   `keryx.md` gives the interim.
 - Whether the readback, the handover and the requester's decision become transport kinds (R03).
+- Whether the transport should carry the human-message kind or answer id itself; 10.7 and 10.9
+  keep them in the body and add no transport field.

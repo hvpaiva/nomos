@@ -86,6 +86,7 @@ to it. Harness startup is separate from reading cost but remains inside the sess
 | Whoever fills this form | Only when filling it | `templates/escalation.md` | 335 | 1,210 to 1,380 |
 | Whoever fills this form | Only when filling it | `templates/first-prompt.md` | 1,701 | 6,130 to 6,980 |
 | Whoever fills this form | Only when filling it | `templates/handover.md` | 1,521 | 5,480 to 6,240 |
+| Whoever fills this form | Only when filling it | `templates/human-message.md` | 911 | 3,280 to 3,740 |
 | Whoever fills this form | Only when filling it | `templates/plan-review.md` | 420 | 1,520 to 1,730 |
 | Whoever fills this form | Only when filling it | `templates/report.md` | 512 | 1,850 to 2,100 |
 | Whoever fills this form | Only when filling it | `templates/review-brief.md` | 753 | 2,720 to 3,090 |
@@ -93,7 +94,7 @@ to it. Harness startup is separate from reading cost but remains inside the sess
 | Claude Code member | Only the note needed for its own harness | `harness-notes.md`, Claude Code | 50 to 204 per note | 180 to 840 per note |
 | Codex member | Only the note needed for its own harness | `harness-notes.md`, Codex | 34 to 256 per note | 130 to 1,050 per note |
 | Cursor member | Only the note needed for its own harness | `harness-notes.md`, Cursor | 77 to 356 per note | 280 to 1,460 per note |
-| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 31,718 in catalog | 114,190 to 130,050 in catalog |
+| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 33,051 in catalog | 118,990 to 135,510 in catalog |
 
 The largest initial member load is 778 words, `cards/member.md` plus `cards/auditor.md`, below the 800-word
 limit. The common card has 486 words; role cards have implementer 273, reviewer 280, qa 255, auditor 292, writer 261; the orchestrator card has 600.

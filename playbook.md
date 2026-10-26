@@ -777,6 +777,10 @@ one resource the team cannot parallelize. (M53, M49; low)
 
 ## Writing for the team
 
+An agent writing to the principal picks the kind by what it asks now, sends each ask as its own
+request with a deadline, and uses `templates/human-message.md` (protocol 10.5 to 10.9). An escalation
+keeps `templates/escalation.md` as the text below a `decision` block.
+
 - Write the current state as a scoped fact, and a principle only when a decision or a test imposes it.
   An architecture document said a tool only reads, from the commands it had that week. (M27; low)
 - A rewrite changes only what was asked, keeps the rest, and says when it removes content. Iterated

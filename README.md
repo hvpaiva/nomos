@@ -95,8 +95,9 @@ The cards are [member](cards/member.md), [orchestrator](cards/orchestrator.md),
 The templates are [first prompt](templates/first-prompt.md), [brief](templates/brief.md),
 [report](templates/report.md), [handover](templates/handover.md),
 [review brief](templates/review-brief.md), [review findings](templates/review-findings.md),
-[plan review](templates/plan-review.md), [audit brief](templates/audit-brief.md) and
-[escalation](templates/escalation.md).
+[plan review](templates/plan-review.md), [audit brief](templates/audit-brief.md),
+[escalation](templates/escalation.md) and [human message](templates/human-message.md), read with
+protocol 10.5 to 10.9.
 
 [tool/check](tool/check) runs [the pre-send tests](test/pre_send_test.rb), [the style check](tool/check-style.sh),
 [the evidence check](tool/check-evidence.rb), [the reading recount](tool/recount.rb) and

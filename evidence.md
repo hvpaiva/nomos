@@ -1893,6 +1893,119 @@ Sourced from the benchmark reports and the later triage's checks of the saved ar
 history. These are reported observations, not a rerun by the writer. Confidence low, one benchmark
 run; the proposed checkpoint and brief checks were not tested by this case.
 
+### LOG, 2026-10-26 UTC-3, human messages
+
+On 2026-10-26 a writer classified the messages agents had sent the principal's inbox over the
+previous four days, 249 from agents and six from the transport, by what each asked the principal to
+do now. The provisional labels were 86 status, 74 results, 41 reserved decisions, 27 notices, eight
+suggestions, seven open questions and six choices among named alternatives. Of the 54 messages that
+asked for something, 30 went as requests, 13 as plain messages and 11 as replies, so the transport
+kind alone missed almost half of the asks. Three of the 30 requests had no deadline. Some asks
+needed the principal to act rather than answer, such as running a command that needed root or
+testing a page on a phone, and a yes alone would not have done them. Deadlines, what was blocked,
+what the team did meanwhile and what it would do without an answer sat in prose, sometimes as local
+times without a date, and one message said it would apply changes after an hour, which read like
+authority taken from silence.
+
+It taught that messages to a human need a kind chosen by what they ask, that every ask must be a
+tracked request with a deadline, that a human action is its own kind, and that waiting, work
+meanwhile and the no-answer plan are separate facts to state. Status was the largest class although
+10.2 already keeps progress out of the inbox.
+
+Sourced from the writer's inventory and its reproducible label ledger. Confidence low, one corpus,
+labels without a second review pass. Protocol 10.5, 10.7 and 10.8 carry it.
+
+### LOG, 2026-10-26 UTC-3, bundled asks
+
+In the same corpus, a publication question carried five independent decisions in one request,
+another message three and another two. The principal answered three of four items of one bundled
+decision request and said the third was unclear, and the sender had to restate it in a new
+message. Of the 30 requests, 26 had a direct first reply, and three of those were partial or bundled
+answers. Since a reply closes its request, a bundled request answered in part closed in the
+transport while one decision stayed open with nothing tracking it.
+
+It taught that a request to a human carries one ask, so the reply closes exactly what was asked.
+
+Sourced from the writer's inventory. Confidence low, three bundled cases and one partial answer.
+Protocol 10.6 carries it.
+
+### LOG, 2026-10-26 UTC-3, answers without a choice
+
+In the same corpus, the principal answered choices with a bare letter, "option 1", the exact label,
+"the recommended one" and free text. A one-word reaction to a demonstration of a cleanup was a reply
+with no option in it, and the deletion stayed pending in a later report. An answer to a two-way
+diagnostic question named neither alternative and said the symptom had stopped. A terse two-word
+reply needed a follow-up question to understand. The sender of each case had to reconstruct the
+answer from the conversation.
+
+It taught that the answer should carry an option id the asker can parse, with the human's words
+kept whole, and that a reply naming no option closes the request without deciding it, so a
+decision is asked again when its answer is unclear. Words that name exactly one option without
+doubt still count, including an id, number or label anywhere in the answer and "the recommended
+one" when there is one recommendation. The principal had used that wording and had told the
+team to do what it recommended; requiring an exact first-line match would reject those choices.
+
+Sourced from the writer's inventory, the principal's replies and the orchestrator's ruling on
+unambiguous choices in words. Confidence low, two replies without a choice; the structured answer
+has not been tested with the principal. Protocol 10.9 carries it.
+
+### LOG, 2026-10-26 UTC-3, inbox page
+
+On 2026-10-26 the maintainer of the principal's inbox page described what it renders. It took the
+title from the first line, made numbered lines in a request into answer buttons that wrote the label
+into the reply, guessed the recommended option from a phrase in Portuguese, guessed file paths in
+the prose and drew the deadline from the transport's deadline only. The maintainer asked for a
+declared kind, options with ids and the recommended one, what blocks and the default, and files to
+show, in a fenced block at the top rather than front matter, which a renderer that ignores it shows
+as a rule and raw keys. The text had to stand alone, the title had to come from the text, the
+block could hold no HTML, had to fit a phone screen when shown raw and had to fall back to plain
+rendering when malformed, and the deadline had to stay in the transport only so the two could not
+drift.
+
+A later contribution from the page's team reported an observed probe against the page's message
+class. With the fence on line 1, the title and notification body read "No text". Moving the title
+to line 1 restored both before a block parser existed. The transport's summary also read line 1.
+An answer with the fence first lost its title in the same way. The contribution proposed a
+page-written label on line 1, a block on line 2 declaring the answer kind, and the principal's
+words unchanged after it. An option alone would be enough unless words were required, and an
+action would require words only on failure.
+
+The contribution also found by code inspection that the page opens only regular text files of
+at most 1 MiB inside its configured roots, with dot folders and secret-like names excluded.
+Folder paths in the draft could not open. Its size probe showed that a block can exceed the
+total byte cap even when each field fits its own cap. The accepted design kept labels at 60
+characters, shortened the waiting facts to 80, capped files and links at three each, kept 16
+lines and 1,024 bytes binding, and used null for nothing waiting. These limits were not measured
+on a phone. The team also proposed no buttons for a malformed or rule-breaking block, text
+taking precedence over a conflicting block, an inert block for agent recipients, and a new
+info string for changed meanings.
+
+It taught that the title belongs before the block, that replies preserve the principal's words
+separately from the page's label, and that fallback must preserve the text without inventing
+answer buttons. The deadline stays out of the block, and file links must name openable files.
+
+Sourced from the maintainer's code account and the page team's contribution, which separates
+observed probes, code inspection and phone-layout hypotheses. The writer did not rerun those
+probes. Confidence low, one page; title placement was probed, the block parser and answer path
+were not built. Protocol 10.7 and 10.9 carry it.
+
+### LOG, 2026-10-26 09:17 UTC-3, asks sent as notes
+
+On 2026-10-26 at 07:22 UTC-3, the protocol team's orchestrator sent the human-message proposal
+to the principal as a message asking for a reaction, after a threaded send was refused. It did
+not open a new request. The principal answered anyway at 09:08 UTC-3, approved the proposal and
+asked for the inbox page team's contributions before application. At 09:17 UTC-3, the principal
+reminded every orchestrator that everything depending on the principal must arrive as a request,
+since a note asking for something might go unseen.
+
+It taught that asking in a message loses the tracked obligation even when the principal happens
+to answer. Each ask needs its own request with a deadline; a reply to one ask then closes that
+ask, while a note remains for information that needs no answer.
+
+Sourced from the protocol run log's entries at 09:09 and 09:18 UTC-3 on 2026-10-26, which record
+the answer and the reminder. Confidence low, one ask sent as a note and a direct correction;
+the one-ask-per-request remedy was not tested by this incident. Protocol 10.5 and 10.6 carry it.
+
 ## Field evidence from the keryx team (LOG)
 
 These entries summarize reports about pull requests in the public [keryx

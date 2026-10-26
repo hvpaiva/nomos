@@ -7,6 +7,8 @@ The format follows Keep a Changelog. Before the first release, all entries are u
 
 ### Added
 
+- Protocol 10.5 to 10.9 and a human-message template, with seven kinds, one ask per request, a `nomos`
+  block for the reader's page, and answers that keep the human's words.
 - Role-based member names within project-named teams, with short names and a full transport role.
 - Request-specific replies, commitments for later or human-requested work, and their dated cases.
 - An optional pre-send hook for keryx messages, with Claude Code, Codex and Cursor adapters and tests.
