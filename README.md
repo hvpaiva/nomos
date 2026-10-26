@@ -44,10 +44,11 @@ From an orchestrator already joined to keryx in a herdr pane, prepare a member f
 brief. The prompt names the absolute paths to this repository's common card and the chosen role
 card, carries the delegation record, and requires a readback before work. Replace the capitalized
 arguments below with the files, directory, deadline and context ceiling chosen for that task.
+The address `impl-1.alpha` is illustrative; use the member and team from its record.
 
 ```sh
 wc -c < FIRST_PROMPT_FILE
-keryx spawn impl-1 --harness codex --role implementer \
+keryx spawn impl-1.alpha --harness codex --role implementer \
   --cwd WORKTREE --file BRIEF_FILE --within DEADLINE --ceiling CONTEXT_LIMIT \
   --prompt "$(cat FIRST_PROMPT_FILE)"
 ```

@@ -57,9 +57,9 @@ request's route, and a late reply is matched by request id and by who owned the 
 L11, R08, S48, S-N03, S-N04; low)
 
 **3.4** A stable address is spelled MEMBER.TEAM@HOST, and a session address appends /SESSION, as in
-`rev-1.alpha@box1/s7f2`. Names start with a lowercase letter and hold lowercase letters, digits and
-hyphens, and stored records keep the four parts as separate fields. The spelling is nomos's choice and
-waits on keryx. (N05, R01, R08, S-N01 to S-N03; low)
+`rev-1.alpha@box1/7f2abc`. Names start with a lowercase letter and hold lowercase letters, digits and
+hyphens, and stored records keep the four parts as separate fields. The spelling is nomos's choice,
+implemented by keryx 143fbb8 (#30). (N05, R01, R08, S-N01 to S-N03; low)
 
 **3.5** A member's name is a role with an instance number (orq for the one orchestrator, impl-N, qa-N,
 rev-N, aud-N), or a task name when no role fits. A replacing session keeps the seat's name and gets a
@@ -68,9 +68,13 @@ new session id. (L11, L14, S-N03; medium)
 **3.6** Short names are resolved by the sender's transport before anything is stored. MEMBER means that
 member of the sender's team on the same host, with no fallback, and MEMBER.TEAM that member of that team
 on the same host. A sender in the reserved scopes `local` or `system` has no team, so a bare MEMBER
-from it resolves only when exactly one MEMBER.TEAM exists on the host, and is the same listing error
-otherwise. A name with @HOST MUST be a full address. A name that matches several members is an
-error that lists them, and a transport MUST NOT choose among candidates or guess. Resolving a name
+from it resolves only when exactly one MEMBER.TEAM exists on the host; an unknown name is refused
+and an ambiguous name lists its candidates. During a move from an older keryx address, a sender
+without a team first reaches an
+unretired old address of that name; `keryx.md`, Identity and addresses, gives the compatibility
+rule and migration steps. A name with @HOST MUST be a full address. A name that matches several
+members is an error that lists them, and a transport MUST NOT choose among candidates or guess.
+Resolving a name
 grants nothing. (L14, N05, R01 with the keryx team's acceptance of 2026-10-23, S43, S-N02, M55; low)
 
 **3.7** A human at a terminal and the transport's own services take the reserved scopes `local` and
@@ -531,7 +535,7 @@ Heartbeats, swaps and their checks, member traffic and progress that needs nothi
 principal stay out of the inbox. (LOG, 2026-10-23 10:25 to 10:38, principal inbox; low, one
 arrangement, partly run)
 
-The session holding the principal's address is a relay under this rule. It carries the principal's
+A session that holds the principal's address is a relay under this rule. It carries the principal's
 words verbatim under 4.5 and the team's messages to the principal, decides nothing and answers no
 request itself. A message from the principal's own transport address named in the root record is
 the principal's word, including for decisions reserved to the principal (field 5) and record changes
