@@ -8,6 +8,11 @@ The format follows Keep a Changelog. Before the first release, all entries are u
 ### Added
 
 - An optional pre-send hook for keryx messages, with Claude Code, Codex and Cursor adapters and tests.
+  It accounts for every raw send, ask or reply occurrence by its position, exempts only reads on
+  per-reader option allowlists, walks other tools' input as strings, and bounds its parsing, input and
+  output.
+- Harness notes and wiring checks for Cursor's non-authoritative hook allow and Claude Code's
+  last-settings-only command-line behavior, each with its dated case.
 - nomos protocol v0 for team identity, delegation, requests, reports, review and handover.
 - A playbook of team recipes and versioned notes on Claude Code, Codex and Cursor.
 - A getting-started guide with a reading map and a first-team acceptance exercise.

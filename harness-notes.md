@@ -155,6 +155,25 @@ report written under the first note could be shorter than the work without sayin
 seen, and the reviewer of that case reran its validator. After a reset on your account, check each
 background task and rerun what died. To check, read the turns around a usage limit in your session's transcript. (M49, P06)
 
+**HN36. Repeated `--settings` arguments keep only the last one.** Reported on 2026-10-25 with
+Claude Code 2.1.310. An orchestrator passed two separate environment objects through `--settings`;
+the Bash probe saw only the second object's variable. A hook in the first argument did not load,
+while the same hook in the last one did. In keryx 92ab75d,
+[Harness.claude, lines 66 and 67](https://github.com/hvpaiva/keryx/blob/92ab75d178aa68c742a126185125672ec509c985/lib/keryx/harness.rb)
+puts keryx's `--settings` first, and
+[spawn, lines 188 to 191](https://github.com/hvpaiva/keryx/blob/92ab75d178aa68c742a126185125672ec509c985/lib/keryx/commands/spawn.rb)
+appends the arguments passed after `--`. A `--settings` there replaces keryx's settings, so the
+pre-send hook can load while `crossSessionInbound: accept` and the keryx Stop hook are lost
+([harness.rb, lines 11 to 14](https://github.com/hvpaiva/keryx/blob/92ab75d178aa68c742a126185125672ec509c985/lib/keryx/harness.rb)).
+Bells can then be held for approval and the stop reminder is absent (HN10). Put the hook
+in a settings file instead, for example the project's `.claude/settings.local.json`, kept out of
+git. The [settings reference](https://code.claude.com/docs/en/settings#settings-files-and-who-they-affect)
+describes that file's scope. To recheck, use an authorized scratch project and a fresh session,
+pass two settings objects with distinct marker variables, and inspect both variables from Bash;
+then move a marker hook between the two arguments and check whether it runs. This needs a new
+session and permission for the settings effects. The writer did not rerun these probes. (LOG,
+2026-10-25, repeated Claude settings; low)
+
 ## Codex
 
 **HN17. A queued message can resume a closed thread.** Seen 2026-10-22, version 0.163. `codex queue
@@ -275,6 +294,37 @@ On 2026-10-23, `cursor-agent --help` in 2026.10.22-27dcf5f lists `--sandbox enab
 The spawner passes the mode the root record names after `--` in `keryx spawn`. These are launch
 controls checked in help, not a recommendation to allow every command; check the effective mode
 inside the seat with an authorized operation. (LOG, acceptance 1, stumble 3; low)
+
+**HN37. The pre-send Cursor adapter depends on a non-authoritative `allow`.** The code reading
+recorded in [bootstrap section 4](bootstrap.md#4-make-every-session-load-nomos) on 2026-10-25 covers
+Cursor agent 2026.10.22-27dcf5f. In that version's `4097.index.js`, line 1, the shell hook caller
+returns no approval override for `allow`; in `index.js`, line 414, the requirement setter leaves
+the shell permission checks in place. This is a reported code inspection, not a live hook test.
+The adapter returns `allow` on clean and unchecked commands, so it depends on that behavior.
+The [Cursor hooks reference](https://cursor.com/docs/hooks), read on 2026-10-26, lists allow, deny
+and ask but does not document a response that defers to the user's own settings. Empty or invalid
+responses are not established as neutral. The adapter therefore keeps one `CURSOR_PASS` constant
+for clean, unchecked, unreadable-input and wrong-event paths. The earlier bundle inspection was not
+rerun. Warning delivery on allow is also untested live and may reach neither the agent nor the user;
+use manual body checks until an authorized live test demonstrates delivery. This uncertainty is a
+wiring gate in bootstrap section 4, not a check deferred until after installation.
+
+
+A [Cursor IDE report](https://forum.cursor.com/t/beforeshellexecution-hook-permissions-allow-ask-ignored-allow-list-takes-precedence/144244)
+describes `beforeShellExecution` allow and ask verdicts yielding to the allowlist, with later reports
+of inconsistent behavior. A [feature request](https://forum.cursor.com/t/support-authoritative-allow-deny-and-ask-verdicts-from-hooks/161342)
+asks for authoritative verdicts and includes a reply reporting an open bug ticket for `preToolUse`. These IDE reports
+are reasons to recheck the CLI dependency, not proof of every CLI version's behavior.
+
+Before wiring the adapter on each Cursor version, inspect its caller and permission checks, then
+use an authorized isolated session to confirm that `allow` leaves an otherwise required approval
+in place, for both a command outside the allowlist and one requiring sandbox escalation. If it
+grants execution, stop wiring and revise the adapter. Also run a clean control to detect wiring
+errors such as a misspelled --harness; Cursor's handling of empty stdout is not documented.
+Whether an empty object can
+serve as a neutral response has not been tested in the recorded CLI version; do not substitute it
+without checking. A live probe needs a new session and authority for its settings and dialogs.
+(LOG, 2026-10-25, Cursor pre-send permission dependency; low)
 
 ## Any harness
 

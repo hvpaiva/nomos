@@ -79,7 +79,7 @@ to it. Harness startup is separate from reading cost but remains inside the sess
 | QA | At start | `cards/member.md` + `cards/qa.md` | 749 | 2,700 to 3,080 |
 | Auditor | At start | `cards/member.md` + `cards/auditor.md` | 786 | 2,830 to 3,230 |
 | Writer | At start | `cards/member.md` + `cards/writer.md` | 755 | 2,720 to 3,100 |
-| Orchestrator | At start | `cards/orchestrator.md` (600), `orchestrator.md` (2,496), bootstrap sections 7 and 8 (2,156), harness notes for all three harnesses (1,479); omit notes for harnesses not being spawned | 6,731 | 24,240 to 27,600 |
+| Orchestrator | At start | `cards/orchestrator.md` (600), `orchestrator.md` (2,496), bootstrap sections 7 and 8 (2,312), harness notes for all three harnesses (1,479); omit notes for harnesses not being spawned | 6,887 | 24,800 to 28,240 |
 | Harness start, outside nomos | Record the context stamped on the first readback | On 2026-10-23, third-run Claude Code 50.2K at its first turn and 60.9K after join and skill; first-run Claude Code 50.9K and 61.8K after join, skill and inbox; first-run Codex about 23K on its readback | Not a word count | Observed context, not a text estimate |
 | Whoever fills this form | Only when filling it | `templates/audit-brief.md` | 781 | 2,820 to 3,210 |
 | Whoever fills this form | Only when filling it | `templates/brief.md` | 1,243 | 4,480 to 5,100 |
@@ -90,10 +90,10 @@ to it. Harness startup is separate from reading cost but remains inside the sess
 | Whoever fills this form | Only when filling it | `templates/report.md` | 494 | 1,780 to 2,030 |
 | Whoever fills this form | Only when filling it | `templates/review-brief.md` | 753 | 2,720 to 3,090 |
 | Whoever fills this form | Only when filling it | `templates/review-findings.md` | 416 | 1,500 to 1,710 |
-| Claude Code member | Only the note needed for its own harness | `harness-notes.md`, Claude Code | 50 to 201 per note | 180 to 830 per note |
+| Claude Code member | Only the note needed for its own harness | `harness-notes.md`, Claude Code | 50 to 204 per note | 180 to 840 per note |
 | Codex member | Only the note needed for its own harness | `harness-notes.md`, Codex | 34 to 256 per note | 130 to 1,050 per note |
-| Cursor member | Only the note needed for its own harness | `harness-notes.md`, Cursor | 77 to 154 per note | 280 to 640 per note |
-| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 30,487 in catalog | 109,760 to 125,000 in catalog |
+| Cursor member | Only the note needed for its own harness | `harness-notes.md`, Cursor | 77 to 356 per note | 280 to 1,460 per note |
+| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 30,961 in catalog | 111,460 to 126,950 in catalog |
 
 The largest initial member load is 786 words, `cards/member.md` plus `cards/auditor.md`, below the 800-word
 limit. The common card has 494 words; role cards have implementer 273, reviewer 280, qa 255, auditor 292, writer 261; the orchestrator card has 600.
@@ -245,9 +245,10 @@ Checks that can be mechanical go in hooks, which every session runs whatever it 
 - The optional [pre-send hook](hooks/pre-send.rb) checks bodies before `keryx send`, `keryx ask` and
   `keryx reply`. It needs Ruby 3.2 or later on the PATH the harness gives the hook, and only its
   standard library. Alternatively, prefix the hook command with the absolute path to a compatible
-  Ruby interpreter, for example `/usr/bin/ruby /absolute/nomos/hooks/pre-send.rb --harness claude`.
-  Ruby 3.0 and 3.1 pass with an agent-readable warning and `--check` exits 2; a Ruby older than 3.0
-  cannot parse the script, so the hook fails without that warning.
+  Ruby interpreter, for example `/usr/bin/ruby "/absolute/nomos/hooks/pre-send.rb" --harness claude`.
+  The Ruby 3.0 and 3.1 warning branch is simulated in tests, untested on those real interpreters;
+  it is intended to pass with a warning and make `--check` exit 2. CI tests Ruby 3.3 and 4.0.
+  Ruby older than 3.0 cannot parse the script, so it fails without that warning.
   The [binding's check
   table](keryx.md#checks-and-packaging) says which checks belong to nomos and which to keryx.
   Wire it as shown below only when the principal's delegation permits the settings change.
@@ -262,23 +263,36 @@ Report sections may be omitted under that template's guidance, and multipart fir
 review and handover forms have no heading check. Review findings also require a rank and evidence
 class for each numbered finding in the template's opening findings list, or under a `## Findings`
 heading. Numbered steps in other sections are excluded. Optional sections remain optional.
+Within a finding, an unindented list that restarts its numbering is treated as steps until a
+ranked item, or a blank-separated item above the previous finding's number, starts another finding.
+Indent nested steps to distinguish them from findings separated by blank lines.
 
 A flag refuses that attempt and tells the sending agent its line and text. The sender corrects the
 body or resends the same command prefixed with `NOMOS_PRESEND_CONFIRMED=1` to confirm the flags. This
-confirms only the message check and grants no authority to send. It never opens a human approval
-prompt. The hook stores no state and never executes the command itself. Without flags, Claude and
-Codex receive no decision; Cursor receives `permission: allow` so its normal checks can continue.
+confirms only the occurrences in that segment and grants no authority to send. A standalone
+assignment or `export NOMOS_PRESEND_CONFIRMED=1` confirms subsequent segments in the same command.
+Other segments still undergo accounting. Confirmation applies only where the body parser can
+resolve the shell syntax. It never opens a human approval prompt. The hook stores no state and never executes the command itself. Without flags, Claude and
+Codex receive no decision; Cursor receives `permission: allow`, subject to the version gate below.
 
 Merge the following entry into the harness's existing configuration, preserving its other hooks.
-Replace `/absolute/nomos` with this checkout's absolute path. Claude Code uses
-`~/.claude/settings.json` or the project's `.claude/settings.json`.
+Replace `/absolute/nomos` with this checkout's absolute path, keeping the path quoted even when it
+contains spaces. Claude Code uses
+`~/.claude/settings.json` or the project's `.claude/settings.json`. If the launcher already passes
+`--settings`, wire the hook in a settings file, for example the project's
+`.claude/settings.local.json` kept out of git: Claude Code 2.1.310 kept only the last `--settings`
+argument in the recorded probes. keryx 92ab75d puts its own settings before the harness arguments
+([harness.rb, lines 66 and 67](https://github.com/hvpaiva/keryx/blob/92ab75d178aa68c742a126185125672ec509c985/lib/keryx/harness.rb),
+[spawn.rb, lines 188 to 191](https://github.com/hvpaiva/keryx/blob/92ab75d178aa68c742a126185125672ec509c985/lib/keryx/commands/spawn.rb)).
+A later `--settings` replaces keryx's `crossSessionInbound: accept` and Stop hook, losing automatic
+bell acceptance and the stop reminder even if the pre-send hook loads (HN36).
 
 ```json
 {
   "hooks": {
     "PreToolUse": [{
-      "matcher": "Bash",
-      "hooks": [{"type": "command", "command": "/absolute/nomos/hooks/pre-send.rb --harness claude"}]
+      "matcher": "Bash|PowerShell|Monitor",
+      "hooks": [{"type": "command", "command": "\"/absolute/nomos/hooks/pre-send.rb\" --harness claude"}]
     }]
   }
 }
@@ -292,23 +306,28 @@ that one PreToolUse hook, never "Trust all" (HN20). Installing this repository d
   "hooks": {
     "PreToolUse": [{
       "matcher": "Bash",
-      "hooks": [{"type": "command", "command": "/absolute/nomos/hooks/pre-send.rb --harness codex"}]
+      "hooks": [{"type": "command", "command": "\"/absolute/nomos/hooks/pre-send.rb\" --harness codex"}]
     }]
   }
 }
 ```
 
-Cursor uses `~/.cursor/hooks.json` or the project's `.cursor/hooks.json`. Its matcher narrows the
-hook to commands containing a keryx invocation, including one inside a compound command; the script
-then checks the executable and subcommand.
+Cursor uses `~/.cursor/hooks.json` or the project's `.cursor/hooks.json`. Its matcher passes every
+command containing `keryx` to the hook, including quoted and nested text. A matcher that requires
+shell word boundaries would filter out substitutions and command strings before the hook sees
+them. The script handles the distinction between sends and mentions. Before wiring this adapter,
+prove on that Cursor version, in an authorized isolated session, that `allow` leaves an otherwise
+required user approval in place (HN37). If it grants execution, stop wiring and revise the adapter.
+The reference documents no response that explicitly defers to the user's settings, so the adapter
+retains `allow` even for wrong events and unreadable input. An empty response is not a proven substitute.
 
 ```json
 {
   "version": 1,
   "hooks": {
     "beforeShellExecution": [{
-      "matcher": "(^|[;&|\\s])([^\\s;&|]*/)?keryx\\s",
-      "command": "/absolute/nomos/hooks/pre-send.rb --harness cursor"
+      "matcher": "keryx",
+      "command": "\"/absolute/nomos/hooks/pre-send.rb\" --harness cursor"
     }]
   }
 }
@@ -316,14 +335,16 @@ then checks the executable and subcommand.
 
 The contracts were checked on 2026-10-25 with installed Claude Code 2.1.310, Codex 0.164.0 and Cursor
 agent 2026.10.22-27dcf5f, against the [Claude hooks reference](https://code.claude.com/docs/en/hooks),
-[Codex hooks reference](https://developers.openai.com/codex/hooks) and
+[Codex hooks reference](https://learn.chatgpt.com/docs/hooks) and
 [Cursor hooks reference](https://cursor.com/docs/hooks). These are current references, not version
 snapshots. Cursor's permission behavior was also read in that installed version's `4097.index.js`
 (line 1, the shell hook caller) and `index.js` (line 414, the hook requirement setter and shell
 permission checks). The Cursor adapter relies on `allow` from beforeShellExecution being
 non-authoritative, leaving the shell's own permission checks in place. That behavior was read in
 this version's code, without an installed hook test, and must be re-checked for each Cursor version
-before wiring this adapter. Check the contract of another harness version before wiring it.
+before wiring this adapter. The public references were read again on 2026-10-26 for tool coverage
+and the Cursor response contract; that reading did not repeat the installed bundle inspection or
+a live harness test. Check the contract of another harness version before wiring it.
 
 For a manual check, run the command below. Exit 0 means no flags, 1 means flags, and 2 means the
 check could not finish. Add `--words FILE` to either mode for a UTF-8 file with extra relative-time
@@ -336,17 +357,140 @@ ruby hooks/pre-send.rb --check MESSAGE_FILE
 The shell parser handles literal inline text or `--file` bodies, leading environment assignments,
 `--as`, executable paths and compound commands separated by `&&`, `||`, `;` or `|`. It follows a
 literal initial `cd DIR &&` for a later relative file path. Other directory changes leave inline,
-stdin and absolute-file bodies checkable; a relative file then passes with a warning. Unquoted
-shell comments are excluded. Output redirections to `/dev/null` and descriptor duplications such as
-`2>&1` are supported. Literal here-documents with quoted delimiters supply `--file -` bodies or
-inline text in `"$(cat <<'EOF' ... EOF)"`; `<<-` strips leading tabs. Other shell substitutions,
-variables, subshells and input redirections are not evaluated.
+stdin and absolute-file bodies checkable; a relative file then passes with a warning. The parser
+invalidates the directory for `pushd`, `popd`, and `cd` reached through repeated `builtin` or
+`command` prefixes, including their `--` and `-p` options. An `eval`, `time`, `source` or `.` segment
+also invalidates it, including after those prefixes, without interpreting its command string or
+reading its script. A leading `CDPATH=` assignment before `cd` invalidates the directory. `CDPATH`
+set in a shell profile remains a limit; use an absolute body-file path in that case.
+
+The warning rule starts with the original command text. Every raw occurrence of `keryx`, followed
+by `send`, `ask` or `reply`, must be accounted for. Global options can intervene, including repeated
+`--as VALUE`, `--as=VALUE`, `--color` and `--color=WHEN`; touching quoted pieces and variable pieces
+in an option value count as one word. Blanks and backslash-newline continuations between these
+words count too. A literal printf/echo escape before `keryx`, such as `\n`, `\t`, `\x41`
+or four-digit octal `\0012`, also counts as a boundary; an identifier merely ending in `keryx` does not. A terminal `keryx` with
+no visible action counts in command position, including
+carriers such as `xargs`, `env` and `nohup`. A path or binary-name argument to `cd`, `ls`, `which`,
+`type` or `command -v` does not count on its own. With no occurrence, a command within the size
+bound passes without shell parsing.
+
+The trigger does not reconstruct names or actions. An action split by quotes (`keryx se''nd`), an
+action held in a variable (`keryx $A`), a variable command name, a wrapper function forwarding
+`"$@"`, or a glob command name such as `ker?x` can pass silently. Escapes that hide the raw words
+can also prevent a match. A script written in one tool call and run in another is not tracked.
+Writing and running it in separate segments of one command is tracked. A function, alias or
+environment variable set in an earlier tool call is outside this stateless lint.
+
+The wiring reaches different tools in each harness, according to the references read on 2026-10-26.
+
+- Claude Code matches `Bash|PowerShell|Monitor`. Bash and Monitor commands get POSIX shell accounting;
+  PowerShell input uses the warn-only word trigger below, since its language is not parsed. Plugin monitors
+  that start without a tool call are outside this wiring, per the
+  [tools reference](https://code.claude.com/docs/en/tools-reference).
+- Codex matches `Bash`, the canonical hook name for shell and unified `exec_command` calls, reading
+  `tool_input.command`. `write_stdin` does not rerun PreToolUse, and specialized paths can opt out.
+  Those paths are outside this wiring, per the [hook coverage](https://learn.chatgpt.com/docs/hooks).
+- Cursor matches `beforeShellExecution` only. Coverage of every terminal or background execution
+  path is unverified; the separate `preToolUse` hook is not wired here.
+
+If a team widens the Claude or Codex matcher, other tool names receive no shell exemption. The
+adapter walks tool_input objects and arrays, reading every string key and value unchanged, plus
+each array's direct string elements joined by spaces. It warns on the word `keryx`, in any case,
+followed by `send`, `ask` or `reply` among the next four words. Whitespace, quotes, backticks and
+backslash line continuations separate words. Paths, `.exe` and a call operator do not hide the name;
+`mykeryx` is not the word. A known Bash or Monitor tool without a string command uses this path too,
+so a Monitor `ws` watch passes silently. Missing or null tool_input is a contract error.
+The keryx word test precedes the combined 64 KiB string-size gate. Input without that word passes
+silently regardless of size, within the 32-level nesting bound. Oversized input with the word warns;
+smaller input without a nearby action passes. This path never runs the POSIX shell scanner.
+
+An occurrence is accounted for by a direct invocation whose literal body was resolved and checked,
+or by literal data in a recognized read command. A nil body never discharges an invocation. Each
+exemption belongs to its position in the original text. A checked body or search pattern cannot
+account for a second, identical phrase elsewhere. Any leftover occurrence warns, including in a
+shell form the scanner does not know. Substitutions inside a read argument do not inherit its
+exemption, and output fed to a command that might execute it is not exempted as read data.
+
+A read exemption requires a bare executable name, or that name directly under `/bin` or `/usr/bin`,
+no variable mutation anywhere in the command or `env` wrapper, and every option on that reader's
+own allowlist. Any assignment, export, declaration, variable read or unset disables read exemptions
+across all segments and nested consumers, whichever variable it names. This includes `export`,
+`declare`, `typeset`, `local`, `readonly`, `read`, `mapfile`, `readarray`, `printf -v`, `getopts`
+and `unset`; even `x=1; grep 'keryx send' f` warns. Long options
+must be spelled out; short clusters and attached values are accepted only where explicitly listed
+in `Command::Reader::OPTIONS`. An unknown or abbreviated option warns when an occurrence depends
+on that exemption. A function definition, alias, hash, enable, builtin invocation or PATH assignment
+anywhere in the same command disables its read exemptions, including nested consumers. `eval`,
+`source` and dot commands also invalidate reader names because they can redefine them.
+
+The tables cover `grep`, `rg`, `head`, `tail`, `sort`, `uniq`, `wc`, `cut`, `tr`, `diff`, `cat`,
+`echo`, and `printf`. Git has separate tables for log, show and grep; gh has separate tables for
+search code and issue list. Git accepts `--no-pager` before log, show or grep, including alongside
+`-C`. Git reads assume the repository configuration names no pager, textconv, external diff or
+fsmonitor program. The lint cannot see that configuration, including includes or a repository
+selected with `-C`, just as it cannot see an environment set by an earlier tool call. `xargs grep`, `xargs wc` and `find -exec grep` validate the inner command
+against the same table. Find predicates have their own exact list. Executing options such as
+`rg --pre`, `sort --compress-program` and `git grep --open-files-in-pager`, including abbreviations,
+receive no exemption. Neither do output options or uniq's second operand.
+
+For `sed`, only literal print, quit and delete programs with supported addresses and options are
+reads. For `awk`, only literal print programs, optionally with a pattern and field, are reads.
+Options after the program are checked too. Interpreters and unknown consumers warn. Literal
+message arguments of `git commit` (`-m`, `--message`, and clusters of no-argument flags from
+`a s q v e` ending in `m`, such as `-am`, `-sm` and `-asm`) and `gh pr create`, `gh issue create` and
+`gh pr comment` (`-t`, `--title`, `-b`, `--body`) are data; the command itself is not a reader.
+
+Text stored by a redirection or `tee` is data only if no part of the same command may run
+it. Those storage forms are not read-only segments for body-file freshness. A shell, interpreter,
+`eval`, `source`, dot command, variable command or unknown executable prevents the storage exemption,
+including through a pipeline or nested producer. The rule is conservative when a destination or
+subsequent consumer is uncertain. Writing a script without running it in the same command remains
+a data operation when no variable mutation disables its read exemption.
+
+The scanner recognizes reads behind `command`, `exec`, `nohup`, a literal timeout and
+`mise exec --`, or within literal shell command strings, ssh commands and watch operands. Shell
+stdin containing recognized reads can be accounted for too. Supported shell no-execution options
+exempt literal input, while expansions evaluated by the calling shell remain exposed. These paths
+only account for reads; a wrapper never makes an unresolved send silent. Comments and quoted
+here-document data are separate from executable substitutions. An unquoted here-document containing
+expansions is not exempted as a whole.
+
+The 64 KiB command limit is applied before occurrence scanning. A `--file` body over 64 KiB is not
+read or checked; the hook warns with exit 0. Manual `--check` uses the same file bound and exits 2
+on oversize. Reads are capped to catch a growing file. Both modes list at most 50 flags and the
+number omitted. Line-number and findings-list checks use forward passes. Accounting finishes
+before the body checker runs, so checker time cannot consume the command budget. With an occurrence present, the
+scanner also limits nesting to 32 levels, lexical tokens to 4096 and scan time to 200 ms. A limit or
+unexpected parser exception, including a stack overflow, produces a warning and exit 0. The error
+path does not run the scanner again. A failed warning write to either output stream leaves the
+other available and still returns exit 0 in hook mode. The scan retains source offsets and shares
+its budget across nested reads. It does not execute commands or evaluate variables or script files.
+
+The body parser supports output redirections to `/dev/null` and descriptor duplications such as
+`2>&1`. Literal here-documents with quoted delimiters supply `--file -` bodies or inline text in
+`"$(cat <<'EOF' ... EOF)"`; `<<-` strips leading tabs. Unquoted brace, glob and tilde expansions are
+unresolved. A body file is checked only when earlier segments cannot change it. Earlier writers
+such as `tee`, `cp`, `mv`, `install`, `dd`, `sort -o`, `uniq IN OUT`, `find -fprint`, `sed -i` or an
+unknown command prevent resolution;
+this conservative rule can warn even when the written path differs. Directory-only changes retain
+the directory rules above. Unsupported syntax leaves its send occurrence unaccounted and warns.
+The optional confirmation prefix still applies to commands the body parser can read.
 
 An unreadable file, unsupported shell input or hook failure passes with a warning on stderr and
-in the adapter output. Claude Code and Codex receive `hookSpecificOutput.additionalContext` with
+in the adapter output when that invocation is present. Name-only mentions outside command position
+and accounted read data pass silently within the size bound; malformed hook input and manual-check
+errors still report their diagnostics.
+Claude Code and Codex receive `hookSpecificOutput.additionalContext` with
 `hookEventName: PreToolUse` and no permission decision, as documented in their hook references
 above. Cursor receives `agent_message` and `user_message` beside `allow`; delivery of those warning
-fields has not been tested in a live harness. Use `--check` on the resolved body file in those cases.
+fields has not been tested in a live harness. A Cursor warning may reach neither the agent nor
+the user; stderr may appear only in its Hooks output channel. Cursor teams check bodies by hand
+with `--check` until an authorized live probe shows warning delivery. Unknown or missing
+`--harness` produces only stderr and exit 0, without an adapter JSON response. Repair the wiring
+and tell the human on argument or input-contract errors; no schema compatibility is claimed for
+an invocation whose harness could not be identified. Cursor's handling of empty stdout is not
+documented, so section 8's clean control catches a misspelled `--harness` that blocks execution.
 Body files must be regular UTF-8 files. These checks are a reminder, not a shell interpreter or an
 authority gate.
 
@@ -366,9 +510,14 @@ with a date or seconds, or separate it with whitespace.
 
 Date-only values, dates joined by a comma or the word `at`, named zones such as `BRT`, one-digit
 hours and 12-hour clocks are not recognized as complete timestamps. A separate time and zone in
-that text can still match using the current date. Only times more than five minutes ahead of the
-check are flagged; a deadline can correctly be in the future. Section names or prose quoting a
-relative date can still need confirmation. A flag is not proof of a mistake.
+that text can still match using the current date. Times more than five minutes ahead of the check
+are flagged unless their date is a later calendar day than the clock's date in the timestamp's own
+zone. A time without a date uses that zone's current day and gets no such exemption. Every same-day
+future time beyond the five-minute tolerance is flagged, including deadlines; the sender confirms
+a correct deadline with one resend. A timestamp dated on a later day is exempt even if its prose
+claims a completed event. This calendar rule does not classify event wording. Section names,
+vocabulary examples and quoted relative dates can still need confirmation. A flag is not proof of
+a mistake.
 
 ## 5. Write your local layer
 
@@ -594,6 +743,16 @@ section 7 are expected at this point; the ping checks require only their own req
 7. The stop hook fires, in each harness where it is installed (section 4). In a member's session,
    leave a request unanswered and end a turn; the hook reminds it. Trusting the hook in Codex is the
    orchestrator's act under its own record, never a member's.
+   Before wiring the optional pre-send adapter on each Cursor version, recheck that its `allow`
+   response leaves Cursor's own approval checks in place, following HN37. Include a command outside
+   the allowlist and one needing sandbox escalation. If it grants execution,
+   stop wiring and revise the adapter. Run any live probe only with authority for its settings and
+   dialogs in an isolated session. In each wired harness, run a flagged body through a fake keryx
+   executable in that isolated session. Confirm that the hook denies it, exposes the flags and
+   leaves the fake's log empty. Run a clean control and verify that the fake then logs it. On Cursor,
+   that control also catches a misspelled --harness, whose empty answer has no documented meaning. Test
+   each named tool path; PowerShell must warn, not claim a POSIX body check. Do not send a live
+   message for this exercise. A successful manual --check alone does not prove the hook is wired.
 8. Each member's readback names its full address, role, task, authority and next action, and matches
    the delegation file and the brief you sent.
 9. You can read each member's context figure, by the method for its harness named in section 7.

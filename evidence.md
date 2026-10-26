@@ -1768,6 +1768,54 @@ entries of 2026-10-25 at 10:24, 11:34 and 14:06 UTC-3. Confidence low, one count
 publication following the inbox answer. Protocol 4.4, 4.6 and 10.2 and the keryx binding carry the
 correction.
 
+### LOG, 2026-10-25, repeated Claude settings
+
+While wiring the optional pre-send hook, an orchestrator found that Claude Code 2.1.310 kept only
+the last `--settings` argument on its command line. Its reported probe ran
+`claude -p --settings '{"env":{"MARK":"merged-b"}}' --settings '{"env":{"OTHER":"a"}}'`;
+the Bash echo printed `MARK= OTHER=a`. A hook carried by the first of two settings arguments did
+not load; the same hook carried by the last argument did. Those probes distinguish replacement
+of the argument from merging its settings with the earlier one.
+
+The initial account reversed the consequence for keryx. A later code check at keryx 92ab75d found
+that [harness.rb, lines 66 and 67](https://github.com/hvpaiva/keryx/blob/92ab75d178aa68c742a126185125672ec509c985/lib/keryx/harness.rb)
+adds keryx's settings before
+[spawn.rb, lines 188 to 191](https://github.com/hvpaiva/keryx/blob/92ab75d178aa68c742a126185125672ec509c985/lib/keryx/commands/spawn.rb)
+appends the harness arguments. A later `--settings` there replaces keryx's settings. The lost
+values are `crossSessionInbound: accept` and the Stop hook that runs `keryx hook stop`
+([harness.rb, lines 11 to 14](https://github.com/hvpaiva/keryx/blob/92ab75d178aa68c742a126185125672ec509c985/lib/keryx/harness.rb)).
+The pre-send hook in that later argument can load, while bells are held for approval and the stop
+reminder is absent. The orchestrator moved the hook into the project's local settings file, kept
+out of git. HN36 and bootstrap section 4 record the consequence. This does not imply that settings
+from separate files fail to merge.
+
+Sourced from the orchestrator's run log of 2026-10-25 at 16:21 UTC-3 and its implementation brief,
+which give the command and output above and the two hook placements. The writer did not rerun
+the probes. The argument ordering is code-grounded at the revision and lines above, read by the
+reviewer and checked again by the implementer. Confidence low, one version and one reported
+experiment with both placements, combined with the launcher code reading.
+
+### LOG, 2026-10-25, Cursor pre-send permission dependency
+
+The pre-send implementer inspected Cursor agent 2026.10.22-27dcf5f while checking adapter formats.
+The recorded reading of `4097.index.js`, line 1, found that the shell hook caller returned no
+approval override for `allow`. In `index.js`, line 414, the requirement setter left the shell
+permission checks in place. No hook was installed for that inspection. The adapter returns
+`allow` both on clean commands and on unchecked commands, so a later version that treats that
+response as an approval would invalidate its authority boundary. HN37 and bootstrap require a
+version-specific recheck before wiring it.
+
+A [Cursor IDE bug report](https://forum.cursor.com/t/beforeshellexecution-hook-permissions-allow-ask-ignored-allow-list-takes-precedence/144244)
+describes allow and ask verdicts yielding to the allowlist and later inconsistent behavior. A
+[feature request](https://forum.cursor.com/t/support-authoritative-allow-deny-and-ask-verdicts-from-hooks/161342)
+asks for authoritative verdicts; a reply reports an open bug ticket for `preToolUse`. These are
+reports about the IDE, not live evidence for this CLI version.
+
+Sourced from the implementer's recorded code inspection, also cited in bootstrap section 4, and
+the two public forum threads. The writer did not repeat the installed-code inspection or a live
+hook test, including whether an empty object could be a neutral response. Confidence low, one
+reported CLI code reading, with related IDE reports that do not establish CLI behavior.
+
 ### LOG, benchmark run, 2026-10-24 00:00 to 00:13 UTC
 
 A benchmark ran NOMOS 7fec01a with keryx da068ef. The later triage checked its saved checkpoint,
