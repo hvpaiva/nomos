@@ -74,12 +74,12 @@ to it. Harness startup is separate from reading cost but remains inside the sess
 
 | Reader | When | Reading | Words | Estimated tokens |
 |---|---|---|---|---|
-| Implementer | At start | `cards/member.md` + `cards/implementer.md` | 767 | 2,770 to 3,150 |
-| Reviewer | At start | `cards/member.md` + `cards/reviewer.md` | 774 | 2,790 to 3,180 |
-| QA | At start | `cards/member.md` + `cards/qa.md` | 749 | 2,700 to 3,080 |
-| Auditor | At start | `cards/member.md` + `cards/auditor.md` | 786 | 2,830 to 3,230 |
-| Writer | At start | `cards/member.md` + `cards/writer.md` | 755 | 2,720 to 3,100 |
-| Orchestrator | At start | `cards/orchestrator.md` (600), `orchestrator.md` (2,496), bootstrap sections 7 and 8 (2,312), harness notes for all three harnesses (1,479); omit notes for harnesses not being spawned | 6,887 | 24,800 to 28,240 |
+| Implementer | At start | `cards/member.md` + `cards/implementer.md` | 759 | 2,740 to 3,120 |
+| Reviewer | At start | `cards/member.md` + `cards/reviewer.md` | 766 | 2,760 to 3,150 |
+| QA | At start | `cards/member.md` + `cards/qa.md` | 741 | 2,670 to 3,040 |
+| Auditor | At start | `cards/member.md` + `cards/auditor.md` | 778 | 2,810 to 3,190 |
+| Writer | At start | `cards/member.md` + `cards/writer.md` | 747 | 2,690 to 3,070 |
+| Orchestrator | At start | `cards/orchestrator.md` (600), `orchestrator.md` (2,498), bootstrap sections 7 and 8 (2,312), harness notes for all three harnesses (1,479); omit notes for harnesses not being spawned | 6,889 | 24,810 to 28,250 |
 | Harness start, outside nomos | Record the context stamped on the first readback | On 2026-10-23, third-run Claude Code 50.2K at its first turn and 60.9K after join and skill; first-run Claude Code 50.9K and 61.8K after join, skill and inbox; first-run Codex about 23K on its readback | Not a word count | Observed context, not a text estimate |
 | Whoever fills this form | Only when filling it | `templates/audit-brief.md` | 781 | 2,820 to 3,210 |
 | Whoever fills this form | Only when filling it | `templates/brief.md` | 1,243 | 4,480 to 5,100 |
@@ -87,16 +87,16 @@ to it. Harness startup is separate from reading cost but remains inside the sess
 | Whoever fills this form | Only when filling it | `templates/first-prompt.md` | 1,701 | 6,130 to 6,980 |
 | Whoever fills this form | Only when filling it | `templates/handover.md` | 1,521 | 5,480 to 6,240 |
 | Whoever fills this form | Only when filling it | `templates/plan-review.md` | 420 | 1,520 to 1,730 |
-| Whoever fills this form | Only when filling it | `templates/report.md` | 494 | 1,780 to 2,030 |
+| Whoever fills this form | Only when filling it | `templates/report.md` | 512 | 1,850 to 2,100 |
 | Whoever fills this form | Only when filling it | `templates/review-brief.md` | 753 | 2,720 to 3,090 |
 | Whoever fills this form | Only when filling it | `templates/review-findings.md` | 416 | 1,500 to 1,710 |
 | Claude Code member | Only the note needed for its own harness | `harness-notes.md`, Claude Code | 50 to 204 per note | 180 to 840 per note |
 | Codex member | Only the note needed for its own harness | `harness-notes.md`, Codex | 34 to 256 per note | 130 to 1,050 per note |
 | Cursor member | Only the note needed for its own harness | `harness-notes.md`, Cursor | 77 to 356 per note | 280 to 1,460 per note |
-| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 30,961 in catalog | 111,460 to 126,950 in catalog |
+| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 31,718 in catalog | 114,190 to 130,050 in catalog |
 
-The largest initial member load is 786 words, `cards/member.md` plus `cards/auditor.md`, below the 800-word
-limit. The common card has 494 words; role cards have implementer 273, reviewer 280, qa 255, auditor 292, writer 261; the orchestrator card has 600.
+The largest initial member load is 778 words, `cards/member.md` plus `cards/auditor.md`, below the 800-word
+limit. The common card has 486 words; role cards have implementer 273, reviewer 280, qa 255, auditor 292, writer 261; the orchestrator card has 600.
 
 ## About this guide
 

@@ -61,21 +61,23 @@ L11, R08, S48, S-N03, S-N04; low)
 hyphens, and stored records keep the four parts as separate fields. The spelling is nomos's choice,
 implemented by keryx 143fbb8 (#30). (N05, R01, R08, S-N01 to S-N03; low)
 
-**3.5** A member's name is a role with an instance number (orq for the one orchestrator, impl-N, qa-N,
-rev-N, aud-N), or a task name when no role fits. A replacing session keeps the seat's name and gets a
-new session id. (L11, L14, S-N03; medium)
+**3.5** The team segment names the project and the member segment names the role. Use short role
+names with instance numbers (impl-N, qa-N, rev-N, aud-N, writer-N), with orq for the one
+orchestrator, so the team's orchestrator is orq.TEAM. No member is named after its team or project.
+The full role word goes in the transport's role field; `keryx.md`, Identity and addresses, maps
+this to `--role` on join and spawn. A replacing session keeps the seat's name and gets a new
+session id. (L11, L14, S-N03, N14, N15; LOG, 2026-10-25 16:30 to 16:34, role names; medium)
 
 **3.6** Short names are resolved by the sender's transport before anything is stored. MEMBER means that
 member of the sender's team on the same host, with no fallback, and MEMBER.TEAM that member of that team
 on the same host. A sender in the reserved scopes `local` or `system` has no team, so a bare MEMBER
 from it resolves only when exactly one MEMBER.TEAM exists on the host; an unknown name is refused
 and an ambiguous name lists its candidates. During a move from an older keryx address, a sender
-without a team first reaches an
-unretired old address of that name; `keryx.md`, Identity and addresses, gives the compatibility
-rule and migration steps. A name with @HOST MUST be a full address. A name that matches several
-members is an error that lists them, and a transport MUST NOT choose among candidates or guess.
-Resolving a name
-grants nothing. (L14, N05, R01 with the keryx team's acceptance of 2026-10-23, S43, S-N02, M55; low)
+without a team first reaches an unretired old address of that name; `keryx.md`, Identity and addresses,
+gives the compatibility rule and migration steps. A name with @HOST MUST be a full address. A name
+that matches several members is an error that lists them, and a transport MUST NOT choose among
+candidates or guess. Resolving a name grants nothing. (L14, N05, R01 with the keryx team's acceptance
+of 2026-10-23, S43, S-N02, M55; low)
 
 **3.7** A human at a terminal and the transport's own services take the reserved scopes `local` and
 `system`, as in `ana.local@box1`, which carry no authority and which no team may take as a name. A
@@ -174,7 +176,9 @@ containment case; propagation remains designed)
 
 **5.1** A request expects an answer and opens an obligation, a message needs none, and a reply answers
 a message and closes a request. Use a request for work or an answer you need, and a message for
-everything else. (L09, S06, S40; high)
+everything else. A request states what its reply must carry. Without that statement, the reply is
+the answer to the question asked. (L09, S06, S40; high for the transport kinds; N16; LOG,
+2026-10-26 06:50 to 06:59, request replies; low for the reply contract)
 
 **5.2** nomos adds a small vocabulary on top, as conventions. Any reply closes its request in the
 transport, and the work item keeps its own state.
@@ -182,12 +186,12 @@ transport, and the work item keeps its own state.
 | nomos kind | Carried as, by | Effect on the work item |
 |---|---|---|
 | request | request, requester | Opens it |
-| accept | message naming an id, the side that takes the offer | Worker takes the request, or requester accepts the result (done), or a handover is confirmed (9.4) |
+| accept | message naming an id, the side that takes the offer; reply with the commitment when 5.3 calls for it | Worker takes the request or commits to what it will do and by when; requester accepts the result (done), or a handover is confirmed (9.4) |
 | refuse | reply with the reason, worker | Ends it |
 | clarify | request naming an id, either side | Waits for the answer |
 | progress | message naming an id, worker | None |
 | amend | message naming the request id, requester, with the change and an absolute time | Changes the open request within the worker's authority |
-| result | reply, worker | Delivered, waiting for the requester's decision (5.5) |
+| result | reply, worker, when the request asks for the result; message naming the request after a commitment reply (5.3) | Delivered, waiting for the requester's decision (5.5) |
 | close | message naming an id, requester | Ends a delivered item as incomplete |
 | cancel | withdrawal (R02), requester | Ends it once the worker acknowledges |
 | handover | request, outgoing incarnation or director | Opens a transfer (9.4) |
@@ -211,9 +215,16 @@ The answer to a [clarify] is the reply on that clarify request, closing the ques
 the original work request. It is a result, not a new [decision] kind. A requester's decision on a
 delivered item remains in its checkpoint under 5.5. (LOG, field PR 26, clarify answer; low)
 
-**5.3** A reply MUST be a terminal outcome, a result, a refusal, the acknowledgment of a cancel or a
-handover-ack. An accept, a progress, an amend or a clarify MUST NOT be a reply, since it would close a request
-whose work is still open. (S03, S42; LOG, field PR 24, honest refusal; low, one refusal case)
+**5.3** A reply MUST carry what the request asked for. A request for a result is answered by the
+result and may be taken meanwhile with an accept message. An accept or progress MUST NOT replace
+that requested result. For a request for later work, or a work request from a human, the reply
+says what will be done and by when, with an absolute time and zone; the result follows as a
+message naming the request. State which reply is wanted under 5.1. A refusal, the acknowledgment
+of a cancel and a handover-ack remain replies; an amend is a message and a clarify is a request.
+The transport closes a request on reply; the requester keeps the work item in its checkpoint
+until its decision under 5.5, including work still owed after a commitment reply. (S03, S42;
+LOG, field PR 24, honest refusal; N16; LOG, 2026-10-26 06:50 to 06:59, request replies; low,
+one refusal case and a new reply rule after early closes)
 
 **5.4** A delivered message is not read, a read message is not accepted work, a stopped session is not
 finished work, and a cancel stops work without undoing it. A message counts as read only on the reading
@@ -577,7 +588,8 @@ meets those, and a team that departs from one says so in its first prompts.
 **11.2** A rule that lives only in a document sessions may not read has failed again and again, and
 what held was a check that every session runs (M10, M45). The transport refuses bad addresses and
 renames (3.3, 3.6, 3.8), spawn composes the first prompt and waits for the readback (4.3, 9.2), the
-transport's status lists overdue and undecided items (5.5, 5.6), a stop hook reminds of unanswered mail
+transport's status lists overdue requests (5.6), the project layer tracks work items and decisions,
+kept in the requester's checkpoint until that layer holds them (5.5, N16), a stop hook reminds of unanswered mail
 (9.1, 9.3), and the transport notifies a session and its director as its context nears the criterion
 (9.5). The optional `hooks/pre-send.rb` flags relative dates, missing headings, leftover
 placeholders and findings without a rank or evidence class (5.7, 6.4, 7.2, 8.1). It reads supported
@@ -602,5 +614,4 @@ its old trace beside the new one. `bootstrap.md` says how each harness loads the
 
 - Addressing an incarnation (3.3, 9.4) and the reserved scopes (3.7) wait on R08 and R01, and
   `keryx.md` gives the interim.
-- Short role names (orq, rev-1) or the full words with short aliases that the research prefers.
 - Whether the readback, the handover and the requester's decision become transport kinds (R03).

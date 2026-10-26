@@ -1816,6 +1816,52 @@ the two public forum threads. The writer did not repeat the installed-code inspe
 hook test, including whether an empty object could be a neutral response. Confidence low, one
 reported CLI code reading, with related IDE reports that do not establish CLI behavior.
 
+### LOG, 2026-10-25 16:30 to 16:34 UTC-3, role names
+
+At 16:30 UTC-3 the protocol team's orchestrator moved to an address whose member and team
+segments both named the project. At 16:32, following the principal's preference for names by
+role, it moved to orq.nomos. The principal asked the protocol team to define that convention.
+At 16:34 the principal asked it to suggest role naming to the other teams' orchestrators, and
+the orchestrator sent the suggestion to three teams on the same machine.
+
+The rule is that the team segment names the project and the member segment the role, so an
+orchestrator is orq.TEAM and a writer is writer-N.TEAM. The repeated project name had hidden the
+role. On 2026-10-26, a writer's `keryx who -o json` reading found the five listed team
+orchestrator addresses used orq as their member segment. That is adoption in one shared
+environment, not two independent settings. The orchestrator closed the choice of short names
+against full words in favour of short role names with instance numbers, with the full word in
+the transport's role field. `keryx help join` exposes `--role ROLE` separately from the address.
+
+Sourced from charter N14 and N15 and the run log entries of 2026-10-25 at 16:30, 16:32 and
+16:34 UTC-3; the naming choice is the orchestrator's ruling in the writing brief of 2026-10-26.
+The directory and help readings were observed by the writer on 2026-10-26. Confidence medium,
+one shared setting with the role-based identity rationale in L11, L14 and S-N03. Evidence for
+protocol 3.5 and the closure of the role-name question in section 12.
+
+### LOG, 2026-10-26 06:50 to 06:59 UTC-3, request replies
+
+The joint review of request semantics reported that several teams had answered work requests
+with acknowledgments before completing the work. Requests disappeared from the transport's
+open list while the work remained in the orchestrators' notes. At 06:50 UTC-3 on 2026-10-26,
+the protocol team's orchestrator checked its own case against the message store. On 2026-10-25
+at 16:27 UTC-3 it had answered the principal's address-migration request with an acknowledgment;
+its completion notice followed at 16:29. The protocol's own orchestrator had broken the rule
+that a reply had to be a terminal outcome.
+
+On 2026-10-26 at 06:56 UTC-3 the principal decided that a request closes when answered, that
+keryx gains no work-state layer and that following up work belongs to the project layer. The
+principal left agents' use of requests to nomos. The 06:59 log entry records the orchestrator's
+ruling that a reply carries what the request asked for. A result request gets its result, with
+an accept message while it is underway. A request for later work, or work requested by a human,
+gets what will be done and by when; its result follows as a message naming the request.
+The requester keeps the work item in its checkpoint until the project layer holds it.
+
+Sourced from the joint request-semantics review, charter N16 and the run log entries of
+2026-10-26 at 06:50 and 06:59 UTC-3. The earlier acknowledgments are reported observations;
+the protocol team's own case was checked by its orchestrator. Confidence low for the remedy,
+a new rule following early closes, with no completed acceptance test of that rule in this
+case. Evidence for protocol 5.1 to 5.3 and the keryx mapping of 5.3 and 5.5.
+
 ### LOG, benchmark run, 2026-10-24 00:00 to 00:13 UTC
 
 A benchmark ran NOMOS 7fec01a with keryx da068ef. The later triage checked its saved checkpoint,
@@ -2393,7 +2439,8 @@ not permission to clean up another team's addresses. Evidence for R07 and the li
 
 ### Charter decisions
 
-The principal's decisions on the nomos work, all of 2026-10-22.
+The principal's decisions on the nomos work and the orchestrator's rulings within them.
+N01 to N05 are of 2026-10-22; later entries give their dates.
 
 **N01.** The principal agreed to a separate layer of conventions and practices beside keryx, in
 three layers, the protocol, the playbook and the harness notes.
@@ -2411,6 +2458,23 @@ the role, to be worked out with the keryx team (L14).
 part of the address's identity, that ambiguous or cross-host bare names are errors, that old
 addresses are retired rather than renamed, and that the grammar lands before keryx 0.1.0 is
 published, as its own pull request.
+
+**N14.** On 2026-10-25 at 16:30 UTC-3, the protocol team moved to project-named team
+addresses at the principal's word. Its orchestrator initially repeated the project in the member
+segment. N15 replaced that choice two minutes later.
+
+**N15.** On 2026-10-25 at 16:32 UTC-3, the principal preferred orq.nomos and asked the
+protocol team to define names by role. The team segment names the project and the member segment
+the role. The writing brief of 2026-10-26 records the orchestrator's ruling for short role names
+with instance numbers, orq for the single orchestrator, and the full word in the transport's role
+field. See the role-names LOG case.
+
+**N16.** On 2026-10-26 at 06:56 UTC-3, the principal decided that a request closes when
+answered and that work state belongs to the project layer, leaving agents' use of requests to
+nomos. The orchestrator ruled that the request states what its reply must carry. A result request
+gets a result; a request for later work, or work requested by a human, gets what will be done and
+by when, with the result following as a message naming the request. The requester keeps work
+items in its checkpoint until the project layer holds them. See the request-replies LOG case.
 
 ### keryx requirements
 

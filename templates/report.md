@@ -13,7 +13,8 @@
 > or write unknown when neither is available. Never estimate it. (protocol 5.7; LOG, field PR 26, context and times; low)
 >
 > A refusal is also a reply, much shorter. Its first line starts with "[refuse]", and its body says
-> why and what would change the answer. Progress and accept are messages, never replies (5.3).
+> why and what would change the answer. For a result request, accept and progress are messages.
+> After a commitment reply under 5.3, send this report as a message naming the original request.
 >
 > Fill every {placeholder} and delete these guidance lines and any section with nothing to say.
 

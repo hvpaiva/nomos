@@ -7,6 +7,8 @@ The format follows Keep a Changelog. Before the first release, all entries are u
 
 ### Added
 
+- Role-based member names within project-named teams, with short names and a full transport role.
+- Request-specific replies, commitments for later or human-requested work, and their dated cases.
 - An optional pre-send hook for keryx messages, with Claude Code, Codex and Cursor adapters and tests.
   It accounts for every raw send, ask or reply occurrence by its position, exempts only reads on
   per-reader option allowlists, walks other tools' input as strings, and bounds its parsing, input and
