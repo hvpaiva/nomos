@@ -451,8 +451,8 @@ Its note also lists every live session it directs, with address, pane, request, 
 open requests in both directions; background watchers; decisions pending with the principal; and
 resources awaiting cleanup, each assigned to a holder. The incoming incarnation may perform the
 handover checks before confirmation, but may not direct the team. After confirmation it records the
-cutover and notifies peers and the principal as 9.5 requires. (LOG, 2026-10-23 about 08:45,
-orchestrator swap; low)
+cutover and tells peers; the principal hears only what needs them under 9.5. (LOG, 2026-10-23 about
+08:45, orchestrator swap; N17; low)
 
 When the outgoing incarnation is gone without a note, its director first checks that no process of
 that lost session still runs; a missing pane or an idle display alone does not prove it cannot act.
@@ -472,6 +472,14 @@ point, and a renewal criterion set by its director (a share of the window, a tok
 between pieces of work). The director measures it when the harness hides the figure, with notices at
 more than one threshold, since some harnesses deliver them late. There is no universal number. (P05,
 P07, M19, M34, S20, S21, LOG; LOG, 2026-10-23 09:54, late notice; medium, one more late notice)
+
+The orchestrator keeps roster.md, roadmap.md and progress.md beside checkpoint.md,
+decisions.md and run-log.md, using the forms in `templates/`. Update the roster when membership,
+role, harness, model, ceiling, launch profile, pane or session state changes; the roadmap when a phase,
+the principal's ask or its decision changes; and progress when an ask arrives, its state changes or
+what it waits on changes. Save before reporting or handing over. Progress has one row per principal
+ask and links to the checkpoint's work items and decisions under 5.5; a transport reply alone does
+not finish that work. (N16; LOG, 2026-10-26, team files; low, one instance)
 
 An orchestrator starts its own renewal on the ceiling's 80% notice, or at a planned boundary between
 steps as it approaches that point. It does not wait for the principal or ask how to swap. It finishes
@@ -501,11 +509,11 @@ do not start a third on this procedure. (LOG, 2026-10-23 about 08:45, orchestrat
 
 When every check passes, the outgoing incarnation sends `[accept]` with an absolute cutover time,
 stops or hands over its background watchers with the new holder recorded, and exits. The successor
-records the cutover, tells peers with open work and tells the principal in one line where its session
-now lives, then closes the outgoing pane after checking its process is gone. Apply the playbook's
-Cleanup inventory. The principal is informed after a successful swap and is asked only if the record
-would change or two successors failed; the unchanged record needs no renewed approval. (LOG,
-2026-10-23 about 08:45, orchestrator swap; low)
+records the cutover, tells peers with open work and closes the outgoing pane after checking its
+process is gone. Apply the playbook's Cleanup inventory. Renewals, handovers and context figures stay
+in the run log; tell the principal only when the change needs them, such as a question, a decision or
+a changed commitment. A changed record or two failed successors still require their decision; an
+unchanged record needs no renewed approval. (LOG, 2026-10-23 about 08:45, orchestrator swap; N17; low)
 
 Finishing beyond the ceiling requires the director's or principal's explicit yes for stated remaining
 work and a hard token cap, recorded with an absolute time. Apply the changed ceiling in the transport
@@ -675,8 +683,10 @@ in the block. (5.6, 10.2; LOG, 2026-10-26, human messages; low, designed)
 
 **10.9** The human's answer is a reply to the request, or to the message for a suggestion. A
 reader's page writes a label on line 1, the `nomos` block on line 2 with `"kind": "answer"`, then
-the human's words verbatim, possibly empty. Line 1 is the page's, not the human's words. It is the
-chosen option's exact label, the labels joined by "; " for `select: many` and cut at 80
+the human's words verbatim, possibly empty, with nothing after them. An answer has no footer;
+10.5's human-message footer and 11.3's filled-form footer do not apply. A footer would become part
+of the human's words. Line 1 is the page's, not the human's words. It is the chosen option's exact
+label, the labels joined by "; " for `select: many` and cut at 80
 characters, or the outcome word in the human's language for an action. The block's `answer` holds
 one option id, an array of ids for `select: many`, `done`, `failed` or `declined` for an action,
 or `take` or `skip` for a suggestion. An answer in words only omits `answer`; its first line is

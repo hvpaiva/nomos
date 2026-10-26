@@ -55,12 +55,14 @@ Name whether the orchestrator may remove the team's merged branches and worktree
 alone does not grant cleanup. Without a cleanup grant, leave them in place and propose their removal
 to the principal, naming the resources. (LOG, acceptance 1, stumble 12; low)
 
-A delegation record names whether the delegate may answer harness trust and approval dialogs, and
-for which directories. A folder trust answer writes the harness's configuration outside the workspace;
-permission to work in that folder alone does not cover the write. Name the configuration effect in
-the grant or reservation. The acceptance-test leader escalated Codex's dialog and reported an earlier
-Claude Code answer outside its record under protocol 4.9. (LOG, 2026-10-23 04:49 UTC-3; low; protocol 4.3,
-4.7, 4.8; harness notes HN02, HN20)
+The orchestrator reads and answers its spawned sessions' dialogs under the principal's standing
+rules, whether a named answer in the record or a standing word such as "Continue without trusting"
+for Codex hooks. Bring the principal only an uncovered dialog. A relayed copy of their word suffices
+for what narrows and grants nothing; trusting a hook, allowing a permission or changing a setting
+still needs their word. Folder trust writes configuration outside the workspace, so name the effect
+and directories in the grant or reservation; folder work alone does not cover it. The acceptance-test
+leader escalated Codex's dialog and reported an earlier Claude Code answer outside its record under
+protocol 4.9. (LOG, 2026-10-23 04:49 UTC-3; N17; low; protocol 4.3, 4.7, 4.8; harness notes HN02, HN20)
 
 The root record names the mode members start in for each harness, including sandbox and approval
 policy where separate, and who may apply it. The spawner carries that choice into the launch;
@@ -612,12 +614,13 @@ interval) The benchmark found the binding still describing this delivered featur
   and `keryx who` before retrying, distinguishing a pane name from an occupied address. (protocol 9.5;
   LOG, 2026-10-23 04:59 UTC-3, swap name collision; LOG, 2026-10-23 about 08:45 UTC-3, orchestrator swap; low)
 - Send the timed `[accept]` only after all checks pass, stop or hand over your watchers and exit.
-  The successor records cutover, tells affected peers, tells the principal in one line where it now
-  lives and closes your pane once your process is gone. Successful renewal with the same record
-  needs no principal decision. A changed record does. Finishing beyond the ceiling still needs an
+  The successor records cutover, tells affected peers and closes your pane once your process is gone.
+  Renewals, handovers and context figures stay in the run log; tell the principal only when the change
+  needs them, such as a question, decision or changed commitment. Successful renewal with the same
+  record needs no principal decision. A changed record does. Finishing beyond the ceiling needs an
   explicit yes for the remaining work and a hard cap with an absolute time, applied by rejoin as The
   ceiling specifies; no answer extends nothing. (protocol 9.5; LOG, acceptance 1, stumble 13;
-  LOG, 2026-10-23 about 08:45 UTC-3, orchestrator swap; low)
+  LOG, 2026-10-23 about 08:45 UTC-3, orchestrator swap; N17; low)
 - Decide whether the orchestrator holds its address. Holding it gives native bells and the stop hook.
   An orchestrator whose harness would turn every bell into an approval dialog (HN10) can run without
   holding it, and then every keryx command it runs names the address, as in `keryx inbox --as ORQ`,
@@ -650,6 +653,11 @@ Keep these files from the first hour, in a directory the team can read and the p
   principal's name. (P07, M54; high for the log, medium for the quotes)
 - A run log with absolute times and their zone, one line per event (spawn, reply, handover, incident),
   with the message ids.
+- roster.md, roadmap.md and progress.md, from their forms in `templates/`. The orchestrator
+  updates the roster on member or launch changes, the roadmap on phase, ask or decision changes,
+  and progress on each principal ask and changes to its state or dependencies, before reporting or
+  handing over. Progress links to checkpoint.md for work items and decisions under protocol 5.5;
+  a transport reply does not finish the work. (N16; LOG, 2026-10-26, team files; low, one instance)
 - Briefs, fix requests, handover notes, probes and reports as files, which the messages point to.
 - A triage queue for findings from outside the team (see "A cheap channel for outside users").
 - Deferred decisions with their reason and what reopens them. A core component was started switched
@@ -775,8 +783,9 @@ one resource the team cannot parallelize. (M53, M49; low)
   and sessions kept changing the active workspace. (M40, L13; low)
 - Announce a disruptive action on a shared machine to every team that uses it. Fifteen minutes'
   notice was the agreed default once. (L13; low)
-- Answer a new session's startup dialogs yourself, by reading the screen. Never choose to trust all
-  hooks in Codex. Never type into a pane that shows a selection dialog, since text plus Enter confirms
+- Read and answer your spawned sessions' startup dialogs under the principal's standing rules; bring
+  the principal only uncovered dialogs (What a delegation record usually reserves; N17; low). Never choose
+  to trust all hooks in Codex. Never type text into a selection dialog, since text plus Enter confirms
   the highlighted option. Close a session only after it ran `keryx leave`, and send nothing to the
   address of a closed Codex session until the transport refuses it. (H01, H03, M42, L06, LOG; high)
 

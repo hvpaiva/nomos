@@ -34,8 +34,11 @@ restart the server only when no team runs in it. To check, run `herdr status` an
 0.9.3, for Codex's "Hooks need review", Cursor's "Workspace Trust Required" and Claude Code's folder
 trust, not rechecked on server 0.9.5; the same Codex dialog stopped two seats launched by another tool on 2026-09-26. A spawner that
 waits for "idle" then types into a dialog. Read the screen with `herdr pane read` before you trust a
-state, and answer the dialog only when the delegation record covers that answer and its configuration
-write for that directory. Earlier harness probes recorded Claude Code folder trust in `~/.claude.json`
+state. The orchestrator answers its spawned sessions' dialogs under the principal's standing rules,
+including named record answers; only uncovered dialogs go to the principal. A relayed copy suffices
+for what narrows and grants nothing. Trust, permission and setting grants still need the principal's
+word covering the configuration write and directory (N17; low). Earlier harness probes recorded
+Claude Code folder trust in `~/.claude.json`
 and Cursor workspace trust in `~/.cursor/projects/<project>/.workspace-trusted`; Codex records folder
 trust in `~/.codex/config.toml` (HN20). These writes are outside the workspace. On 2026-10-23 the
 acceptance-test leader escalated Codex's dialog and reported its earlier Claude Code answer under
@@ -199,9 +202,10 @@ the Codex process's command line (`ps -o args= -p PID`) for `shell_environment_p
 full PATH, broke the command typed into a pane's interactive shell. (H06)
 
 **HN20. The hooks trust dialog.** Seen 2026-10-22, version 0.163, and 2026-09-26 under another
-launcher. Answer "Continue without trusting" (down, down, check the selection, Enter), never "Trust
-all". Codex runs a new hook only after the user trusts it in `/hooks`, so keryx installs none for
-Codex. Codex records folder trust in `~/.codex/config.toml`; back it up before a test that adds
+launcher. The orchestrator answers "Continue without trusting" under the principal's standing word
+(down, down, check the selection, Enter), never "Trust all". A relayed copy suffices for that answer;
+granting hook trust still needs the principal's word (N17; low). Codex runs a new hook only after the
+user trusts it in `/hooks`, so keryx installs none for Codex. Codex records folder trust in `~/.codex/config.toml`; back it up before a test that adds
 folders only when the record grants that configuration change for those directories (HN02). To check,
 start Codex in a folder with a hooks file; this needs a new session and authority for the dialog's
 configuration effects. (H01, LOG, 2026-10-23 04:49; low for the delegation lesson)
@@ -334,7 +338,8 @@ pasted after a readiness probe was lost in 14 of 26 relaunches and in every hand
 argument is visible in `/proc` to local processes and capped at 128 KiB per argument on Linux
 (E2BIG); on 2026-10-23 an argument of 131071 bytes passed and one of 131072 failed. Keep the first
 prompt short, with no secret, and put the task in the first request. To check, start a harness with a
-first prompt and a dialog pending, answer the dialog, and see the prompt acted on; read
+first prompt and a dialog pending, answer under the standing rules in HN02 and HN20, and see the
+prompt acted on; read
 `/proc/PID/cmdline` to see what others see. (H07, M34)
 
 **HN28. A launcher that times out can still start the session.** Seen in OpenRig 0.5.14, where the

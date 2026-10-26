@@ -49,8 +49,10 @@
 > an `answer` block, which the asker reads under 10.9.
 >
 > The page writes an answer's label on line 1 and its block on line 2, for example
-> `{"kind": "answer", "answer": "keep"}`, then the human's words verbatim, possibly empty. The first
-> line is the page's, not the human's words. Use the option's exact label, labels joined by "; " and
+> `{"kind": "answer", "answer": "keep"}`, then the human's words verbatim, possibly empty, with
+> nothing after them. Answers have no footer; the human-message footer below is for agent messages
+> to a human (10.5), and the filled-form footer belongs to 11.3. A footer would be read as the
+> human's words (10.9). The first line is the page's. Use the option's exact label, labels joined by "; " and
 > cut at 80 characters for select many, or the action's outcome word in the human's language. The
 > `answer` value is the chosen id, an array for many, an action outcome, or `take` or `skip` for a
 > suggestion; omit it for words only. For words only, line 1 is the page's fixed wording in the

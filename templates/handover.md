@@ -157,8 +157,9 @@ Correct a mismatch with `[clarify]`. If it remains wrong, have the successor lea
 act, close it and start another from the same record and corrected note. A second failed successor
 goes to the principal. All checks must pass before the outgoing incarnation sends Part 3's timed
 `[accept]`, stops or hands over its watchers and exits. The successor records cutover, notifies peers
-with open work, tells the principal in one line where it now lives, and closes the old pane after
-checking its process is gone. Ask the principal only for a changed record or two failed successors.
-(protocol 9.4, 9.5; playbook, Cleanup)
+with open work, and closes the old pane after checking its process is gone. Keep renewals, handovers
+and context figures in the run log; tell the principal only when the change needs them, such as a
+question, decision or changed commitment. A changed record or two failed successors still require
+their decision. (protocol 9.4, 9.5; N17; low; playbook, Cleanup)
 
 nomos v0 orchestrator handover

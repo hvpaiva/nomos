@@ -2578,6 +2578,17 @@ code, not a mutation test by this writer. Retirement is a command under the dele
 not permission to clean up another team's addresses. Evidence for R07 and the list consumers in
 `keryx.md`, bootstrap 10 and playbook, Cleanup.
 
+**2026-10-26, team files.** One team's directory became the first instance of the agreed team layout
+at 07:31 UTC-3. It added roster.md, roadmap.md and progress.md without moving existing files. The
+roster held members, roles, harness and model, ceiling, pane and state, plus a launch profile; the
+roadmap held phases, what was asked and their state; progress held one row per principal ask,
+when it was asked, where it stood and what it waited on. The protocol team agreed to adopt those
+file and field names unless one contradicted a protocol term; none did. Its forms keep them and
+assign updates to the orchestrator when those facts change, before reporting or handover. Progress
+points to work items and decisions kept under 5.5, since a transport reply closes a request without
+necessarily finishing the work (N16). Confidence low, one instance; the new forms have no fresh-user
+acceptance test yet.
+
 ## Decisions, requirements and rulings
 
 ### Charter decisions
@@ -2618,6 +2629,18 @@ nomos. The orchestrator ruled that the request states what its reply must carry.
 gets a result; a request for later work, or work requested by a human, gets what will be done and
 by when, with the result following as a message naming the request. The requester keeps work
 items in its checkpoint until the project layer holds them. See the request-replies LOG case.
+
+**N17.** On 2026-10-26 at 10:55 UTC-3, the principal sent every orchestrator the same words.
+They did not want messages that only announced a handover unless the change needed them, and each
+orchestrator was to handle its own sessions' dialogs. Earlier that day the principal had answered
+Codex hooks dialogs for three sessions of this team. Renewals, handovers and context figures stay
+in the run log; the principal hears only a question, decision, changed commitment or other matter
+that needs them. The orchestrator answers dialogs under the principal's standing rules, such as
+"Continue without trusting" for Codex hooks, and brings them only uncovered dialogs. The team's
+ruling of 11:01 UTC-3 accepts a relayed copy for what narrows and grants nothing; trusting a hook,
+allowing a permission or changing a setting still needs the principal's word. This keeps routine
+session care with the orchestrator without widening its authority. Confidence low, one standing
+instruction after three dialogs; no new field test of the remedy.
 
 ### keryx requirements
 

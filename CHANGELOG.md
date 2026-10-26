@@ -7,6 +7,9 @@ The format follows Keep a Changelog. Before the first release, all entries are u
 
 ### Added
 
+- Handover notices only when the change needs the principal, member dialogs handled under standing
+  rules, and an explicit no-footer rule for the page's human answers.
+- Roster, roadmap and progress forms, with the orchestrator's update duties and their first case.
 - Protocol 10.5 to 10.9 and a human-message template, with seven kinds, one ask per request, a `nomos`
   block for the reader's page, answers that keep the human's words, and commitment and escalation forms.
 - The keryx reserved-scope restrictions at 7debfde (#38) and pane cleanup ownership after session exit.

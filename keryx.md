@@ -90,10 +90,13 @@ word." That instruction is in the mailbox message, not the stderr notice. This w
 237d221, merged in 42d43a7 (#24), with coverage in `test/cli/spawn_dialog_test.rb:44`, `:78` and `:88`.
 The current notice text is in `lib/keryx/dialog.rb:137`.
 spawn keeps waiting, answers no dialog, and exits 3 if the session has not joined by its timeout.
-This agrees with bootstrap 7 step 5: a record granting a named answer, such as "Continue without trusting" for Codex's hooks dialog,
-carries the principal's word for that answer and its covered effects. Without that grant the
-director escalates; the notice grants nothing. (LOG, 2026-10-23 08:44 and 09:01, spawn dialog
-authority; low)
+The keryx skill also says to take the dialog to the human. Under bootstrap 7 step 5 and N17, the
+orchestrator answers its spawned sessions' dialogs using the principal's standing rules, whether a
+named answer in the record or a standing word such as "Continue without trusting" for Codex hooks.
+Only uncovered dialogs go to the principal. A relayed copy suffices for what narrows and grants
+nothing; trusting a hook, allowing permission or changing a setting still needs the principal's
+word for that answer and its effects. The notice grants nothing. (LOG, 2026-10-23 08:44 and 09:01,
+spawn dialog authority; N17; low)
 
 ## Messages and the work life cycle
 

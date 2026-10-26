@@ -79,25 +79,28 @@ to it. Harness startup is separate from reading cost but remains inside the sess
 | QA | At start | `cards/member.md` + `cards/qa.md` | 752 | 2,710 to 3,090 |
 | Auditor | At start | `cards/member.md` + `cards/auditor.md` | 789 | 2,850 to 3,240 |
 | Writer | At start | `cards/member.md` + `cards/writer.md` | 758 | 2,730 to 3,110 |
-| Orchestrator | At start | `cards/orchestrator.md` (598), `orchestrator.md` (2,499), bootstrap sections 7 and 8 (2,312), harness notes for all three harnesses (1,479); omit notes for harnesses not being spawned | 6,888 | 24,800 to 28,250 |
+| Orchestrator | At start | `cards/orchestrator.md` (600), `orchestrator.md` (2,500), bootstrap sections 7 and 8 (2,336), harness notes for all three harnesses (1,535); omit notes for harnesses not being spawned | 6,971 | 25,100 to 28,590 |
 | Harness start, outside nomos | Record the context stamped on the first readback | On 2026-10-23, third-run Claude Code 50.2K at its first turn and 60.9K after join and skill; first-run Claude Code 50.9K and 61.8K after join, skill and inbox; first-run Codex about 23K on its readback | Not a word count | Observed context, not a text estimate |
 | Whoever fills this form | Only when filling it | `templates/audit-brief.md` | 781 | 2,820 to 3,210 |
 | Whoever fills this form | Only when filling it | `templates/brief.md` | 1,243 | 4,480 to 5,100 |
 | Whoever fills this form | Only when filling it | `templates/escalation.md` | 495 | 1,790 to 2,030 |
 | Whoever fills this form | Only when filling it | `templates/first-prompt.md` | 1,701 | 6,130 to 6,980 |
-| Whoever fills this form | Only when filling it | `templates/handover.md` | 1,521 | 5,480 to 6,240 |
-| Whoever fills this form | Only when filling it | `templates/human-message.md` | 1,101 | 3,970 to 4,520 |
+| Whoever fills this form | Only when filling it | `templates/handover.md` | 1,539 | 5,550 to 6,310 |
+| Whoever fills this form | Only when filling it | `templates/human-message.md` | 1,136 | 4,090 to 4,660 |
 | Whoever fills this form | Only when filling it | `templates/plan-review.md` | 420 | 1,520 to 1,730 |
 | Whoever fills this form | Only when filling it | `templates/report.md` | 512 | 1,850 to 2,100 |
 | Whoever fills this form | Only when filling it | `templates/review-brief.md` | 753 | 2,720 to 3,090 |
 | Whoever fills this form | Only when filling it | `templates/review-findings.md` | 416 | 1,500 to 1,710 |
+| Whoever fills this form | Only when filling it | `templates/roster.md` | 215 | 780 to 890 |
+| Whoever fills this form | Only when filling it | `templates/roadmap.md` | 178 | 650 to 730 |
+| Whoever fills this form | Only when filling it | `templates/progress.md` | 215 | 780 to 890 |
 | Claude Code member | Only the note needed for its own harness | `harness-notes.md`, Claude Code | 50 to 204 per note | 180 to 840 per note |
 | Codex member | Only the note needed for its own harness | `harness-notes.md`, Codex | 34 to 256 per note | 130 to 1,050 per note |
 | Cursor member | Only the note needed for its own harness | `harness-notes.md`, Cursor | 77 to 356 per note | 280 to 1,460 per note |
-| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 33,474 in catalog | 120,510 to 137,250 in catalog |
+| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 33,781 in catalog | 121,620 to 138,510 in catalog |
 
 The largest initial member load is 789 words, `cards/member.md` plus `cards/auditor.md`, below the 800-word
-limit. The common card has 497 words; role cards have implementer 273, reviewer 280, qa 255, auditor 292, writer 261; the orchestrator card has 598.
+limit. The common card has 497 words; role cards have implementer 273, reviewer 280, qa 255, auditor 292, writer 261; the orchestrator card has 600.
 
 ## About this guide
 
@@ -259,7 +262,8 @@ Checks that can be mechanical go in hooks, which every session runs whatever it 
 The hook checks brace placeholders, relative dates and future timestamps outside fenced code, inline
 code and lines quoted with `>`. It reads a filled form's last nonempty line, such as `nomos v0 brief`,
 and loads headings from `templates/` beside the script. It checks fixed headings of brief, audit
-brief, review brief and review findings; headings containing placeholders are skipped. Report
+brief, review brief, review findings, roster, roadmap and progress; headings containing placeholders
+are skipped. Report
 sections may be omitted under that template's guidance, multipart first prompt, plan review and
 handover forms have no heading check, and neither has a footer that several templates share, such
 as the human message footer that ends an escalation. Review findings also require a rank and evidence
@@ -534,7 +538,8 @@ memory. Cover at least these.
   usually reserves), and whether the orchestrator may merge.
 - The principal's writing rules, language for each audience, and the checks that enforce them.
 - Commit rules (signatures, trailers, what must never appear).
-- Where the run's files live (decision log, run log, briefs, probes, delegation files).
+- Where the run's files live (decision log, run log, checkpoint, roster, roadmap, progress, briefs,
+  probes, delegation files; protocol 9.5).
 - Where you installed keryx from and which release each machine runs; record the revision too if
   you use a source build.
 
@@ -543,8 +548,13 @@ When nomos says "the local layer", it means these instructions.
 ## 6. Start the orchestrator
 
 1. Make a directory for the run's state with a charter (the goal, the team, the open questions), an
-   empty decision log and an empty run log (playbook, State kept outside sessions). Check the
-   project's effective git identity against the root record using section 8's checklist before any member commits.
+   empty decision log (decisions.md), empty run log (run-log.md) and checkpoint.md. Use `templates/roster.md`,
+   `templates/roadmap.md` and `templates/progress.md` for the three team files. The orchestrator keeps
+   roster current on member or launch changes, roadmap on phase, ask or decision changes, and progress
+   on each principal ask and changes to its state or dependencies, before reports and handovers.
+   (protocol 9.5; playbook, State kept outside sessions; LOG, 2026-10-26, team files; low, one instance)
+   Check the project's effective git identity against the root record using section 8's checklist
+   before any member commits.
 2. Write the orchestrator's first prompt from `templates/first-prompt.md` into a file in that
    directory, naming your principal as the delegator and the channel they will use. In the example,
    Ana says, "Ana talks to you here, in this session." State what the orchestrator may grant the
@@ -673,15 +683,17 @@ When nomos says "the local layer", it means these instructions.
 
    Each team uses its own segment, such as `impl-1.alpha` and `impl-1.beta` on the same machine.
    Use full `MEMBER.TEAM@HOST` addresses in delegation records and readbacks.
-5. Read the new pane's screen and answer its dialogs only when your record grants the answer and
-   configuration effects for that directory (HN02, HN20, HN26). Otherwise use the declared escalation
-   channel. spawn never answers one, and the session joins once it is answered, even after spawn timed out with status 3
-   (HN28). Read `keryx who` before you spawn again. Name the pane with `herdr pane rename PANE NAME`.
-   The spawn notice says, "Take it to your human, and answer it with herdr pane send-keys only on their word". A record granting a named dialog answer, such as
-   Codex's hooks dialog answered "Continue without trusting", carries the principal's word for that
-   answer and its covered effects. Without that grant, escalate. (LOG, 2026-10-23 08:44 and 09:01 UTC-3,
-   spawn dialog authority; LOG, field PR 27, dialog notices; low, three more quoted dialogs,
-   no recorded principal grant for their answers)
+5. Read the new pane's screen and answer its dialogs under the principal's standing rules, whether a
+   named answer in the record or a standing word such as "Continue without trusting" for Codex hooks.
+   Bring only uncovered dialogs through the declared principal channel. A relayed copy of their word
+   suffices for what narrows and grants nothing. An answer granting hook trust, permission or a setting
+   change still needs their word, covering its configuration effects and directory (HN02, HN20, HN26).
+   spawn answers no dialog; the session joins once it is answered, even after timeout status 3 (HN28).
+   Read `keryx who` before spawning again. Name the pane with `herdr pane rename PANE NAME`.
+   The spawn notice and keryx skill still say to take the dialog to the human; the standing word
+   already covers its named answer and effects. The notice grants nothing. (LOG, 2026-10-23 08:44 and
+   09:01 UTC-3, spawn dialog authority; LOG, field PR 27, dialog notices; N17; low, three earlier
+   quoted dialogs without a recorded grant, followed by the principal's standing instruction)
 6. Wait for the member's readback by mail and compare it, line by line, with the delegation file and
    the brief. A join is not readiness (protocol, The session life cycle and handover). A readback that
    misses a field, or adds authority, gets a correction before the member acts.
