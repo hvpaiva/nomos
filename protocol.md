@@ -420,6 +420,16 @@ nobody directs. (L06, S11, S37; medium)
 (its full address, role, task, authority and next action) before it acts, and the director compares
 it with what it sent. A launcher reporting the session ready is no evidence that the role, the brief
 and the authority reached it. (M34, L07, H07, S37; high for the problem, low for the readback)
+The optional [readback comparator](bin/compare-readback.rb) flags lexical differences for the
+director to review; a match never replaces the director's confirmation.
+The readback SHOULD use five labeled lines, `Address`, `Role`, `Task`, `Authority` and `Next action`
+(or `Endereço`, `Papel`, `Tarefa`, `Autoridade` and `Próxima ação`), with `Task` starting with the first
+request's first line. In `Authority`, restate each granted act and path, prohibition and reservation in
+the record's words or a faithful translation into the readback's language; in `Next action`, state the
+wait for confirmation and what follows. The comparator reads clauses beginning "I may", "I may not"
+and "Reserved to {party} are", or "Posso", "Não posso" and "Reservado a {parte}". The form helps readers
+and the optional comparator check the readback; following the protocol does not depend on the tool.
+(LOG, 2026-10-26, readback form; low)
 
 **9.3** Before it leaves, a session answers or refuses every request it holds, hands over what it
 cannot finish, and says what it leaves running. (L06, S11; low)

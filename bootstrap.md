@@ -74,17 +74,17 @@ to it. Harness startup is separate from reading cost but remains inside the sess
 
 | Reader | When | Reading | Words | Estimated tokens |
 |---|---|---|---|---|
-| Implementer | At start | `cards/member.md` + `cards/implementer.md` | 770 | 2,780 to 3,160 |
-| Reviewer | At start | `cards/member.md` + `cards/reviewer.md` | 777 | 2,800 to 3,190 |
-| QA | At start | `cards/member.md` + `cards/qa.md` | 752 | 2,710 to 3,090 |
-| Auditor | At start | `cards/member.md` + `cards/auditor.md` | 789 | 2,850 to 3,240 |
-| Writer | At start | `cards/member.md` + `cards/writer.md` | 758 | 2,730 to 3,110 |
+| Implementer | At start | `cards/member.md` + `cards/implementer.md` | 773 | 2,790 to 3,170 |
+| Reviewer | At start | `cards/member.md` + `cards/reviewer.md` | 780 | 2,810 to 3,200 |
+| QA | At start | `cards/member.md` + `cards/qa.md` | 755 | 2,720 to 3,100 |
+| Auditor | At start | `cards/member.md` + `cards/auditor.md` | 792 | 2,860 to 3,250 |
+| Writer | At start | `cards/member.md` + `cards/writer.md` | 761 | 2,740 to 3,130 |
 | Orchestrator | At start | `cards/orchestrator.md` (600), `orchestrator.md` (2,500), bootstrap sections 7 and 8 (2,336), harness notes for all three harnesses (1,535); omit notes for harnesses not being spawned | 6,971 | 25,100 to 28,590 |
 | Harness start, outside nomos | Record the context stamped on the first readback | On 2026-10-23, third-run Claude Code 50.2K at its first turn and 60.9K after join and skill; first-run Claude Code 50.9K and 61.8K after join, skill and inbox; first-run Codex about 23K on its readback | Not a word count | Observed context, not a text estimate |
 | Whoever fills this form | Only when filling it | `templates/audit-brief.md` | 781 | 2,820 to 3,210 |
 | Whoever fills this form | Only when filling it | `templates/brief.md` | 1,243 | 4,480 to 5,100 |
 | Whoever fills this form | Only when filling it | `templates/escalation.md` | 495 | 1,790 to 2,030 |
-| Whoever fills this form | Only when filling it | `templates/first-prompt.md` | 1,701 | 6,130 to 6,980 |
+| Whoever fills this form | Only when filling it | `templates/first-prompt.md` | 2,137 | 7,700 to 8,770 |
 | Whoever fills this form | Only when filling it | `templates/handover.md` | 1,539 | 5,550 to 6,310 |
 | Whoever fills this form | Only when filling it | `templates/human-message.md` | 1,136 | 4,090 to 4,660 |
 | Whoever fills this form | Only when filling it | `templates/plan-review.md` | 420 | 1,520 to 1,730 |
@@ -97,10 +97,10 @@ to it. Harness startup is separate from reading cost but remains inside the sess
 | Claude Code member | Only the note needed for its own harness | `harness-notes.md`, Claude Code | 50 to 204 per note | 180 to 840 per note |
 | Codex member | Only the note needed for its own harness | `harness-notes.md`, Codex | 34 to 256 per note | 130 to 1,050 per note |
 | Cursor member | Only the note needed for its own harness | `harness-notes.md`, Cursor | 77 to 356 per note | 280 to 1,460 per note |
-| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 33,781 in catalog | 121,620 to 138,510 in catalog |
+| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 33,988 in catalog | 122,360 to 139,360 in catalog |
 
-The largest initial member load is 789 words, `cards/member.md` plus `cards/auditor.md`, below the 800-word
-limit. The common card has 497 words; role cards have implementer 273, reviewer 280, qa 255, auditor 292, writer 261; the orchestrator card has 600.
+The largest initial member load is 792 words, `cards/member.md` plus `cards/auditor.md`, below the 800-word
+limit. The common card has 500 words; role cards have implementer 273, reviewer 280, qa 255, auditor 292, writer 261; the orchestrator card has 600.
 
 ## About this guide
 
@@ -524,6 +524,68 @@ a correct deadline with one resend. A timestamp dated on a later day is exempt e
 claims a completed event. This calendar rule does not classify event wording. Section names,
 vocabulary examples and quoted relative dates can still need confirmation. A flag is not proof of
 a mistake.
+
+The optional [readback comparator](bin/compare-readback.rb) compares the five items in protocol 9.2
+against the first prompt's delegation record. It needs Ruby 3.3 or later and only its standard
+library; CI tests Ruby 3.3 and 4.0. Run it after saving the record and the readback as text files.
+
+```bash
+ruby bin/compare-readback.rb --record first-prompt.txt --readback readback.txt --brief brief.txt --json
+```
+
+Pass `--brief` with records made from `templates/first-prompt.md`, which has no task value, and
+omit it only when the record already supplies that value. Omit `--json` for the same values in lines.
+The JSON object contains `fields`, keyed by `address`, `role`, `task`, `authority` and `next_action`.
+Each has `status` (`matched`, `missing` or `differs`) and `record` and `readback` arrays of literal
+source spans. The task's record spans come from the brief when supplied. `authority_added` and
+`authority_missing` list added atoms or unknown readback spans, and omitted atoms, respectively, `version` is the record's named NOMOS version
+(such as `v0`, or `null` when no single version is named), and `limits` explains what needs human
+judgment. Exit 0 means all five fields matched, 1 means at least one flag, and 2 means a usage or
+file error. A flag is a warning, and only the director decides whether the readback is acceptable.
+
+The readback should use five lines labeled `Address`, `Role`, `Task`, `Authority` and `Next action`,
+or `Endereço`, `Papel`, `Tarefa`, `Autoridade` and `Próxima ação`. Begin `Task` with the first request's
+first line. In `Authority`, repeat granted acts and paths, prohibitions and reservations in the record's
+words or a faithful translation into the readback's language. In `Next action`, state that you wait for
+confirmation and what follows. Protocol 9.2 recommends this form; path summaries such as "the four
+repositories" still flag missing resources. The comparator reads clauses beginning "I may", "I may not"
+and "Reserved to {party} are", or "Posso", "Não posso" and "Reservado a {parte}". Unknown sentences
+under `Authority` can match whole record sentences after case, spacing, punctuation and you/I or
+your/my normalization; matching a fragment never exempts an added claim.
+
+The comparator also recognizes the template's sentences, numbered fields 3 to 6, and an opening
+address and role after an optional tag, including fixed English and Portuguese role words.
+Labels may start a line or sentence and use a colon, period, `is`, or its Portuguese counterpart,
+with at most eight connecting words; Markdown headings also work. With `--brief`, the task value
+must start with the brief's first content line after normalization, so added detail can match. Without a
+task source it stays `missing`. An explicit `Next action` takes precedence over the template's
+wait instruction. When the record calls for waiting, fixed confirmation phrases in `WAIT` may
+precede every act in the value and be affirmative; they do not authorize that step. A record that is
+not template-shaped, such as a free-prose root record, can give authority and next_action `missing`.
+
+Authority comparison assigns grant, prohibition, reservation and redelegation per atom, with
+negation, and extracts paths, addresses and a fixed vocabulary of acts. The English and Portuguese
+forms and conjugations are in the script's vocabulary tables. A reservation and the same prohibition satisfy each other.
+A summary can match while changing word order.
+Missing granted acts, paths or addresses, prohibitions, reservations and redelegation terms are flagged.
+Extra affirmative grant atoms are flagged as possible additions. Unknown authority wording also flags a
+difference and its original span appears in `authority_added`. Authority continues until the next known
+field. Modals split before polarity is assigned; semicolons and bare contrasts cannot extend a negation.
+Outside recognized authority clauses, restricted acts that are never granted also flag. A granted act
+with an absolute, home or variable path outside its clause's granted paths flags; relative paths there
+are not checked. A message grant counts as send in this outside scan only, and an ungranted transport
+recipient also flags. These checks do not resolve action-to-resource bindings inside a clause.
+Paths are normalized lexically for trailing slash, dot and parent segments, without expanding home or
+variables or resolving symlinks. An Address value uses its first address without a session suffix.
+An extra restriction flags a missing grant only
+if it names a granted act or resource; unrelated extra restrictions do not flag. The original clauses
+remain in the spans. These are lexical comparisons, not proof that a grant is valid or wider.
+Conditions, which action applies to which resource, expiry, external records, other languages and
+semantic equivalence need human review. The comparator never reads a file mentioned in the text,
+makes a transport call, stores state or grants permission. Each input must be a regular UTF-8 file
+without NUL bytes, at most 64 KiB; capped reads reject growth beyond that bound. Quoted lines and
+fenced examples do not supply fields. Text output JSON-encodes each value on its own line to preserve
+spans and escape embedded newlines.
 
 ## 5. Write your local layer
 

@@ -10,6 +10,10 @@ The format follows Keep a Changelog. Before the first release, all entries are u
 - Handover notices only when the change needs the principal, member dialogs handled under standing
   rules, and an explicit no-footer rule for the page's human answers.
 - Roster, roadmap and progress forms, with the orchestrator's update duties and their first case.
+- An optional readback comparator for identity, task, authority and next action, with JSON output,
+  bounded file input and tests on Ruby 3.3 and 4.0. It preserves literal evidence spans, checks authority
+  claims across fields, reports omitted acts, and supports English and Portuguese readback forms.
+  Protocol 9.2 recommends the five-line form, with a complete example and human confirmation required.
 - Protocol 10.5 to 10.9 and a human-message template, with seven kinds, one ask per request, a `nomos`
   block for the reader's page, answers that keep the human's words, and commitment and escalation forms.
 - The keryx reserved-scope restrictions at 7debfde (#38) and pane cleanup ownership after session exit.

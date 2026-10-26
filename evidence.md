@@ -2036,6 +2036,26 @@ principal's direction, the refusal and the other orchestrator's completion. Conf
 refused close and a reported cleanup, not a rerun by the writer. The playbook's Cleanup section
 carries the lesson under protocol 4.7 and 9.3.
 
+### LOG, 2026-10-26 UTC-3, readback form
+
+On 2026-10-26, trials on the comparator round's first revision flagged every field of three real
+member readbacks.
+Each readback used prose in the member's language without labels and summarized the granted paths;
+the director had confirmed all three by reading. Passing synthetic tests had not shown whether the
+tool could compare the readbacks members actually sent. After the first fix round, the three member
+pairs flagged task without a brief and authority on summarized paths. The later review also required
+omitted acts and unknown wording to remain visible; a labeled form alone does not guarantee a match.
+
+The proposed remedy is five labeled lines. The task begins with the first request's first line, authority
+repeats granted acts and paths, prohibitions and reservations in the record's words or a faithful
+translation, and the next action
+states the wait for confirmation and what follows. This gives both the director and the optional
+tool identifiable values to compare, while summarized paths still need clarification.
+
+Sourced from the director's trial report and correction request of 2026-10-26, in UTC-3, and the
+three saved member readbacks. Confidence low, three comparisons and a proposed form, with no
+new member launch testing that form. Protocol 9.2 carries the lesson.
+
 ## Field evidence from the keryx team (LOG)
 
 These entries summarize reports about pull requests in the public [keryx
