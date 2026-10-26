@@ -224,16 +224,23 @@ class PreSendTest < Minitest::Test
   end
 
   def test_footer_must_be_last_nonempty_prose_line
-    assert_empty flags("nomos v0 escalation\nUnrelated text\n")
-    assert_empty flags("`nomos v0 escalation`\n")
-    assert_empty flags("> nomos v0 escalation\n")
+    refute_empty flags("Done.\nnomos v0 review brief\n")
+    assert_empty flags("nomos v0 review brief\nUnrelated text\n")
+    assert_empty flags("`nomos v0 review brief`\n")
+    assert_empty flags("> nomos v0 review brief\n")
     assert_empty flags('Text without a form')
-    assert_empty flags("Done.\nnomos v1 escalation\n")
+    assert_empty flags("Done.\nnomos v1 review brief\n")
   end
 
-  def test_escalation_checks_its_template_headings
-    result = flags("Done.\nnomos v0 escalation\n\n")
-    assert_equal %w[Assessment Background Recommendation Situation], result.map(&:text).sort
+  def test_footer_shared_by_templates_checks_no_headings
+    assert_empty flags("Done.\nnomos v0 human message\n\n")
+    Dir.mktmpdir do |dir|
+      File.write(File.join(dir, 'one.md'), "# One\n## First field\nnomos v0 shared\n")
+      File.write(File.join(dir, 'two.md'), "# Two\n## Second field\nnomos v0 shared\n")
+      assert_empty flags("Done.\nnomos v0 shared\n", templates: dir)
+      File.delete(File.join(dir, 'two.md'))
+      assert_equal ['First field'], flags("Done.\nnomos v0 shared\n", templates: dir).map(&:text)
+    end
   end
 
   def test_multipart_forms_skip_headings_silently

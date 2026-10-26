@@ -63,10 +63,11 @@ implemented by keryx 143fbb8 (#30). (N05, R01, R08, S-N01 to S-N03; low)
 
 **3.5** The team segment names the project and the member segment names the role. Use short role
 names with instance numbers (impl-N, qa-N, rev-N, aud-N, writer-N), with orq for the one
-orchestrator, so the team's orchestrator is orq.TEAM. No member is named after its team or project.
-The full role word goes in the transport's role field; `keryx.md`, Identity and addresses, maps
-this to `--role` on join and spawn. A replacing session keeps the seat's name and gets a new
-session id. (L11, L14, S-N03, N14, N15; LOG, 2026-10-25 16:30 to 16:34, role names; medium)
+orchestrator, so the team's orchestrator is orq.TEAM. Other seats take a short role word with an
+instance number in the same pattern. No member is named after its team or project. The full role
+word goes in the transport's role field; `keryx.md`, Identity and addresses, maps this to `--role`
+on join and spawn. A replacing session keeps the seat's name and gets a new session id. (L11, L14,
+S-N03, N14, N15; LOG, 2026-10-25 16:30 to 16:34, role names; medium)
 
 **3.6** Short names are resolved by the sender's transport before anything is stored. MEMBER means that
 member of the sender's team on the same host, with no fallback, and MEMBER.TEAM that member of that team
@@ -79,9 +80,10 @@ that matches several members is an error that lists them, and a transport MUST N
 candidates or guess. Resolving a name grants nothing. (L14, N05, R01 with the keryx team's acceptance
 of 2026-10-23, S43, S-N02, M55; low)
 
-**3.7** A human at a terminal and the transport's own services take the reserved scopes `local` and
-`system`, as in `ana.local@box1`, which carry no authority and which no team may take as a name. A
-principal who talks to the team through its orchestrator needs no address. (R01, S-N01; low)
+**3.7** A human at a terminal and the transport's own services take the reserved scopes `local`
+and `system`, as in `ana.local@box1`, which carry no authority and which no team may take as a
+name. A principal who talks to the team through its orchestrator needs no address. A transport
+able to tell an agent from a terminal refuses a reserved address to the agent. (R01, S-N01; low)
 
 **3.8** Addresses are retired, never renamed. An identity MUST NOT change while it has open requests,
 sent or received, since a reply closes a request only from its full recipient, and moving an identity
@@ -174,11 +176,13 @@ containment case; propagation remains designed)
 
 ## 5. Messages and the work life cycle
 
-**5.1** A request expects an answer and opens an obligation, a message needs none, and a reply answers
-a message and closes a request. Use a request for work or an answer you need, and a message for
-everything else. A request states what its reply must carry. Without that statement, the reply is
-the answer to the question asked. (L09, S06, S40; high for the transport kinds; N16; LOG,
-2026-10-26 06:50 to 06:59, request replies; low for the reply contract)
+**5.1** A request expects an answer and opens an obligation, a message needs none, and a reply
+answers a message and closes a request. Use a request for work or an answer you need, and a
+message for everything else. A request states what its reply must carry. Without that statement,
+the reply is the answer to the question asked. A work request that states no reply asks for a
+result unless it asks for later work; human work requests follow the commitment rule of 5.3. (L09,
+S06, S40; high for the transport kinds; N16; LOG, 2026-10-26 06:50 to 06:59, request replies; low
+for the reply contract)
 
 A request to a human carries one ask (10.6), and its reply is read under 10.9, since a reply that
 names no option closes the request without deciding it. (LOG, 2026-10-26, bundled asks; LOG,
@@ -225,10 +229,12 @@ that requested result. For a request for later work, or a work request from a hu
 says what will be done and by when, with an absolute time and zone; the result follows as a
 message naming the request. State which reply is wanted under 5.1. A refusal, the acknowledgment
 of a cancel and a handover-ack remain replies; an amend is a message and a clarify is a request.
-The transport closes a request on reply; the requester keeps the work item in its checkpoint
-until its decision under 5.5, including work still owed after a commitment reply. (S03, S42;
-LOG, field PR 24, honest refusal; N16; LOG, 2026-10-26 06:50 to 06:59, request replies; low,
-one refusal case and a new reply rule after early closes)
+The transport closes a request on reply. The side that sent a commitment keeps the owed work in
+its checkpoint until it sends the result. The requester keeps its work item and decision under 5.5
+in its checkpoint; for a human requester, the orchestrator keeps both the owed work and the
+requester's work item and decision. (S03, S42; LOG, field PR 24, honest refusal; N16; LOG,
+2026-10-26 06:50 to 06:59, request replies; low, one refusal case and a new reply rule after early
+closes)
 
 **5.4** A delivered message is not read, a read message is not accepted work, a stopped session is not
 finished work, and a cancel stops work without undoing it. A message counts as read only on the reading
@@ -593,7 +599,7 @@ do now, not by the transport kind the sender picked. Four are asks and three are
 | `question` | Information or an observation only the human has, with no fixed set of answers | request with a deadline |
 | `action` | Something the human must do (run a command, test on a device, answer a dialog) and report on | request with a deadline |
 | `suggestion` | An optional proposal the human may take or ignore, with nothing waiting on it | message |
-| `notice` | Something the human should see under 10.2 and need not answer, including a commitment under 5.3 | message, or reply to the human's message or work request |
+| `notice` | Something the human should see under 10.2 and need not answer, including a commitment, refusal or cancel acknowledgment under 5.3 | message, or reply to the human's message or request |
 | `result` | The outcome of something the human asked for | reply when the request calls for a result under 5.3, or a message naming the request after a commitment reply |
 
 An ask MUST go as a request with a deadline, since an ask carried by a message or a reply is not
@@ -613,20 +619,22 @@ stays open, and nothing tracks it. Asking in a note instead leaves even that one
 (LOG, 2026-10-26, bundled asks; LOG, 2026-10-26 09:17, asks sent as notes; low, three bundled
 cases, one partial answer and one ask sent as a note)
 
-**10.7** A message to a human MAY carry a block that a reader's page draws as a component, and
-an ask MUST carry one. The body's first line is the title, in plain words, at most 80 characters,
-not a heading, list, quote or fence. The block starts on line 2, the only place a reader looks
-for it. It is a fenced code block with the info string `nomos`, holding one JSON object, at most
-16 lines including the fences and 1,024 bytes. Both limits bind even when every field fits its
-own limit. It holds no HTML and no time or date. Unknown keys are ignored. A changed field
-meaning takes a new info string, such as `nomos-1`, with no version key. (LOG, 2026-10-26, inbox
-page; low, title placement observed on one page, block and limits designed)
+**10.7** A message to a human MAY carry a block that a reader's page draws as a component, and an
+ask MUST carry one. The body's first line is the title, in plain words, at most 80 characters, not
+a heading, list, quote or fence. The block starts on line 2, the only place a reader looks for it.
+It is a fenced code block with the info string `nomos`, holding one JSON object, at most 16 lines
+including the fences and 1,024 bytes. Both limits bind even when every field fits its own limit.
+It holds no HTML. Free-text fields (`blocks`, `meanwhile`, `if_silent` and labels) hold no time or
+date; paths, URLs and ids are exempt from that restriction. Unknown keys are ignored. A changed
+field meaning takes a new info string, such as `nomos-1`, with no version key. (LOG, 2026-10-26,
+inbox page; low, title placement observed on one page, block and limits designed)
 
 A block that does not parse, is over a limit, names an unknown kind or breaks a field or ask rule
-stays in the body as a code box and the message renders as plain text, with no answer buttons.
-An unknown info string also falls back to text. A block in a message to an agent is inert, read as
-text rather than an answer component. A draft forwarded for review sits inside a longer fence,
-so its block is not on the body's line 2. (LOG, 2026-10-26, inbox page; low, designed)
+stays in the body as a code box and the message renders as plain text, with no answer buttons. An
+unknown info string also falls back to text. A block in a message to an agent is inert, read as
+text rather than an answer component, except an `answer` block, which the asker reads under 10.9.
+A draft forwarded for review sits inside a longer fence, so its block is not on the body's line 2.
+(LOG, 2026-10-26, inbox page; low, designed)
 
 The text below the block MUST stand alone, so the human can answer from it when the block is
 ignored. An ask's text lists each option with its number, its label and its id, says what waits,
@@ -665,24 +673,34 @@ is reversible and inside the team's authority. The difference lets the human see
 whether silence lets the team act. Whether an act is reserved is read in the delegation record, not
 in the block. (5.6, 10.2; LOG, 2026-10-26, human messages; low, designed)
 
-**10.9** The human's answer is a reply to the request, or to the message for a suggestion. A reader's
-page writes a label on line 1, the `nomos` block on line 2 with `"kind": "answer"`, then the human's
-words verbatim, possibly empty. Line 1 is the page's, not the human's words. It is the chosen
-option's exact label, the labels joined by "; " for `select: many` and cut at 80 characters, or
-the outcome word in the human's language for an action. The block's `answer` holds one option id,
-an array of ids for `select: many`, `done`, `failed` or `declined` for an action, or `take` or `skip`
-for a suggestion. An answer in words only omits `answer`. The asker reads the block on line 2
-and accepts only ids it sent, or the fixed answers for the original kind. An unknown id counts
-as no choice. The human's words are always read, and a condition in them binds the chosen option.
-(LOG, 2026-10-26, answers without a choice; LOG, 2026-10-26, inbox page; low, designed)
+**10.9** The human's answer is a reply to the request, or to the message for a suggestion. A
+reader's page writes a label on line 1, the `nomos` block on line 2 with `"kind": "answer"`, then
+the human's words verbatim, possibly empty. Line 1 is the page's, not the human's words. It is the
+chosen option's exact label, the labels joined by "; " for `select: many` and cut at 80
+characters, or the outcome word in the human's language for an action. The block's `answer` holds
+one option id, an array of ids for `select: many`, `done`, `failed` or `declined` for an action,
+or `take` or `skip` for a suggestion. An answer in words only omits `answer`; its first line is
+the page's fixed wording in the human's language saying the answer is in words. The asker reads
+the block on line 2 and accepts only ids it sent, or the fixed answers for the original kind. An
+unknown id supplies no valid `answer`. The human's words are always read, and a condition in them
+binds the chosen option. (LOG, 2026-10-26, answers without a choice; LOG, 2026-10-26, inbox page;
+low, designed)
 
-Without a block, words count as a choice when they name exactly one option without doubt, such
-as its id, number or label anywhere in the answer, or "the recommended one" when the ask had one
-recommendation. Anything else decides nothing. A reply that names no option to a `choice` or a
-`decision` closes the request and decides nothing. For a `decision` the asker sends a new request
-with `follows` naming the old one and says what is still open. What the team then does reaches the
-human as a `result` or `notice` naming the request. (5.5, 5.6; LOG, 2026-10-26, answers without a
-choice; low, two replies without a choice and the principal's unambiguous choices in words)
+Whenever a reply has no valid `answer`, words count as a choice when they name exactly one option
+without doubt. This includes replies with no block, a block omitting `answer` or an unknown id. A
+choice can be named by words such as its id, number or label anywhere in the answer, or "the
+recommended one" when the ask had one recommendation. Anything else decides nothing. A reply that
+names no option to a `choice` or a `decision` closes the request and decides nothing. For a
+`decision` the asker sends a new request with `follows` naming the old one and says what is still
+open. What the team then does reaches the human as a `result` or `notice` naming the request.
+(5.5, 5.6; LOG, 2026-10-26, answers without a choice; low, two replies without a choice and the
+principal's unambiguous choices in words)
+
+Words that unambiguously name `done`, `failed` or `declined` for an `action`, or `take` or `skip`
+for a `suggestion`, including their wording in the human's language, count like option words. A
+question's words-only reply is read as the information asked for. Refusal and cancel
+acknowledgment sent to a human are `notice` replies with no bracketed tag. (LOG, 2026-10-26, human
+messages; LOG, 2026-10-26, answers without a choice; low, designed)
 
 ## 11. Conformance, checks and versioning
 
@@ -711,6 +729,10 @@ alone has not held. The optional nomos hook implements this comparison; it is no
 acceptance 3, 2026-10-23, message times; LOG, field PR 24, message times; low for the check, seven
 more message lapses and a separate log case) `keryx.md` says where each check runs in keryx.
 `bootstrap.md` section 4 names the supported forms, parser limits and hook setup.
+
+The optional human-message checks for the block, request and deadline under 10.5 to 10.9 are
+planned for a later hook round. They are not implemented by the hook described here. (LOG,
+2026-10-26, inbox page; low, designed)
 
 **11.3** Each template names the protocol version in its title, and a filled form ends with a line that
 names the form and the version, such as "nomos v0 brief", since its first line belongs to the outcome.

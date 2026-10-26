@@ -170,32 +170,33 @@ module Nomos
         paths = Dir.glob(File.join(@templates, '*.md')).sort
         raise IOError, "no templates in #{@templates}" if paths.empty?
 
-        paths.each do |path|
+        forms = paths.filter_map do |path|
           template = PreSend.read_text(path)
           sections = template.split(/^(nomos v\d+ [a-z][a-z ]*)\s*$/)
           index = sections.index(footer)
-          next unless index
-          return if MULTIPART.include?(File.basename(path, '.md'))
-
-          form = sections[index - 1]
-          headings = PreSend.prose(form).scan(/^\#{2,6}\s+(.+?)\s*#*$/).flatten
-          headings.reject! { |heading| heading.include?('{') }
-          if File.basename(path) == 'report.md' && template.include?('any section with nothing to say')
-            headings = []
-          else
-            headings.reject! do |heading|
-              optional_heading?(heading, template)
-            end
-          end
-          present = clean.scan(/^\#{1,6}\s+(.+?)\s*#*$/).flatten.map { |heading| normalize(heading) }
-          headings.each do |heading|
-            next if present.include?(normalize(heading))
-
-            flags << Flag.new(footer_index + 1, 'missing heading', heading)
-          end
-          check_findings(clean, flags) if File.basename(path) == 'review-findings.md'
-          return
+          [path, template, sections[index - 1]] if index
         end
+        return unless forms.length == 1
+
+        path, template, form = forms.first
+        return if MULTIPART.include?(File.basename(path, '.md'))
+
+        headings = PreSend.prose(form).scan(/^\#{2,6}\s+(.+?)\s*#*$/).flatten
+        headings.reject! { |heading| heading.include?('{') }
+        if File.basename(path) == 'report.md' && template.include?('any section with nothing to say')
+          headings = []
+        else
+          headings.reject! do |heading|
+            optional_heading?(heading, template)
+          end
+        end
+        present = clean.scan(/^\#{1,6}\s+(.+?)\s*#*$/).flatten.map { |heading| normalize(heading) }
+        headings.each do |heading|
+          next if present.include?(normalize(heading))
+
+          flags << Flag.new(footer_index + 1, 'missing heading', heading)
+        end
+        check_findings(clean, flags) if File.basename(path) == 'review-findings.md'
       end
 
       def optional_heading?(heading, template)

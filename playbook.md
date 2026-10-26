@@ -351,6 +351,11 @@ stumble 12; low)
 
 ## Cleanup
 
+A team closes the panes it opened once their sessions end. When a harness's permission check
+refuses the close, the team reports the panes and the refusal and leaves them to whoever may close
+them, without working around the denial. (protocol 4.7, 9.3; LOG, 2026-10-26, pane cleanup
+ownership; low, one refused close and a reported cleanup)
+
 Keep an inventory of resources the run creates, with exact paths or ids, creation evidence, current
 holder, removal grant, retention reason and the command that checks their state. Update it at each
 task end and copy its unfinished rows into the orchestrator handover. Remove only resources covered
@@ -778,8 +783,10 @@ one resource the team cannot parallelize. (M53, M49; low)
 ## Writing for the team
 
 An agent writing to the principal picks the kind by what it asks now, sends each ask as its own
-request with a deadline, and uses `templates/human-message.md` (protocol 10.5 to 10.9). An escalation
-keeps `templates/escalation.md` as the text below a `decision` block.
+request with a deadline, and uses `templates/human-message.md` (protocol 10.5 to 10.9). An
+escalation uses `templates/escalation.md` for the text below a `decision` block, with one title,
+one block and one human-message footer; silence on that reserved decision only waits or keeps
+things as they are.
 
 - Write the current state as a scoped fact, and a principle only when a decision or a test imposes it.
   An architecture document said a tool only reads, from the commands it had that week. (M27; low)

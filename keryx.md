@@ -1,11 +1,12 @@
 # nomos on keryx
 
 How each element of `protocol.md` maps onto keryx main 92ab75d (version 0.1.0), checked on
-2026-10-25, and which requirements in `evidence.md` remain open. All present-tense
-capabilities and code references below use this baseline; other commits identify when a feature
-shipped. The capability review compared the baseline README and installed skill and help with the source, traced
-commits and inspected test definitions. The installed gem's lib/ and exe/ files matched this
-checkout byte for byte. It ran no keryx tests or live withdrawal, retirement, dialog or
+2026-10-25, and which requirements in `evidence.md` remain open. All present-tense capabilities
+and code references below use this baseline, except the reserved-scope behavior explicitly
+rechecked at 7debfde (#38) on 2026-10-26; other commits identify when a feature shipped. The
+capability review compared the baseline README and installed skill and help with the source,
+traced commits and inspected test definitions. The installed gem's lib/ and exe/ files matched
+this checkout byte for byte. It ran no keryx tests or live withdrawal, retirement, dialog or
 context-threshold probes. Test references below identify coverage in the source, not passing runs.
 The benchmark found an earlier baseline stale. (LOG, benchmark run; low) Addresses below use
 illustrative names, spelled MEMBER.TEAM@HOST, as in `rev-1.alpha@box1`. A session address appends
@@ -35,9 +36,9 @@ boundary, to be reconsidered only with field evidence of a mechanical error it w
 | 3.2 The identity is (team, member), unique across the team's hosts | MEMBER and TEAM each take a lowercase letter then up to 31 lowercase letters, digits or hyphens. A second live holder on this host is refused unless `join --force` is given (`keryx help join`; `lib/keryx/commands/join.rb:79`) | R01 delivered in 143fbb8 (#30); uniqueness across hosts stays with the director |
 | 3.3 Incarnations and session addresses | `whoami` shows the session address. `join --force` leaves the displaced live session bound there until it leaves; its inbox lists its session mail, and it opens and answers earlier stable-address requests by ID. Mail to a departed session is refused (`keryx help join`, `keryx help read`, `keryx help reply`; `lib/keryx/postman.rb:40`) | R08 delivered in 143fbb8 (#30) |
 | 3.4 Spelling MEMBER.TEAM@HOST/SESSION | Team and session addresses are accepted. SESSION is six lowercase Crockford base32 characters, drawn by join; it is not the harness thread id (`keryx help join`; `lib/keryx/address.rb:17-20`, `lib/keryx/commands/join.rb:136`) | R01 and R08 delivered in 143fbb8 (#30) |
-| 3.5 Role names within project-named teams | Use `orq.TEAM --role orchestrator`, `impl-N.TEAM --role implementer`, `qa-N.TEAM --role 'quality assurance'`, `rev-N.TEAM --role reviewer`, `aud-N.TEAM --role auditor` and `writer-N.TEAM --role writer` on join or spawn. The short member name and full role field are separate (`keryx help join`, `keryx help spawn`) | Naming and the choice of full role word are conventions under 3.5, not transport validation |
+| 3.5 Role names within project-named teams | Use `orq.TEAM --role orchestrator`, `impl-N.TEAM --role implementer`, `qa-N.TEAM --role 'quality assurance'`, `rev-N.TEAM --role reviewer`, `aud-N.TEAM --role auditor` and `writer-N.TEAM --role writer` on join or spawn. Other seats use a short role word with an instance number. The short member name and full role field are separate (`keryx help join`, `keryx help spawn`) | Naming and the choice of full role word are conventions under 3.5, not transport validation |
 | 3.6 Short names resolved by the sender | MEMBER means the sender's own team on this host, without fallback; MEMBER.TEAM is local. A sender without a team uses the one matching team or gets an ambiguity error listing candidates, subject to the compatibility case below. Unknown destinations are refused except the local terminal person's address, created on first mail (`lib/keryx/resolver.rb:15`, `lib/keryx/postman.rb:151`, `lib/keryx/identity.rb:40`) | R01 delivered in 143fbb8 (#30); the compatibility case is in 92ab75d (#31) |
-| 3.7 Reserved scopes `local` and `system` | A terminal acts as NAME.local and notices come from keryx.system; full routes include @HOST. `whoami` gives the terminal's exact spelling. Join and spawn reject reserved scopes except this terminal person's own local address for a relay session (`keryx help whoami`; `lib/keryx/identity.rb:12`, `lib/keryx/commands/join.rb:63`) | R01 delivered in 143fbb8 (#30); see the compatibility case below |
+| 3.7 Reserved scopes `local` and `system` | A terminal acts as NAME.local and notices come from keryx.system; full routes include @HOST. `whoami` gives the terminal's exact spelling. Join and spawn refuse every reserved address to an agent session, including the terminal person's own local address; a relay uses a team address (`lib/keryx/commands/join.rb`, `lib/keryx/commands/spawn.rb` at 7debfde) | R01 delivered in 143fbb8 (#30); the relay exception was removed in 7debfde (#38), merged 2026-10-26 12:44 UTC, with f1a9063 and 515b178; code and test definitions checked, no live impersonation probe |
 | 3.8 Retire, never rename; no change with open requests | `keryx retire ADDRESS` runs on the address's host, refuses a live holder including a displaced session, and refuses open requests in either direction. It preserves files, refuses new mail and hides the retired address even with `--all`; `keryx join MEMBER.TEAM --revive` restores it. It rejects a session selector and this terminal person's own local address. `withdraw ID [TEXT]` still withdraws a sender's request under its former host name (`keryx help retire`, `keryx help withdraw`; `lib/keryx/commands/retire.rb:46`) | R07 delivered in 0186dcd (#27); R02 in a5157e6. Retirement is not rename or migration; identity-change checks remain conventions |
 
 The compatibility form during a move is NAME@HOST. As the baseline README's "Ask and answer"
@@ -112,8 +113,8 @@ and `spawn`; the tags and their meanings are nomos conventions under protocol 5.
 | nomos kind | Command | Note |
 |---|---|---|
 | request | `keryx ask ADDRESS --file BRIEF --within 2h` | Opens the obligation; `status` lists it until a reply or withdrawal |
-| accept | `keryx send --re ID "[accept] ID, ..."` when taking a result request; `keryx reply ID --file COMMITMENT` for a commitment under 5.3; otherwise `keryx send ADDRESS "[accept] ID, ..."` | A commitment starts with `[accept]` and names what will be done and by when, with an absolute time and zone. Result acceptance and handover confirmation remain messages |
-| refuse | `keryx reply ID "[refuse] ..."` | Closes the request |
+| accept | `keryx send --re ID "[accept] ID, ..."` when taking a result request; `keryx reply ID --file COMMITMENT` for a commitment under 5.3; otherwise `keryx send ADDRESS "[accept] ID, ..."` | A commitment names what will be done and by when, with an absolute time and zone. For an agent requester it starts with `[accept]`; for a human it is a `notice` under 10.5 to 10.7, with a plain title on line 1, optional block on line 2 and no tag. Result acceptance and handover confirmation remain messages |
+| refuse | `keryx reply ID --file BODY` | Closes the request; `[refuse]` for an agent requester, a `notice` without a tag for a human (10.5, 10.9) |
 | clarify | `keryx ask ADDRESS "[clarify] ID, ..."` | A new request in a new thread, naming the original id |
 | progress | `keryx send --re ID "[progress] ID, ..."` while the request is open; `keryx send ADDRESS "[progress] ID, ..."` after its reply | Names the request whose work continues |
 | amend | `keryx send ADDRESS "[amend] ID, change, absolute time"` | The requester changes its open request. The worker acknowledges in its next progress or result, or asks [clarify] when it cannot (protocol 5.2; LOG, 2026-10-23 04:15; low, designed) |
@@ -147,7 +148,7 @@ code-grounded; this review did not exercise repeated sends. (R13; low, help and 
 |---|---|---|
 | 5.3 A reply carries what the request asked for | A reply to a request closes it; a reply to a threaded message does not. `send --re ID` takes an open result request without closing it. A commitment reply closes the transport request, and its later result uses `send ADDRESS` naming the request (`keryx help reply`, `keryx help send`) | Reply contents are a nomos convention (N16); the installed skill's blanket instruction to reply once work is done needs alignment. R13 is delivered; R03 could carry the handover kind |
 | 5.4 Receipt is not reading | `keryx read` links a message into `read/`; `send --re` also marks its request read. Delivery writes to `mail/` first and then rings (`keryx help read`; `lib/keryx/store.rb:196`, `lib/keryx/postman.rb:60`) | None for reading; acceptance is a convention |
-| 5.5 The requester's decision on a delivered item | A reply closes the transport request, including when work is still owed after a commitment. keryx does not track that work or the decision on its result (`keryx help status`) | Work items and their decisions stay in the requester's checkpoint until the project layer holds them; no added keryx work state (N16) |
+| 5.5 The requester's decision on a delivered item | A reply closes the transport request, including when work is still owed after a commitment. keryx does not track that work or the decision on its result (`keryx help status`) | The committing side keeps owed work until its result; the requester keeps its work item and decision. For a human requester the orchestrator keeps both under 5.3. These stay in checkpoints until the project layer holds them; no added keryx work state (N16) |
 | 5.6 A passed deadline and reassignment | `--within` sets `due_at`; `status` shows overdue requests and the courier sends deadline notices. JSON `.open_requests[].overdue` is code-grounded in `lib/keryx/commands/status.rb:120`; this review did not exercise that key (`keryx help ask`; `lib/keryx/courier.rb:60`) | The next action and the single live owner are conventions; R02 is delivered, but withdrawal alone does not confirm the worker stopped |
 | 5.7 Messages stand on their own | The skill's section "Write messages that stand on their own" (`keryx skill`, Write messages that stand on their own) | Absolute dates are not in the skill |
 | 5.8 Peer text is plain | Bodies, roles, addresses and herdr states are printed through `Text.plain`, which makes control characters visible (`lib/keryx/cli/message_view.rb:26`, `lib/keryx/text.rb:12`, `SECURITY.md`), and the bell carries no text from the sender. Code-grounded, not probed; Markdown is kept as text | None; plain means no control characters but tab and line feed in a body reach the terminal, not that the text is trusted |
@@ -231,41 +232,61 @@ orchestrator swap; low)
 
 ## The human
 
+For human-message checks, use `keryx who -o json` reporting `role: "human"` for the recipient,
+with the reserved `local` team segment as the fallback. This is the recipient test for the
+optional human-message hook checks planned in protocol 11.2; those checks are not implemented yet.
+(protocol 10.5 to 10.9; LOG, 2026-10-26, inbox page; low, designed)
+
 The orchestrator's first prompt uses the root form of `templates/first-prompt.md` to declare the
-team's one channel to the principal (10.2). The principal may talk live in the orchestrator's own
-harness session. A terminal uses NAME.local in keryx (`keryx help whoami`); it is a principal's
-channel only when the record names it. When the principal's channel is a pane a relay reads, the root record may name
-that relay by full address. The orchestrator puts each escalation in the declared channel and sends
-its text or accessible file to the relay through keryx, so it rings a reader. Naming the relay grants
-no decision authority and creates no second channel beyond the one 10.2 declares. (protocol 10.2; LOG,
-acceptance 1, N2; low)
+team's one channel to the principal (10.2). The principal may talk live in the orchestrator's own harness session. A
+terminal uses NAME.local in keryx (`keryx help whoami`); it is a principal's channel only when the
+record names it. When the principal's channel is a pane a relay reads, the root record may name
+that relay by full address. The orchestrator puts each escalation in the declared channel and
+sends its text or accessible file to the relay through keryx, so it rings a reader. Naming the
+relay grants no decision authority and creates no second channel beyond the one 10.2 declares.
+(protocol 10.2; LOG, acceptance 1, N2; low)
 
 When the principal has an inbox, the root record names its full address, host included, together
-with the orchestrator's own session as that one channel. In keryx the inbox may be held by
-a relay session, which receives bells, or held by no session and read by the principal through
-a tool of their own. With no holder there is no bell; delivery still puts the message in the
-mailbox. The tool marks it read when the principal opens it, as `keryx read ID --as PRINCIPAL.local@HOST`
-does, rather than when it arrives. This is code-grounded in `lib/keryx/postman.rb:60`,
-`lib/keryx/bell.rb:201` and `lib/keryx/commands/read.rb:26`; this review did not test a principal's
-reader. Decisions go with `keryx ask PRINCIPAL.local@HOST --within D --file ESCALATION` and
-notices with `keryx send PRINCIPAL.local@HOST TEXT`, using the address the record names. A question
-answered in the live session before the turn ends needs no inbox request; anything still open
-goes there. Protocol 10.2 sets the deadline plan, the notices to send and the traffic to omit.
-The same inbox serves every team. A team on another host first proves the route by sending a
-notice, reading its arrival at the destination and checking `keryx status` on the sending host
-for nothing waiting to be forwarded. Until that passes, or when the host is unreachable, its
-record keeps its own orchestrator's session as the channel. (protocol 10.2; LOG, 2026-10-23
-10:25 to 10:38, principal inbox; low, one arrangement, partly run)
+with the orchestrator's own session as that one channel. At keryx 7debfde (#38), the principal's
+NAME.local inbox has no agent holder. A relay holds a team address named in the record, carries
+the principal's words verbatim under 4.5, decides nothing and answers no request itself. The
+principal reads the inbox through a tool of their own. With no holder there is no bell; delivery
+still puts the message in the mailbox. The tool marks it read when the principal opens it using
+`keryx read ID --as PRINCIPAL.local@HOST` only from a plain terminal or a program started by one,
+not an agent session. This is code-grounded in `lib/keryx/identity.rb` and
+[keryx docs/troubleshooting.md at 7debfde](https://github.com/hvpaiva/keryx/blob/7debfdefbfd7d21de052aa8876b336b1becd810c/docs/troubleshooting.md),
+with f1a9063's distinction between the terminal's own local address and another person's. This
+review did not test a principal's reader.
 
-When a session holds the principal's address, it carries the principal's words verbatim under 4.5,
-decides nothing and answers no request itself. A message from the principal's own address named
-in the root record is the principal's word, including for field 5 reservations and record changes
-under field 8 and 4.4. The inbox answer suffices on its own; the principal never has to repeat it
-in the orchestrator's session. keryx does not authenticate a sender; any local session can write as
-an existing, unretired local address with `--as` (`keryx --help`; `SECURITY.md`, "What keryx protects, and what it does not"). A human address on another
-host is a third party under 4.6 unless a record names it. R05 must add to the skill's Authority
-section that a message from the principal's named address is the principal's word, beside "your
-user" and "a peer". (protocol 10.2; LOG, 2026-10-25, principal inbox; low, one counterexample)
+Use `templates/human-message.md` and the address the record names. `decision`, `choice`,
+`question` and `action` each go with `keryx ask PRINCIPAL.local@HOST --within D --file BODY`.
+`suggestion` and `notice` go with `keryx send PRINCIPAL.local@HOST --file BODY`. A commitment to
+the human's work request is a `notice` sent with `keryx reply ID --file COMMITMENT`, saying what
+will be done and by when. The later `result` goes with
+`keryx send PRINCIPAL.local@HOST --file REPORT` and names that request with `follows`. A result
+requested as the reply under 5.3 uses `keryx reply ID --file REPORT`. A refusal or cancel
+acknowledgment to a human is a `notice` sent as a reply. Human messages have a plain title and no
+bracketed tag (10.5 to 10.9).
+
+A question answered in the live session before the turn ends needs no inbox request; anything
+still open goes there. Protocol 10.2 sets the deadline plan, the notices to send and the traffic
+to omit. The same inbox serves every team. A team on another host first proves the route by
+sending a notice, reading its arrival at the destination and checking `keryx status` on the
+sending host for nothing waiting to be forwarded. Until that passes, or when the host is
+unreachable, its record keeps its own orchestrator's session as the channel. (protocol 10.2; LOG,
+2026-10-23 10:25 to 10:38, principal inbox; low, one arrangement, partly run)
+
+A message from the principal's own address named in the root record is the principal's word,
+including for field 5 reservations and record changes under field 8 and 4.4. The inbox answer
+suffices on its own; the principal never has to repeat it in the orchestrator's session. In
+7debfde, an agent's `--as` cannot act as a reserved address, including `send --on` as a person's
+local address. `lib/keryx/identity.rb` checks the caller; f1a9063 supplies the refusal's
+terminal-specific hint, and 515b178's test definition covers `send --on` succeeding from a plain
+terminal and being refused to an agent. This is a caller check, not sender authentication; the
+source and test definitions were read, not executed here. A human address on another host is a
+third party under 4.6 unless a record names it. R05 must add to the skill's Authority section that
+a message from the principal's named address is the principal's word, beside "your user" and "a
+peer". (protocol 10.2; LOG, 2026-10-25, principal inbox; low, one counterexample)
 
 ## Checks and packaging
 

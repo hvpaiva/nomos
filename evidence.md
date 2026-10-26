@@ -1838,6 +1838,12 @@ The directory and help readings were observed by the writer on 2026-10-26. Confi
 one shared setting with the role-based identity rationale in L11, L14 and S-N03. Evidence for
 protocol 3.5 and the closure of the role-name question in section 12.
 
+A review on 2026-10-26 found the protocol team's orchestrator still used `protocol` as its
+transport role. The orchestrator retained that known divergence because the root record names the
+role and changing that record needs the principal. Other seats follow the same short-role naming
+pattern even when absent from the examples. Sourced from the review and the orchestrator's ruling,
+not a new naming grant.
+
 ### LOG, 2026-10-26 06:50 to 06:59 UTC-3, request replies
 
 The joint review of request semantics reported that several teams had answered work requests
@@ -1848,19 +1854,25 @@ at 16:27 UTC-3 it had answered the principal's address-migration request with an
 its completion notice followed at 16:29. The protocol's own orchestrator had broken the rule
 that a reply had to be a terminal outcome.
 
-On 2026-10-26 at 06:56 UTC-3 the principal decided that a request closes when answered, that
-keryx gains no work-state layer and that following up work belongs to the project layer. The
-principal left agents' use of requests to nomos. The 06:59 log entry records the orchestrator's
-ruling that a reply carries what the request asked for. A result request gets its result, with
-an accept message while it is underway. A request for later work, or work requested by a human,
-gets what will be done and by when; its result follows as a message naming the request.
-The requester keeps the work item in its checkpoint until the project layer holds it.
+On 2026-10-26 at 06:56 UTC-3 the principal decided that a request closes when answered, that keryx
+gains no work-state layer and that following up work belongs to the project layer. The principal
+left agents' use of requests to nomos. The 06:59 log entry records the orchestrator's ruling that
+a reply carries what the request asked for. A result request gets its result, with an accept
+message while it is underway. A request for later work, or work requested by a human, gets what
+will be done and by when; its result follows as a message naming the request. The requester keeps
+the work item in its checkpoint until the project layer holds it.
 
-Sourced from the joint request-semantics review, charter N16 and the run log entries of
-2026-10-26 at 06:50 and 06:59 UTC-3. The earlier acknowledgments are reported observations;
-the protocol team's own case was checked by its orchestrator. Confidence low for the remedy,
-a new rule following early closes, with no completed acceptance test of that rule in this
-case. Evidence for protocol 5.1 to 5.3 and the keryx mapping of 5.3 and 5.5.
+The 07:25 UTC-3 log entry records the proposal owed to the principal as an obligation in the
+committing orchestrator's checkpoint. A later review found that 5.3 had named only the requester's
+checkpoint, leaving no keeper for human-requested work. The correction names the committing side
+as keeper of owed work until the result, the requester as keeper of its work item and decision,
+and the orchestrator as keeper of both for a human requester.
+
+Sourced from the joint request-semantics review, charter N16 and the run log entries of 2026-10-26
+at 06:50, 06:59 and 07:25 UTC-3, and the later review ruling. The earlier acknowledgments are
+reported observations; the protocol team's own case was checked by its orchestrator. Confidence
+low for the remedy, a new rule following early closes, with no completed acceptance test of that
+rule in this case. Evidence for protocol 5.1 to 5.3 and the keryx mapping of 5.3 and 5.5.
 
 ### LOG, benchmark run, 2026-10-24 00:00 to 00:13 UTC
 
@@ -1970,15 +1982,16 @@ page-written label on line 1, a block on line 2 declaring the answer kind, and t
 words unchanged after it. An option alone would be enough unless words were required, and an
 action would require words only on failure.
 
-The contribution also found by code inspection that the page opens only regular text files of
-at most 1 MiB inside its configured roots, with dot folders and secret-like names excluded.
-Folder paths in the draft could not open. Its size probe showed that a block can exceed the
-total byte cap even when each field fits its own cap. The accepted design kept labels at 60
-characters, shortened the waiting facts to 80, capped files and links at three each, kept 16
-lines and 1,024 bytes binding, and used null for nothing waiting. These limits were not measured
-on a phone. The team also proposed no buttons for a malformed or rule-breaking block, text
-taking precedence over a conflicting block, an inert block for agent recipients, and a new
-info string for changed meanings.
+The contribution also found by code inspection that the page opens only regular text files of at
+most 1 MiB inside its configured roots, with dot folders and secret-like names excluded. Folder
+paths in the draft could not open. Its size probe showed that a block can exceed the total byte
+cap even when each field fits its own cap. The accepted design kept labels at 60 characters,
+shortened the waiting facts to 80, capped files and links at three each, kept 16 lines and 1,024
+bytes binding, and used null for nothing waiting. These limits were not measured on a phone. The
+team also proposed no buttons for a malformed or rule-breaking block, text taking precedence over
+a conflicting block, an inert block for agent recipients, and a new info string for changed
+meanings. Its directory probe reported the principal's address with role `human`, supporting that
+as the human-recipient test with the local scope as fallback.
 
 It taught that the title belongs before the block, that replies preserve the principal's words
 separately from the page's label, and that fallback must preserve the text without inventing
@@ -2005,6 +2018,23 @@ ask, while a note remains for information that needs no answer.
 Sourced from the protocol run log's entries at 09:09 and 09:18 UTC-3 on 2026-10-26, which record
 the answer and the reminder. Confidence low, one ask sent as a note and a direct correction;
 the one-ask-per-request remedy was not tested by this incident. Protocol 10.5 and 10.6 carry it.
+
+### LOG, 2026-10-26 UTC-3, pane cleanup ownership
+
+On 2026-10-26 at 09:38 UTC-3, the principal said that a team that opened a pane must close it once
+the session ends. The protocol team's orchestrator tried to close a finished pane, but its
+harness's permission classifier refused. The orchestrator reported the refusal and the finished
+panes it had opened, leaving them in place. The principal then assigned their closure to another
+orchestrator, which reported closing them at 09:49 UTC-3.
+
+It taught that each team owns cleanup of the panes it creates after the sessions end. A permission
+refusal does not erase that ownership or permit a workaround; the team reports the retained panes
+and leaves the close to whoever may perform it.
+
+Sourced from the run log entries of 2026-10-26 at 09:39 and 09:55 UTC-3, which record the
+principal's direction, the refusal and the other orchestrator's completion. Confidence low, one
+refused close and a reported cleanup, not a rerun by the writer. The playbook's Cleanup section
+carries the lesson under protocol 4.7 and 9.3.
 
 ## Field evidence from the keryx team (LOG)
 
@@ -2611,7 +2641,13 @@ while old addresses are retired, and that the grammar should land before 0.1.0. 
 agreed (N05). On 2026-10-23 the keryx team accepted the exception for senders in `local` or
 `system`, which have no team. Their bare MEMBER resolves only when exactly one MEMBER.TEAM exists
 on the host; otherwise it is the same listing error. This is an accepted design for protocol 3.6,
-still not implemented in main at 2f599dc. R01 and R08 are in progress on a separate branch.
+still not implemented in main at 2f599dc. R01 and R08 were in progress on a separate branch at
+that historical point. The reserved-scope behavior was rechecked in keryx 7debfde (#38), merged on
+2026-10-26 at 09:44 UTC-3. Its join and spawn reject all reserved addresses, and its identity
+check refuses an agent acting as one. f1a9063 names the terminal path for the caller's own or
+another person's local address; 515b178 defines a test of send --on from a terminal and its
+refusal to an agent. These are source and test-definition readings, not live probes. The keryx
+binding records this revision separately from its general baseline.
 
 **R02.** Withdrawing a request, already in the keryx team's next batch on 2026-10-22, since stale
 requests made an implementer's stop hook block every turn (L10). Delivered in a5157e6 (#19), `keryx
