@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -uo pipefail
 cd -- "$(dirname -- "$0")/.." || exit 1
-for command in ruby bash awk sed grep sort find wc mktemp diff; do
+for command in ruby bash awk sed grep sort find wc mktemp diff head shellcheck; do
     command -v "$command" >/dev/null || { printf 'Missing command: %s\n' "$command" >&2; exit 1; }
 done
 reports=$(mktemp -d -t nomos-check.XXXXXXXX) || exit 1
@@ -16,10 +16,43 @@ run_check() {
     printf '%s exit %s\n' "$name" "$code"
     [ "$code" -eq 0 ] || status=1
 }
+# shellcheck disable=SC2329 # called by the two checks below
+sources() {
+    find . -type d -name '.*' ! -name . -prune -o -type f -print0 |
+        while IFS= read -r -d '' file; do
+            case $file in
+                *"$2") printf '%s\0' "$file" ;;
+                *) head -n 1 -- "$file" | grep -q -E "$1" && printf '%s\0' "$file" ;;
+            esac
+        done
+}
+# shellcheck disable=SC2329 # run_check calls it by name
+check_shell() {
+    local file found=0 failed=0
+    while IFS= read -r -d '' file; do
+        found=$((found + 1))
+        shellcheck --norc -- "$file" || failed=1
+    done < <(sources '^#!.*[/ ](ba)?sh([[:space:]]|$)' .sh)
+    printf 'shell scripts checked: %s\n' "$found"
+    [ "$found" -gt 0 ] && [ "$failed" -eq 0 ]
+}
+# shellcheck disable=SC2329 # run_check calls it by name
+check_ruby() {
+    local file output found=0 failed=0
+    while IFS= read -r -d '' file; do
+        found=$((found + 1))
+        output=$(ruby -wc -- "$file" 2>&1) || failed=1
+        [ "$output" = 'Syntax OK' ] || { printf '%s\n%s\n' "$file" "$output"; failed=1; }
+    done < <(sources '^#!.*[/ ]ruby([[:space:]]|$)' .rb)
+    printf 'Ruby files checked: %s\n' "$found"
+    [ "$found" -gt 0 ] && [ "$failed" -eq 0 ]
+}
 run_check pre-send ruby -EUTF-8 test/pre_send_test.rb
 run_check compare-readback ruby -EUTF-8 test/compare_readback_test.rb
 run_check nomos ruby -EUTF-8 -e 'Dir.glob("test/nomos_*_test.rb").sort.each { |file| require File.expand_path(file) }'
 run_check style bash tool/check-style.sh
+run_check shellcheck check_shell
+run_check ruby-warnings check_ruby
 run_check evidence ruby tool/check-evidence.rb
 run_check recount ruby tool/recount.rb --check --report-dir "$reports"
 run_check verify ruby tool/verify.rb --report-dir "$reports"

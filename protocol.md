@@ -416,6 +416,16 @@ too. (P09, M04, M18, M32; high for blind first, medium for the rest)
 before it closes, since one closed without leaving can be woken by a bell and act under an identity
 nobody directs. (L06, S11, S37; medium)
 
+A director MUST answer every harness dialog of a session it directs at once, whether the dialog
+comes at startup or long after the join. It decides by that session's delegation record and the
+principal's standing rules. It allows once what the record grants, never the option that changes a
+setting or stops later prompts, declines what the record does not grant or reserves to the
+principal, and continues without trusting in a Codex hooks dialog. It takes to the principal at
+once, on the principal's channel with the dialog's text and pane, only a dialog that none of these
+covers or one its own harness will not let it answer. A director MUST NOT leave a dialog to time
+out or to an automatic deny, since silence is not an answer. (N17; LOG, 2026-10-26, unanswered
+dialogs; low, one incident and a rule confirmed by four orchestrators)
+
 **9.2** After any spawn, relaunch or handover, the new incarnation MUST send its director a readback
 (its full address, role, task, authority and next action) before it acts, and the director compares
 it with what it sent. A launcher reporting the session ready is no evidence that the role, the brief
@@ -423,13 +433,14 @@ and the authority reached it. (M34, L07, H07, S37; high for the problem, low for
 The optional [readback comparator](bin/compare-readback.rb) flags lexical differences for the
 director to review; a match never replaces the director's confirmation.
 The readback SHOULD use five labeled lines, `Address`, `Role`, `Task`, `Authority` and `Next action`
-(or `Endereço`, `Papel`, `Tarefa`, `Autoridade` and `Próxima ação`), with `Task` starting with the first
+(or their translation into the readback's language), with `Task` starting with the first
 request's first line. In `Authority`, restate each granted act and path, prohibition and reservation in
 the record's words or a faithful translation into the readback's language; in `Next action`, state the
 wait for confirmation and what follows. The comparator reads clauses beginning "I may", "I may not"
-and "Reserved to {party} are", or "Posso", "Não posso" and "Reservado a {parte}". The form helps readers
+and "Reserved to {party} are"; English is built in, and a readback in another language is compared
+with a local vocabulary file given through `--words`. The form helps readers
 and the optional comparator check the readback; following the protocol does not depend on the tool.
-(LOG, 2026-10-26, readback form; low)
+(LOG, 2026-10-26, readback form; LOG, 2026-10-26, local vocabulary; low)
 
 **9.3** Before it leaves, a session answers or refuses every request it holds, hands over what it
 cannot finish, and says what it leaves running. (L06, S11; low)
@@ -484,7 +495,9 @@ more than one threshold, since some harnesses deliver them late. There is no uni
 P07, M19, M34, S20, S21, LOG; LOG, 2026-10-23 09:54, late notice; medium, one more late notice)
 
 The orchestrator keeps roster.md, roadmap.md and progress.md beside checkpoint.md,
-decisions.md and run-log.md, using the forms in `templates/`. Update the roster when membership,
+decisions.md and run-log.md, using the forms in `templates/`. One state file that holds the six forms
+as headed sections is an allowed equivalent, provided each form keeps its fields and its update
+points below. (LOG, 2026-10-26, one state file; low) Update the roster when membership,
 role, harness, model, ceiling, launch profile, pane or session state changes; the roadmap when a phase,
 the principal's ask or its decision changes; and progress when an ask arrives, its state changes or
 what it waits on changes. Save before reporting or handing over. Progress has one row per principal
@@ -495,10 +508,13 @@ An orchestrator starts its own renewal on the ceiling's 80% notice, or at a plan
 steps as it approaches that point. It does not wait for the principal or ask how to swap. It finishes
 or parks its current step, saves the checkpoint and the orchestrator variant of `templates/handover.md`,
 and carries the root record word for word, including the principal's channel. With keryx today it
-runs `keryx leave`, starts the successor at the same address with that record and the note as its
-handover request, and stays open without an address. Use `keryx.md`, Handover today, for this interim
-transport sequence; joining alone transfers no obligations. (LOG, acceptance 1, stumble 13;
-LOG, 2026-10-23 about 08:45, orchestrator swap; low)
+runs `keryx leave`, joins a temporary address of its own, such as `orq-out.TEAM`, and from there
+starts the successor at the stable address with that record and the note as its handover request.
+The successor's readback then rings the outgoing incarnation, and its `[accept]` goes from the
+temporary address without `--as`, which records forbid. Use `keryx.md`, Handover today, for this
+interim transport sequence; joining alone transfers no obligations. (LOG, acceptance 1, stumble 13;
+LOG, 2026-10-23 about 08:45, orchestrator swap; low; LOG, 2026-10-26, temporary outgoing address;
+medium for the temporary address, two handovers after one that could not accept)
 
 Before cutover the outgoing incarnation checks all of the following against the note and records
 the commands, outputs and any mismatch. (LOG, 2026-10-23 about 08:45, orchestrator swap; low)
@@ -518,9 +534,12 @@ transfer pending throughout. After a second successor fails, save the failures a
 do not start a third on this procedure. (LOG, 2026-10-23 about 08:45, orchestrator swap; low)
 
 When every check passes, the outgoing incarnation sends `[accept]` with an absolute cutover time,
-stops or hands over its background watchers with the new holder recorded, and exits. The successor
-records the cutover, tells peers with open work and closes the outgoing pane after checking its
-process is gone. Apply the playbook's Cleanup inventory. Renewals, handovers and context figures stay
+stops or hands over its background watchers with the new holder recorded, leaves the temporary
+address and starts nothing more. The successor records the cutover, tells peers with open work and
+ends the outgoing session by the playbook's Cleanup sequence, since leaving releases an address and
+only the harness's exit ends its process. It closes the outgoing pane after checking that process is
+gone and retires the temporary address. (LOG, 2026-10-26, closing sequence; medium for the successor
+ending the outgoing session, two handovers) Apply the playbook's Cleanup inventory. Renewals, handovers and context figures stay
 in the run log; tell the principal only when the change needs them, such as a question, a decision or
 a changed commitment. A changed record or two failed successors still require their decision; an
 unchanged record needs no renewed approval. (LOG, 2026-10-23 about 08:45, orchestrator swap; N17; low)
@@ -637,8 +656,11 @@ stays open, and nothing tracks it. Asking in a note instead leaves even that one
 (LOG, 2026-10-26, bundled asks; LOG, 2026-10-26 09:17, asks sent as notes; low, three bundled
 cases, one partial answer and one ask sent as a note)
 
-**10.7** A message to a human MAY carry a block that a reader's page draws as a component, and an
-ask MUST carry one. The body's first line is the title, in plain words, at most 80 characters, not
+**10.7** Every message an agent sends a human MUST carry a block that a reader's page draws as a
+component and MUST end with the human-message footer, `nomos v0 human message`; the two go together,
+notices, suggestions and results included. The human's answer under 10.9 keeps its block and has no
+footer, and the withdrawal of a request to a human is exempt, its body being the reason. (LOG,
+2026-10-26, footer and block; low) The body's first line is the title, in plain words, at most 80 characters, not
 a heading, list, quote or fence. The block starts on line 2, the only place a reader looks for it.
 It is a fenced code block with the info string `nomos`, holding one JSON object, at most 16 lines
 including the fences and 1,024 bytes. Both limits bind even when every field fits its own limit.
@@ -728,7 +750,7 @@ messages; LOG, 2026-10-26, answers without a choice; low, designed)
 are in 3.2, 3.6, 3.8, 4.3, 4.4, 4.6, 4.9, 5.3, 5.5, 5.6, 6.5, 8.2, 9.1, 9.2, 9.4, 10.5, 10.6, 10.7 and 10.8.
 A team conforms when every member does and its messages use the kinds of 5.2 between agents and
 10.5 to humans. The other rules say how a conforming team meets those, and a team that departs
-from one says so in its first prompts.
+from one says so in its first prompts. (default, no outside team has claimed conformance yet)
 
 **11.2** A rule that lives only in a document sessions may not read has failed again and again, and
 what held was a check that every session runs (M10, M45). The transport refuses bad addresses and
@@ -738,9 +760,9 @@ kept in the requester's checkpoint until that layer holds them (5.5, N16), a sto
 (9.1, 9.3), and the transport notifies a session and its director as its context nears the criterion
 (9.5). The optional `hooks/pre-send.rb` flags relative dates, missing headings, leftover
 placeholders and findings without a rank or evidence class (5.7, 6.4, 7.2, 8.1). It reads supported
-forms' own headings, outside code and quoted text, and refuses the first attempt with its flags,
-then accepts the sender's confirmation through `NOMOS_PRESEND_CONFIRMED=1`; it never asks a human to
-approve what a literal match cannot judge. It also compares each absolute time in a body with the
+forms' own headings, outside code and quoted text, and refuses a MUST flag every time; an advisory
+flag it refuses once, then accepts the sender's confirmation through `NOMOS_PRESEND_CONFIRMED=1`. It
+never asks a human to approve what a literal match cannot judge. It also compares each absolute time in a body with the
 send time and flags one more than five minutes ahead of it for the sender to confirm; a future
 deadline can be valid. The third acceptance leader repeated the error despite 5.7 in its digest,
 following the second leader, the protocol director and the keryx team's orchestrators. A text rule
@@ -754,10 +776,23 @@ The same optional hook is the pre-send check of a human message's block, request
 under 10.5 to 10.9, run before the page's own check after delivery. (LOG, 2026-10-26, bare block;
 low, one message)
 
+For messages a text rule alone is not enough. Under the principal's decision (N18), keryx runs the
+command named in a root-owned system file before it writes any message, fail closed, with no
+environment or flag bypass, and that command is `nomos check`. It reads one keryx envelope on
+standard input; exit 0 accepts, exit 1 refuses with one reason per line as `SECTION reason`, and exit
+2 is an internal error that keryx treats as a refusal. A message that breaks a MUST that `nomos check` can judge from the envelope is refused every time,
+agent to agent included; the protocol's other MUSTs need state the envelope lacks and stay with the
+sender and its director. `nomos compose send|ask|reply --to ADDRESS` builds a body, for a human
+the title, block, text, deadline sentence and footer, and prints it without sending. The human's
+vocabulary is `/etc/nomos/words` or `--words FILE`, with English built in. A sender may compose with
+`nomos compose`, check with `nomos check` and send with keryx. The protocol's other rules still need no
+tool. (N18; low, decided and not yet run)
+
 **11.3** Each template names the protocol version in its title, and a filled form ends with a line that
 names the form and the version, such as "nomos v0 brief", since its first line belongs to the outcome.
 Version 0 makes no compatibility promise. A rule changes when a team meets counterevidence, and keeps
-its old trace beside the new one. `bootstrap.md` says how each harness loads these documents.
+its old trace beside the new one. `bootstrap.md` says how each harness loads these documents. (LOG, 2026-10-26, bare block; low for the
+footer, default for the version line)
 
 ## 12. Open questions
 

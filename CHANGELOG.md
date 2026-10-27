@@ -19,7 +19,8 @@ The format follows Keep a Changelog. Before the first release, all entries are u
 - Roster, roadmap and progress forms, with the orchestrator's update duties and their first case.
 - An optional readback comparator for identity, task, authority and next action, with JSON output,
   bounded file input and tests on Ruby 3.3 and 4.0. It preserves literal evidence spans, checks authority
-  claims across fields, reports omitted acts, and supports English and Portuguese readback forms.
+  claims across fields, reports omitted acts, and reads English built in, other languages from a local
+  vocabulary file given with `--words`.
   Protocol 9.2 recommends the five-line form, with a complete example and human confirmation required.
 - Protocol 10.5 to 10.9 and a human-message template, with seven kinds, one ask per request, a `nomos`
   block for the reader's page, answers that keep the human's words, and commitment and escalation forms.
@@ -33,6 +34,18 @@ The format follows Keep a Changelog. Before the first release, all entries are u
 - Harness notes and wiring checks for Cursor's non-authoritative hook allow and Claude Code's
   last-settings-only command-line behavior, each with its dated case.
 - nomos protocol v0 for team identity, delegation, requests, reports, review and handover.
+- A checked closing order for members and outgoing orchestrators, the successor ending the outgoing
+  session, a temporary address for the outgoing orchestrator, and leaving only after the acceptance.
+- Mailbox purges only after the principal's confirmation and a verified full export.
+- The `nomos` block and the human-message footer together on every agent message to a human.
+- One state file with the six team forms as sections as an allowed equivalent of the six files.
+- The director's duty to answer every dialog of a session it directs at once, under protocol 9.1.
+- A ceiling change that keeps the director, through leave, expect and join.
+- `nomos check` run by keryx before every message under the principal's decision, in protocol 11.2.
+- Traces for ten rules, and an evidence check that requires a confidence on every protocol rule and
+  playbook practice paragraph.
+- shellcheck and `ruby -wc` in `tool/check`, Ruby 3.3 as the stated floor, the comparator in the
+  README, the team's commit flow in CONTRIBUTING, and weekly Dependabot updates for GitHub Actions.
 - A playbook of team recipes and versioned notes on Claude Code, Codex and Cursor.
 - A getting-started guide with a reading map and a first-team acceptance exercise.
 - Role cards, an orchestrator digest and templates for the team's work.

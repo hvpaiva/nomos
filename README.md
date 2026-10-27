@@ -15,8 +15,10 @@ and versioned harness notes. Each rule carries the incident that produced it, it
 confidence. The project is maintained and versioned, and a rule enters only with its case, reason
 and confidence.
 
-nomos is transport-agnostic, with keryx as the reference binding. It is a set of documents with optional
-tools, not a framework or runtime. No team needs a tool to follow the protocol.
+nomos is transport-agnostic, with keryx as the reference binding. It is a set of documents with tools, not
+a framework or runtime. Messages are the exception to following the protocol by text alone. Under
+the principal's decision (N18), keryx runs `nomos check` before it writes any message and refuses one
+that breaks a MUST, every time; the other tools stay optional.
 
 The protocol is [version 0](protocol.md). The cards and templates identify themselves as nomos v0.
 [CHANGELOG.md](CHANGELOG.md) records changes to the package.
@@ -79,6 +81,7 @@ carry these rules.
 |---|---|
 | [bin/nomos](bin/nomos) | `nomos check`, the message check keryx runs before it writes a message, and `nomos compose`, with their library in [lib/nomos](lib/nomos) |
 | [hooks/pre-send.rb](hooks/pre-send.rb) | Optional message checks before keryx sends, with Claude Code, Codex and Cursor adapters |
+| [bin/compare-readback.rb](bin/compare-readback.rb) | Optional readback comparator for identity, task, authority and next action, English built in, with a local vocabulary through `--words` |
 | [protocol.md](protocol.md) | Rules every team member can rely on, including delegation, messages, reports and session life cycles |
 | [playbook.md](playbook.md) | Recipes for implementation, review, audits, research and document work |
 | [harness-notes.md](harness-notes.md) | Observed behavior of Claude Code, Codex and Cursor, with versions and evidence |
@@ -100,9 +103,12 @@ The templates are [first prompt](templates/first-prompt.md), [brief](templates/b
 [escalation](templates/escalation.md) and [human message](templates/human-message.md), read with
 protocol 10.5 to 10.9.
 
-[tool/check](tool/check) runs [the pre-send tests](test/pre_send_test.rb), the `nomos check` and `nomos compose` tests, [the style check](tool/check-style.sh),
+[tool/check](tool/check) runs [the pre-send tests](test/pre_send_test.rb),
+[the comparator tests](test/compare_readback_test.rb), the `nomos check` and `nomos compose` tests,
+[the style check](tool/check-style.sh), shellcheck on every shell script, `ruby -wc` on every Ruby file,
 [the evidence check](tool/check-evidence.rb), [the reading recount](tool/recount.rb) and
-[the package verifier](tool/verify.rb). [CI](.github/workflows/ci.yml) runs the same entry point.
+[the package verifier](tool/verify.rb), on Ruby 3.3 or later. [CI](.github/workflows/ci.yml) runs the
+same entry point.
 
 ## How a rule is written
 

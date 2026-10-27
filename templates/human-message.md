@@ -4,7 +4,8 @@
 > list, quote or fence. Its `nomos` block starts on line 2, and the text below stands alone (protocol
 > 10.5 to 10.9). Pick the kind by what the human must do now. An ask (`decision`, `choice`,
 > `question`, `action`) goes as a request with a deadline and carries one ask; its block is required.
-> A `suggestion`, `notice` or `result` may omit the block. Write in the human's language, with no
+> Every kind carries the block and ends with the footer, the two together; only the withdrawal of
+> a request, whose body is the reason, is exempt. Write in the human's language, with no
 > bracketed kind tag. Put the deadline in the request's deadline and once in the text, never in the
 > block. When the block and the text disagree, the text governs; send a correction with `replaces`
 > and withdraw a replaced request.
@@ -89,8 +90,8 @@
 {What waits for the answer, and what the team does meanwhile.} {What the team does if no answer
 comes by {the request's deadline, absolute, in the human's zone}.}
 
-{How to answer, such as "Responda 1 ou 2, ou o id". For an action, replace the option list with
-"Informe feito (done), falhou (failed) ou recusado (declined); se falhou, descreva o erro".
+{How to answer in the human's language, such as "Reply 1 or 2, or the id". For an action, replace the
+option list with "Report done, failed or declined; if it failed, describe the error".
 For a question without options, replace the list with the information the human should report.}
 
 nomos v0 human message

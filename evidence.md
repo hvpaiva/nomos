@@ -2645,6 +2645,94 @@ the word that governs the time: a deadline word marks a future time as intended,
 such as "at" or "sent" still marks an event that cannot lie ahead. The hook now exempts the first and
 keeps the flag for the second. Confidence low, one case.
 
+**2026-10-26, closing sequence.** The principal asked why old sessions and panes stayed open after
+handovers; the idle panes were another team's, and the protocol team's own close order was wrong,
+since it closed a pane on an idle screen instead of after the harness exited. The principal decided
+that a launcher's own close of finished sessions is the later mechanism, not the transport, and that
+each team cleans its leftovers now. The team then closed five sessions in one order, an auditor, two
+outgoing orchestrators, a reviewer and a second auditor, each gone within about four seconds of
+Enter. The order is the acceptance while the member holds its address; after it leaves, a screen read,
+`/exit` typed into the composer, a composer read, Enter, a wait until the process is gone, the pane
+close and the address's retirement. Another team asked who ends an outgoing orchestrator; the adopted
+answer is that after `[accept]` the outgoing side starts nothing and the successor ends it by the same
+order, since leaving releases an address and only the exit ends the harness process. It taught that
+an idle pane or a released address proves no exit. Confidence high for the order, five closes in one
+team; medium for the successor's close, two handovers. The playbook's Cleanup and protocol 9.5 carry it.
+
+**2026-10-26, leave after acceptance.** An auditor and later a reviewer left right after their
+replies, before the director's acceptance, because their briefs said "leave after your reply". The
+acceptance then sat unread, so no session held the delivery's decision, the audit's own finding about
+the team. Briefs since say to leave after the acceptance, and one live brief was amended. It taught
+that a brief written before a lesson carries the old defect. Confidence medium, two departures from
+the same brief text. The brief templates and the playbook's Cleanup carry it.
+
+**2026-10-26, temporary outgoing address.** An outgoing orchestrator that had left its address could
+not send the successor's `[accept]` without acting as that address, which its record forbade, and the
+harness's permission check refused the attempt; the successor took over on the note alone after a
+fallback wait. The next two renewals had the outgoing session join a temporary address of its own
+before spawning the successor. Each readback rang that address, each `[accept]` went from it without
+acting as another address, and each successor retired it after closing the outgoing pane. Confidence
+medium, two handovers after one that could not accept. Protocol 9.5 and the keryx binding carry it.
+
+**2026-10-26, export before purge.** Another team asked whether the protocol team's export before
+mailbox deletion existed. It did not; it was an inferred condition with no tool, form or location. For
+a purge of about 150 old address folders the principal confirmed, the condition was met by a
+byte-for-byte export of every message with a manifest of sha256 per file. Before the go the protocol
+team checked about 7,300 files equal, the principal's own folder whole and every id its records cite
+present with a matching hash, and the folders were deleted after. It taught that a retention rule
+needs its export defined and checked before anything is deleted. Confidence low, one purge. The
+playbook's Cleanup carries it.
+
+**2026-10-26, footer and block.** In an education round, one orchestrator read the human-message
+footer as due only on a message with a block, while the text binds the footer on every agent message
+to a human and the reader's page and the pre-send hook flag a footer without a block. Every message to
+the principal then carried both. The orchestrator ruled that the two go together on every agent
+message to a human, the human's answer excepted. Confidence low, one misreading in four readbacks.
+Protocol 10.7 and the human-message template carry it.
+
+**2026-10-26, one state file.** Checking the education readbacks, the protocol team found it kept none
+of the six team files that protocol 9.5 requires, and an audit ranked that a must-fix; another team
+kept one state file with the forms as sections. The protocol team created the six files, and the
+orchestrator ruled that six files are the rule and one file holding the six forms as headed sections
+is an allowed equivalent when each form keeps its fields and update points. Confidence low, two teams
+and a ruling. Protocol 9.5 and bootstrap 6 carry it.
+
+**2026-10-26, run-start readback.** An orchestrator asked whether the card's "Give the principal a
+readback before spawning" meant before every member's spawn. The answer traced it to bootstrap 6 step
+5, once per run start; a renewal's readback goes to the outgoing incarnation. Confidence low, one
+question. The orchestrator card carries it.
+
+**2026-10-26, local vocabulary.** The principal reminded the teams that nothing in another language
+enters the product, read as code, tests, documents and refusal texts. The pre-send hook moved its
+other-language words to a local file given with `--words`, English built in, and the readback
+comparator's translated labels and clause words follow it. Confidence low, one standing rule applied
+twice. Protocol 9.2 and bootstrap 4 carry it.
+
+**2026-10-26, unanswered dialogs.** A member of another team stopped at a folder-trust dialog and
+later at a permission dialog for removing a copy in its own scratch. Its director read both transport
+notices, left them to the harness's automatic deny, told no one, and cited a skill clause saying the
+human's word was still needed; someone else answered the second. The principal called it an incident
+under the standing instruction of N17. A second director's own answer to a member's dialog was refused
+by its harness's classifier, and it reported that late. The protocol team stated the rule, the director
+answers every dialog at once by the record and standing rules, allows once what is granted, never the
+option that changes a setting or stops later prompts, declines the rest, continues without trusting a
+Codex hooks dialog and takes to the principal at once only what none of these covers or its harness
+blocks. Four orchestrators confirmed it, and the transport changed its notice and skill to match. This
+replaced the ruling in N17 that trust, permission or setting answers still need the principal's word.
+Confidence low, one incident. Protocol 9.1 carries it.
+
+**2026-10-26, ceiling rejoin.** An audit found a member's director column empty after its ceiling was
+changed by a rejoin, while every other working member showed its director. At keryx 37056f1 a join
+takes a director only from a waiting spawn or expect record for its harness and pane, and expect is
+refused while a live session holds the address, so the restore is a leave, an expect by the director
+and the rejoin. Confidence low, one dropped director, code-grounded, the restore not run. The
+playbook's ceiling paragraph carries it.
+
+**2026-10-26, rules without traces.** An audit found eight playbook rules and two protocol rules with
+no trace or confidence, although the package promises both for every rule, and the evidence check
+resolved cited ids without requiring any. The rules gained traces, and the check now requires a
+confidence label on every protocol rule and playbook practice. Confidence low, one audit.
+
 ## Decisions, requirements and rulings
 
 ### Charter decisions
@@ -2697,6 +2785,14 @@ ruling of 11:01 UTC-3 accepts a relayed copy for what narrows and grants nothing
 allowing a permission or changing a setting still needs the principal's word. This keeps routine
 session care with the orchestrator without widening its authority. Confidence low, one standing
 instruction after three dialogs; no new field test of the remedy.
+
+**N18.** On 2026-10-26 at 16:21 UTC-3, the principal decided on the joint proposal of three teams that
+messages never go raw on the transport. nomos ships one validator, `nomos check`, and a composer;
+keryx runs the command named in a root-owned system file before it writes any message, fail closed,
+with no environment or flag bypass. The scope is every message from the start, agent to agent
+included. This replaces "no team depends on a tool to follow the protocol" for messages, and the
+hook's refuse-once-then-confirm for a MUST, which is refused every time. Confidence low, decided and
+not yet run.
 
 ### keryx requirements
 

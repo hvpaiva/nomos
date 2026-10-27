@@ -36,12 +36,12 @@ transport's skill}' and follow it, then '{the command that lists your inbox}'. R
 nomos/cards/member.md} and {absolute path to nomos/cards/{role}.md} before sending the readback.
 Before you act on your first request, send {the director's full address} a readback with your address, role, task,
 authority and next action, and wait for its confirmation.
-The readback should use five lines labeled Address, Role, Task, Authority and Next action, or
-Endereço, Papel, Tarefa, Autoridade and Próxima ação. Begin Task with the first request's first line.
+The readback should use five lines labeled Address, Role, Task, Authority and Next action, or their
+translation into the readback's language. Begin Task with the first request's first line.
 In Authority, repeat granted acts and paths, prohibitions and reservations in this record's words
 or a faithful translation into the readback's language. In Next action, state the wait for confirmation
 and what follows. The optional comparator reads clauses beginning "I may", "I may not" and
-"Reserved to {party} are", or "Posso", "Não posso" and "Reservado a {parte}".
+"Reserved to {party} are", and translated labels and clauses from a local vocabulary file.
 
 The principal is {the principal's name}, who {talks to this team only through {the orchestrator's
 full address} | talks to you directly, through {the channel}}.
@@ -98,12 +98,12 @@ Run '{the transport's join command for this address and role}', then '{the comma
 transport's skill}' and follow it, then '{the command that lists your inbox}'. Before you start a
 member, give the principal, through the channel this record declares, a readback with your address,
 role, task, authority and next action, and wait for the principal's confirmation there.
-The readback should use five lines labeled Address, Role, Task, Authority and Next action, or
-Endereço, Papel, Tarefa, Autoridade and Próxima ação. Begin Task with the first request's first line.
+The readback should use five lines labeled Address, Role, Task, Authority and Next action, or their
+translation into the readback's language. Begin Task with the first request's first line.
 In Authority, repeat granted acts and paths, prohibitions and reservations in this record's words
 or a faithful translation into the readback's language. In Next action, state the wait for confirmation
 and what follows. The optional comparator reads clauses beginning "I may", "I may not" and
-"Reserved to {party} are", or "Posso", "Não posso" and "Reservado a {parte}".
+"Reserved to {party} are", and translated labels and clauses from a local vocabulary file.
 
 From {absolute path to nomos}, run `awk '/^## Reading map$/{found=1} found && /^## / && $0 != "## Reading map"{exit} found{print} END{if (!found) exit 1}' bootstrap.md` and follow the map. Read `cards/orchestrator.md`, `orchestrator.md`, bootstrap sections 7 and 8, and the notes for the harnesses you will spawn, by id. Read protocol and playbook by section on demand. (bootstrap, Reading map)
 
@@ -148,12 +148,12 @@ Run 'keryx join impl-1.alpha --role implementer', then 'keryx skill' and follow 
 inbox'. Read `~/nomos/cards/member.md` and `~/nomos/cards/implementer.md` before sending the
 readback. Before you act on your first request, send orq.alpha@box1 a readback with your address, role,
 task, authority and next action, and wait for its confirmation.
-The readback should use five lines labeled Address, Role, Task, Authority and Next action, or
-Endereço, Papel, Tarefa, Autoridade and Próxima ação. Begin Task with the first request's first line.
+The readback should use five lines labeled Address, Role, Task, Authority and Next action, or their
+translation into the readback's language. Begin Task with the first request's first line.
 In Authority, repeat granted acts and paths, prohibitions and reservations in this record's words
 or a faithful translation into the readback's language. In Next action, state the wait for confirmation
 and what follows. The optional comparator reads clauses beginning "I may", "I may not" and
-"Reserved to {party} are", or "Posso", "Não posso" and "Reservado a {parte}".
+"Reserved to {party} are", and translated labels and clauses from a local vocabulary file.
 
 The principal is Ana, who talks to this team only through orq.alpha@box1.
 The delegator is orq.alpha@box1, acting within the delegation it holds from the principal.

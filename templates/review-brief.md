@@ -72,7 +72,8 @@ LOG, field PR 23, brief ceiling; LOG, field PR 26, stop lines; low)
 
 ## When the task ends
 
-{Leave after your reply | Stay after your reply until {the director} says the fixes are verified}.
+{Leave after {the director}'s acceptance of your reply, never after the reply alone | Stay after your
+reply until {the director} says the fixes are verified, and leave after that}.
 Run '{the transport's leave command}' before your session closes.
 
 nomos v0 review brief

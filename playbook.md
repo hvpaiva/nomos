@@ -55,14 +55,18 @@ Name whether the orchestrator may remove the team's merged branches and worktree
 alone does not grant cleanup. Without a cleanup grant, leave them in place and propose their removal
 to the principal, naming the resources. (LOG, acceptance 1, stumble 12; low)
 
-The orchestrator reads and answers its spawned sessions' dialogs under the principal's standing
-rules, whether a named answer in the record or a standing word such as "Continue without trusting"
-for Codex hooks. Bring the principal only an uncovered dialog. A relayed copy of their word suffices
-for what narrows and grants nothing; trusting a hook, allowing a permission or changing a setting
-still needs their word. Folder trust writes configuration outside the workspace, so name the effect
-and directories in the grant or reservation; folder work alone does not cover it. The acceptance-test
-leader escalated Codex's dialog and reported an earlier Claude Code answer outside its record under
-protocol 4.9. (LOG, 2026-10-23 04:49 UTC-3; N17; low; protocol 4.3, 4.7, 4.8; harness notes HN02, HN20)
+The orchestrator answers every dialog of a session it directs at once (protocol 9.1), by that
+session's record and the principal's standing rules, such as "Continue without trusting" for Codex
+hooks. It allows once what the record grants, never the option that changes a setting or stops later
+prompts, and declines what the record does not grant or reserves. It brings the principal, at once,
+only a dialog none of these covers or one its own harness will not let it answer, and never leaves
+one to time out. One director left a member's folder-trust and permission dialogs to the harness's
+automatic deny, reading a transport notice as a reason to wait for the principal, and told nobody;
+the principal called it an incident. Folder trust writes configuration outside the workspace, so name
+the effect and directories in the grant or reservation; folder work alone does not cover it. The
+acceptance-test leader escalated Codex's dialog and reported an earlier Claude Code answer outside its
+record under protocol 4.9. (LOG, 2026-10-23 04:49 UTC-3; N17; LOG, 2026-10-26, unanswered dialogs;
+low; protocol 4.3, 4.7, 4.8, 9.1; harness notes HN02, HN20)
 
 The root record names the mode members start in for each harness, including sandbox and approval
 policy where separate, and who may apply it. The spawner carries that choice into the launch;
@@ -124,7 +128,8 @@ it"), such as existing reviews, bots whose approval does not count, and the orde
 sees the other's verdict until both are in. Nothing is posted outside the team unless the record
 grants it, by category or by name, or the principal approves that act by name (protocol, Roles,
 principals and the delegation record). Done means the findings are measured by the orchestrator and
-either published under that grant or approval or handed to the principal.
+either published under that grant or approval or handed to the principal. (M13, M36, M37; low for
+the pair of lenses, not yet run on one change)
 
 A coordinated review round of this shape ran once, with one coordinator and several reviewer
 sessions. Once the coordinator relayed every question, the principal got fewer than half as many as in
@@ -184,7 +189,7 @@ must-fix findings are resolved, and a fresh user has run the acceptance test (se
 ## Routing across vendors and quota pools
 
 Route a role first by what it needs, then by the pool it draws from. Keep in the local layer which
-pool each of your accounts draws from, how full it is, and which harness shows it.
+pool each of your accounts draws from, how full it is, and which harness shows it. (P01, M35; medium)
 
 - A reviewer from another vendor is worth trying. The first round's reviewer ran on another vendor
   from the implementer and found real defects in every change, each with a failing test, and in
@@ -240,7 +245,7 @@ one more plan decided before code, default for the fifteen minutes)
 ## The review recipe
 
 The protocol's Reviews sets the contract, which is ranking, blocking, independence, reproduction and
-the history of rounds. These are the choices that carry it out.
+the history of rounds. These are the choices that carry it out. (protocol, Reviews; default)
 
 - One fresh reviewer per change. Reusing a reviewer across changes carries its reading of the last
   one; fresh reviewers found new defects every round. A fresh context after a clear, with a new brief,
@@ -316,7 +321,7 @@ it caused no further fix round. These are observations for the review recipe, no
 ## Merge rules
 
 A change merges when the quality gates hold and the delegation record covers the merge. The
-orchestrator checks each one itself.
+orchestrator checks each one itself. (P03, P12; high)
 
 1. Every must-fix is reproduced, fixed, and its probe passes on the head, together with the probes of
    every earlier round. Each suggestion a reviewer reproduced and each departure from a recorded
@@ -390,8 +395,8 @@ are verification commands, not a grant to remove anything. (protocol 7.3, 7.4; L
 
 | Resource | At swap, task end and run end | Check |
 |---|---|---|
-| Member and outgoing panes | At swap retain working members and close only the outgoing pane after its harness exits. At task end have departing members run `keryx leave`, settle or transfer obligations, exit their harness and then close their panes; retain a specialist only for named next work. Recheck all run panes at run end. | `keryx who --all -o json \| jq '.addresses[]'` checks the address holder; `herdr pane process-info --pane PANE` and `ps -p PID -o pid=,lstart=,args=` check the recorded harness process; `herdr pane list` checks the pane is gone. An idle pane or released address alone does not prove process exit. |
-| Addresses created by the run | Retain the stable address through swaps. At task or run end, under the record, run `keryx retire ADDRESS` on the address's host after its live holder and open requests in either direction are gone. Keep the mailbox files; `keryx join MEMBER.TEAM --revive` restores the address with them. Otherwise retain and record the reason and holder. | Before retirement compare `keryx who --all -o json \| jq '.addresses[]'` and `keryx status --all -o json` with the run's inventory. Keep the successful retirement output, then check the address is absent from both full lists. Absence alone is not proof. `keryx help retire` states the refusal conditions and restoration command; R07 is delivered in 0186dcd. |
+| Member and outgoing panes | Send the acceptance while the member still holds its address; it settles or transfers its obligations and leaves after that acceptance, never after its reply alone. Then close it in this order. Read its screen with `herdr pane read`, type `/exit` with `herdr pane send-text`, read the composer (again when the first read shows it empty), submit Enter with `herdr pane send-keys`, wait until `ps -p PID` shows the process gone, run `herdr pane close`, then `keryx retire` the address under the record. Leaving releases the address; only the exit ends the harness process. At swap retain working members; after the `[accept]` the outgoing orchestrator starts nothing, and the successor ends it by the same order and retires its temporary address. Retain a specialist only for named next work. Recheck all run panes at run end. A launcher that closes finished sessions is the later mechanism; until the team uses one, this order is the close. (LOG, 2026-10-26, closing sequence; LOG, 2026-10-26, leave after acceptance; high for the order, five closes; medium for the successor's close, two handovers) | `keryx who --all -o json \| jq '.addresses[]'` checks the address holder; `herdr pane process-info --pane PANE` and `ps -p PID -o pid=,lstart=,args=` check the recorded harness process; `herdr pane list` checks the pane is gone. An idle pane or released address alone does not prove process exit. |
+| Addresses created by the run | Retain the stable address through swaps. At task or run end, under the record, run `keryx retire ADDRESS` on the address's host after its live holder and open requests in either direction are gone. Keep the mailbox files; `keryx join MEMBER.TEAM --revive` restores the address with them. A purge that deletes them follows only the principal's confirmation and a verified full export, a byte-for-byte copy of every message of each address folder with a manifest of sha256 per file, checked before the purge against the current mailbox, with every id the team's records cite present and matching. (LOG, 2026-10-26, export before purge; low) Otherwise retain and record the reason and holder. | Before retirement compare `keryx who --all -o json \| jq '.addresses[]'` and `keryx status --all -o json` with the run's inventory. Keep the successful retirement output, then check the address is absent from both full lists. Absence alone is not proof. `keryx help retire` states the refusal conditions and restoration command; R07 is delivered in 0186dcd. |
 | Merged worktrees and branches | At swap keep those used by live work. At task end remove only merged, unused resources with the cleanup grant; otherwise propose the exact removals. At run end account for every retained tree and branch. | `git -C REPO worktree list --porcelain`, `git -C TREE status --porcelain`, `git -C TREE stash list` and `git -C REPO branch --merged BASE` establish registration, saved or unsaved work and merge state. Recheck the list and `git -C REPO branch --list BRANCH` after removal. A stash needs review, not deletion. |
 | Scratch directories and temporary files | Transfer required probes and handover evidence at swap. At task and run end remove the run's disposable paths when covered, keeping evidence until its report no longer depends on them. | `ls -ld -- PATH` and `test -L PATH` distinguish the recorded path and a symlink; `test ! -e PATH && test ! -L PATH` checks removal. Check the creation inventory before considering any existing path disposable. |
 | Loops, heartbeats and watchers | At swap name one continuing holder and stop or transfer each old instance after the new heartbeat is armed. At task end stop watchers whose purpose ended. At run end stop every run-owned instance; leave shared services running. | `ps -p PID -o pid=,lstart=,args=` checks the recorded process and start time. For scheduled work use the scheduler's exact listing command recorded when it was armed, such as `systemctl --user list-timers --all` for a user timer or `crontab -l` for a cron entry. Record the successor's id and next check, and verify the old instance stopped. |
@@ -414,7 +419,7 @@ on 2026-10-23 at 09:43 UTC-3. This is sourced cleanup evidence; the writer did n
 ## Context policy
 
 Every brief gives its session a renewal criterion and the orchestrator watches it (protocol, The
-session life cycle and handover). The defaults below come from three settings.
+session life cycle and handover). The defaults below come from three settings. (P05, M19, M34; medium)
 
 | Setting | Criterion | What happened |
 |---|---|---|
@@ -461,7 +466,7 @@ Whoever spawns the session states the ceiling in tokens for its actual window an
 a window for Claude Code. Its transcript gives the tokens in use but not the window, the model id
 does not tell a 200K window from a 1M one, and the harness hands the window only to a status line
 command the user configures (HN16). Give a percentage only where the harness reports the window, as
-Codex's rollout file and Cursor's status line do.
+Codex's rollout file and Cursor's status line do. (HN16, HN21, HN23; low)
 
 | Window, in tokens | State in files | One-pass reading with the progress file | Where this window was seen |
 |---|---|---|---|
@@ -503,6 +508,17 @@ notices then go to the sender of its oldest open request, or to the session alon
 `--ceiling` also removes the ceiling (keryx.md, 9.5). A message alone leaves the courier's notices at
 the old ceiling, as the field audits showed when two auditors were told to continue past 125K. The
 director's rejoin was checked at 2026-10-23 04:22 UTC-3. (LOG, field PR 22 and audits of fde5548; low)
+
+A rejoin keeps the address and its role, sets only the ceiling it is given, and keeps a director
+only from a waiting spawn or expect record for the same harness and pane. To change the ceiling and
+keep the director, the member runs `keryx leave`; the director runs `keryx expect MEMBER.TEAM
+--harness HARNESS --pane PANE` from its own address, which keryx refuses while a live session holds
+the address; the member waits, bounded, until `keryx who -o json` shows that record and then runs
+`keryx join MEMBER.TEAM --role ROLE --ceiling NEW` in the same pane. The director then compares the
+DIRECTOR and CONTEXT columns of `keryx who` with the roster. At keryx 37056f1 this is code-grounded
+in `lib/keryx/commands/join.rb` (the director taken on join) and `lib/keryx/commands/expect.rb` (the
+refusal), not run. (LOG, 2026-10-26, ceiling rejoin; low, one dropped director, the restore path not
+exercised)
 
 A brief sets no separate token stop below the stored ceiling. If the director wants handover to
 start at N tokens, it sets `--ceiling` so the 80% notice falls at N, retaining the ceiling as the
@@ -553,7 +569,7 @@ at 80% and at the ceiling. It tells the session and its director, the spawner or
 its oldest open request, and only the session when neither exists. The director still chooses the
 ceiling, checks output and stalls, keeps the checkpoint and arranges handover. A missing figure needs
 the harness-specific check above; a delayed notice still needs margin. (R09, R10; help and display
-checked at fde5548, notice routing code-grounded, threshold delivery not probed here)
+checked at fde5548, notice routing code-grounded, threshold delivery not probed here; low)
 
 ### The director's heartbeat
 
@@ -563,7 +579,8 @@ never more than fifteen minutes, even when no message arrives; a 22-minute audit
 every five minutes. Check output-file or transcript growth, errors in the pane and each request's
 deadline. Compare with
 the previous check; silence is not progress. Use `keryx who -o json | jq '.addresses[]'` to list sessions for the routine,
-then inspect those signals. The transport's context notice does not show whether useful work advances.
+then inspect those signals. The transport's context notice does not show whether useful work advances. (LOG, field audits of
+fde5548; LOG, 2026-10-23 02:28 UTC-3; low)
 
 Know which pool each session uses and that it can run out, including when several sessions share
 it. In the recorded nomos run the director waited two and a half hours for a stalled session
@@ -601,10 +618,11 @@ interval) The benchmark found the binding still describing this delivered featur
 - Renew yourself on the 80% notice, or at a planned step boundary near it, without waiting for the
   principal. Finish or park the step and save the checkpoint and orchestrator handover variant.
   Include every directed session's address, pane, request, deadline and heartbeat; requests both
-  ways; watchers; pending principal decisions; and the Cleanup inventory. Leave, spawn at the same
-  address with the root record word for word and the note as the handover request, and stay open
-  without an address. Follow `keryx.md`, Handover today. (protocol 9.4, 9.5; LOG, 2026-10-23 about
-  08:45 UTC-3, orchestrator swap; low)
+  ways; watchers; pending principal decisions; and the Cleanup inventory. Leave, join a temporary
+  address of your own, and from it spawn at the same address with the root record word for word and
+  the note as the handover request, so the readback rings you and the `[accept]` needs no `--as`.
+  Follow `keryx.md`, Handover today. (protocol 9.4, 9.5; LOG, 2026-10-23 about 08:45 UTC-3,
+  orchestrator swap; low; LOG, 2026-10-26, temporary outgoing address; medium)
 - Before confirming your successor, compare the readback and record, the holder shown by `keryx who`,
   the stamped context against the expected harness and reading range, a ping that rings and gets a
   reply, the team and request inventory, and the armed heartbeat. Save each result. Correct a failed
@@ -783,8 +801,9 @@ one resource the team cannot parallelize. (M53, M49; low)
   and sessions kept changing the active workspace. (M40, L13; low)
 - Announce a disruptive action on a shared machine to every team that uses it. Fifteen minutes'
   notice was the agreed default once. (L13; low)
-- Read and answer your spawned sessions' startup dialogs under the principal's standing rules; bring
-  the principal only uncovered dialogs (What a delegation record usually reserves; N17; low). Never choose
+- Answer every dialog of the sessions you direct at once, at startup or later, under protocol 9.1;
+  bring the principal only uncovered ones and never let one time out (What a delegation record
+  usually reserves; N17; LOG, 2026-10-26, unanswered dialogs; low). Never choose
   to trust all hooks in Codex. Never type text into a selection dialog, since text plus Enter confirms
   the highlighted option. Close a session only after it ran `keryx leave`, and send nothing to the
   address of a closed Codex session until the transport refuses it. (H01, H03, M42, L06, LOG; high)
@@ -795,7 +814,9 @@ An agent writing to the principal picks the kind by what it asks now, sends each
 request with a deadline, and uses `templates/human-message.md` (protocol 10.5 to 10.9). An
 escalation uses `templates/escalation.md` for the text below a `decision` block, with one title,
 one block and one human-message footer; silence on that reserved decision only waits or keeps
-things as they are.
+things as they are. Every message to the principal carries the block and the footer together.
+(LOG, 2026-10-26, human messages; LOG, 2026-10-26 09:17, asks sent as notes; LOG, 2026-10-26,
+footer and block; low)
 
 - Write the current state as a scoped fact, and a principle only when a decision or a test imposes it.
   An architecture document said a tool only reads, from the commands it had that week. (M27; low)

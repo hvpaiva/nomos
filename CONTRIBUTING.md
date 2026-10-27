@@ -43,15 +43,18 @@ case. The package checks cannot decide that for you.
 
 ## Check a change
 
-From the repository root, with Ruby 4.0 or later and its bundled minitest, Bash and the standard Unix tools `awk`, `sed`,
-`grep`, `sort`, `find`, `wc` and `diff` available, run the same entry point as CI.
+From the repository root, with Ruby 3.3 or later and its bundled minitest, Bash, shellcheck and the
+standard Unix tools `awk`, `sed`, `grep`, `sort`, `find`, `wc` and `diff` available, run the same entry
+point as CI.
 
 ```sh
 tool/check
 ```
 
-The checks run `test/pre_send_test.rb` against the optional `hooks/pre-send.rb`, using fixtures in
-`test/fixtures/pre-send/` and isolated temporary files. They send no mail and change no harness
+The checks run `test/pre_send_test.rb` against the optional `hooks/pre-send.rb` and
+`test/compare_readback_test.rb` against `bin/compare-readback.rb`, using fixtures in `test/fixtures/`
+and isolated temporary files, then shellcheck on every shell script and `ruby -wc` on every Ruby file,
+which fails on any warning. They send no mail and change no harness
 settings. Keep its runtime dependencies in Ruby's standard library and its tests in minitest.
 
 The checks also read the package and fail on a style violation, an unresolved evidence citation, a card
@@ -86,7 +89,9 @@ parentheses instead of em dashes, en dashes or a double-hyphen substitute. Keep 
 blocks or inline code spans. The style check excludes those spans and rejects its listed filler
 words and phrases in prose; the list is in [tool/check-style.sh](tool/check-style.sh).
 
-A pull request explains the case, the rule and its reason, the confidence, the files affected and
+The team commits signed to `main` after a reviewed round, with `tool/check` passing in the default and
+the C locale. Pull requests are for outside contributors. A pull request explains the case, the rule
+and its reason, the confidence, the files affected and
 the checks run with their exit codes. Name what remains unverified. The automated checks establish
 mechanical consistency; a reviewer still checks the rule against its evidence, the privacy of the
 case and the authority it implies. For a change to the startup or handover path, use the

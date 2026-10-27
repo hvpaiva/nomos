@@ -12,10 +12,11 @@ if [ "$#" -eq 0 ]; then
 fi
 status=0
 for f in "$@"; do
+    # shellcheck disable=SC2016 # the backticks are literal Markdown
     prose=$(awk '/^[[:space:]]*```/{c=!c; next} !c' "$f" | sed -E 's/`[^`]*`//g') || { status=1; continue; }
     hits=$(printf '%s\n' "$prose" | grep -n -E '—|–| -- ')
     [ -n "$hits" ] && { printf '%s: dash\n%s\n' "$f" "$hits"; status=1; }
-    hits=$(printf '%s\n' "$prose" | grep -n '’')
+    hits=$(printf '%s\n' "$prose" | grep -n $'\342\200\231')
     [ -n "$hits" ] && { printf '%s: curly apostrophe\n%s\n' "$f" "$hits"; status=1; }
     hits=$(printf '%s\n' "$prose" | grep -n -E '(^|[.!?]\s+|^\s*([-*]|[0-9]+\.)\s+|\|\s*)(\*\*)?[A-Z][A-Za-z ]{0,25}(\*\*)?:(\s|$)')
     [ -n "$hits" ] && { printf '%s: label colon\n%s\n' "$f" "$hits"; status=1; }

@@ -79,17 +79,17 @@ to it. Harness startup is separate from reading cost but remains inside the sess
 | QA | At start | `cards/member.md` + `cards/qa.md` | 755 | 2,720 to 3,100 |
 | Auditor | At start | `cards/member.md` + `cards/auditor.md` | 792 | 2,860 to 3,250 |
 | Writer | At start | `cards/member.md` + `cards/writer.md` | 761 | 2,740 to 3,130 |
-| Orchestrator | At start | `cards/orchestrator.md` (600), `orchestrator.md` (2,500), bootstrap sections 7 and 8 (2,336), harness notes for all three harnesses (1,535); omit notes for harnesses not being spawned | 6,971 | 25,100 to 28,590 |
+| Orchestrator | At start | `cards/orchestrator.md` (598), `orchestrator.md` (2,500), bootstrap sections 7 and 8 (2,387), harness notes for all three harnesses (1,565); omit notes for harnesses not being spawned | 7,050 | 25,380 to 28,910 |
 | Harness start, outside nomos | Record the context stamped on the first readback | On 2026-10-23, third-run Claude Code 50.2K at its first turn and 60.9K after join and skill; first-run Claude Code 50.9K and 61.8K after join, skill and inbox; first-run Codex about 23K on its readback | Not a word count | Observed context, not a text estimate |
 | Whoever fills this form | Only when filling it | `templates/audit-brief.md` | 781 | 2,820 to 3,210 |
-| Whoever fills this form | Only when filling it | `templates/brief.md` | 1,243 | 4,480 to 5,100 |
+| Whoever fills this form | Only when filling it | `templates/brief.md` | 1,257 | 4,530 to 5,160 |
 | Whoever fills this form | Only when filling it | `templates/escalation.md` | 495 | 1,790 to 2,030 |
-| Whoever fills this form | Only when filling it | `templates/first-prompt.md` | 2,137 | 7,700 to 8,770 |
-| Whoever fills this form | Only when filling it | `templates/handover.md` | 1,539 | 5,550 to 6,310 |
-| Whoever fills this form | Only when filling it | `templates/human-message.md` | 1,136 | 4,090 to 4,660 |
+| Whoever fills this form | Only when filling it | `templates/first-prompt.md` | 2,140 | 7,710 to 8,780 |
+| Whoever fills this form | Only when filling it | `templates/handover.md` | 1,616 | 5,820 to 6,630 |
+| Whoever fills this form | Only when filling it | `templates/human-message.md` | 1,156 | 4,170 to 4,740 |
 | Whoever fills this form | Only when filling it | `templates/plan-review.md` | 420 | 1,520 to 1,730 |
 | Whoever fills this form | Only when filling it | `templates/report.md` | 512 | 1,850 to 2,100 |
-| Whoever fills this form | Only when filling it | `templates/review-brief.md` | 753 | 2,720 to 3,090 |
+| Whoever fills this form | Only when filling it | `templates/review-brief.md` | 766 | 2,760 to 3,150 |
 | Whoever fills this form | Only when filling it | `templates/review-findings.md` | 416 | 1,500 to 1,710 |
 | Whoever fills this form | Only when filling it | `templates/roster.md` | 215 | 780 to 890 |
 | Whoever fills this form | Only when filling it | `templates/roadmap.md` | 178 | 650 to 730 |
@@ -100,7 +100,7 @@ to it. Harness startup is separate from reading cost but remains inside the sess
 | Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 34,618 in catalog | 124,630 to 141,940 in catalog |
 
 The largest initial member load is 792 words, `cards/member.md` plus `cards/auditor.md`, below the 800-word
-limit. The common card has 500 words; role cards have implementer 273, reviewer 280, qa 255, auditor 292, writer 261; the orchestrator card has 600.
+limit. The common card has 500 words; role cards have implementer 273, reviewer 280, qa 255, auditor 292, writer 261; the orchestrator card has 598.
 
 ## About this guide
 
@@ -731,14 +731,22 @@ judgment. Exit 0 means all five fields matched, 1 means at least one flag, and 2
 file error. A flag is a warning, and only the director decides whether the readback is acceptable.
 
 The readback should use five lines labeled `Address`, `Role`, `Task`, `Authority` and `Next action`,
-or `Endereço`, `Papel`, `Tarefa`, `Autoridade` and `Próxima ação`. Begin `Task` with the first request's
-first line. In `Authority`, repeat granted acts and paths, prohibitions and reservations in the record's
+or their translation into the readback's language. Begin `Task` with the first request's first line. In `Authority`, repeat granted acts and paths, prohibitions and reservations in the record's
 words or a faithful translation into the readback's language. In `Next action`, state that you wait for
 confirmation and what follows. Protocol 9.2 recommends this form; path summaries such as "the four
 repositories" still flag missing resources. The comparator reads clauses beginning "I may", "I may not"
-and "Reserved to {party} are", or "Posso", "Não posso" and "Reservado a {parte}". Unknown sentences
-under `Authority` can match whole record sentences after case, spacing, punctuation and you/I or
-your/my normalization; matching a fragment never exempts an added claim.
+and "Reserved to {party} are". English is built in. `--words FILE` adds a UTF-8 vocabulary in
+another language, kept outside the repository, with blank lines and `#` lines skipped and `[section]`
+headers, an unknown section being a usage error. The label sections are `[label-address]`,
+`[label-role]`, `[label-identity]`, `[label-task]`, `[label-authority]`, `[label-next-action]` and
+`[label-redelegation]`; `[roles]`, `[acts]` and `[scope]` take `phrase = canonical` lines naming a
+built-in role, act or scope word; `[grant]` holds first-person permission openers, `[reserved]` holds
+`PREFIX {party} SUFFIX` templates, and `[negation]`, `[wait-negation]`, `[auxiliary]`, `[wait]`,
+`[wait-verb]`, `[first-person]`, `[possessive]`, `[contrast]`, `[conjunction]`, `[copula]`,
+`[identity]`, `[article]`, `[permission]`, `[redelegation-no]` and `[redelegation-yes]` hold literal
+words or phrases, with no stems or patterns. (LOG, 2026-10-26, local vocabulary; low) Unknown sentences
+under `Authority` can match whole record sentences after case, spacing, punctuation and you/I, your/my, yourself/myself
+and yours/mine normalization; matching a fragment never exempts an added claim.
 
 The comparator also recognizes the template's sentences, numbered fields 3 to 6, and an opening
 address and role after an optional tag, including fixed English and Portuguese role words.
@@ -801,7 +809,9 @@ When nomos says "the local layer", it means these instructions.
    `templates/roadmap.md` and `templates/progress.md` for the three team files. The orchestrator keeps
    roster current on member or launch changes, roadmap on phase, ask or decision changes, and progress
    on each principal ask and changes to its state or dependencies, before reports and handovers.
-   (protocol 9.5; playbook, State kept outside sessions; LOG, 2026-10-26, team files; low, one instance)
+   One state file that holds the six forms as headed sections is an allowed equivalent when each
+   form keeps its fields and update points. (protocol 9.5; playbook, State kept outside sessions;
+   LOG, 2026-10-26, team files; low, one instance; LOG, 2026-10-26, one state file; low)
    Check the project's effective git identity against the root record using section 8's checklist
    before any member commits.
 2. Write the orchestrator's first prompt from `templates/first-prompt.md` into a file in that
@@ -932,17 +942,20 @@ When nomos says "the local layer", it means these instructions.
 
    Each team uses its own segment, such as `impl-1.alpha` and `impl-1.beta` on the same machine.
    Use full `MEMBER.TEAM@HOST` addresses in delegation records and readbacks.
-5. Read the new pane's screen and answer its dialogs under the principal's standing rules, whether a
-   named answer in the record or a standing word such as "Continue without trusting" for Codex hooks.
-   Bring only uncovered dialogs through the declared principal channel. A relayed copy of their word
-   suffices for what narrows and grants nothing. An answer granting hook trust, permission or a setting
-   change still needs their word, covering its configuration effects and directory (HN02, HN20, HN26).
-   spawn answers no dialog; the session joins once it is answered, even after timeout status 3 (HN28).
-   Read `keryx who` before spawning again. Name the pane with `herdr pane rename PANE NAME`.
-   The spawn notice and keryx skill still say to take the dialog to the human; the standing word
-   already covers its named answer and effects. The notice grants nothing. (LOG, 2026-10-23 08:44 and
-   09:01 UTC-3, spawn dialog authority; LOG, field PR 27, dialog notices; N17; low, three earlier
-   quoted dialogs without a recorded grant, followed by the principal's standing instruction)
+5. Read the new pane's screen and answer its dialogs at once under protocol 9.1, by the member's
+   record and the principal's standing rules, such as "Continue without trusting" for Codex hooks.
+   Allow once what the record grants, never the option that changes a setting or stops later prompts,
+   and decline what the record does not grant or reserves. Hook trust, folder trust or a setting change
+   is granted only where the record names it with its configuration effects and directory (HN02, HN20,
+   HN26). Bring the principal, at once through the declared channel, only a dialog none of these
+   covers or one your harness will not let you answer, and never leave one to time out or to an
+   automatic deny. spawn answers no dialog; the session joins once it is answered, even after timeout
+   status 3 (HN28). keryx also tells the director about a dialog that stops a session long after its
+   join. Read `keryx who` before spawning again. Name the pane with `herdr pane rename PANE NAME`.
+   Since keryx 37056f1 the dialog notice and the keryx skill say the same; the notice grants nothing.
+   (LOG, 2026-10-23 08:44 and 09:01 UTC-3, spawn dialog authority; LOG, field PR 27, dialog notices;
+   N17; LOG, 2026-10-26, unanswered dialogs; low, three earlier quoted dialogs without a recorded
+   grant, the principal's standing instruction and one incident)
 6. Wait for the member's readback by mail and compare it, line by line, with the delegation file and
    the brief. A join is not readiness (protocol, The session life cycle and handover). A readback that
    misses a field, or adds authority, gets a correction before the member acts.

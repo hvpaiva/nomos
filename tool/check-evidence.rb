@@ -73,12 +73,58 @@ class EvidenceChecker
         end
       end
     end
+    errors.merge(untraced_rules)
     errors << 'No evidence citations found' if citation_count.zero?
     puts errors.sort
     errors.empty? ? 0 : 1
   end
 
   private
+
+  CONFIDENCE = /\b(?:high|medium|low|default|hypothesis)\b/
+  UNCHECKED_SECTIONS = ['How to read the traces', 'Open'].freeze
+
+  # A protocol rule runs from its bold number to the next rule or heading; a playbook practice is a
+  # prose paragraph of two or more lines under a section heading, outside lists, the guide and Open.
+  def untraced_rules
+    rule_blocks('protocol.md') { |lines| lines.first.match?(/\A\*\*\d+\.\d+\*\*/) } +
+      rule_blocks('playbook.md') { |lines, section| lines.length > 1 && section && !UNCHECKED_SECTIONS.include?(section) }
+  end
+
+  def rule_blocks(path)
+    errors = []
+    section = nil
+    fence = false
+    block = []
+    flush = lambda do
+      text = block.map(&:last).join(' ')
+      if !block.empty? && yield(block.map(&:last), section) && text.scan(/\((?:[^()]|\([^()]*\))*\)/).none? { |item| item.match?(CONFIDENCE) }
+        errors << "#{path}:#{block.first.first}: Rule without a trace and confidence"
+      end
+      block = []
+    end
+    @files.fetch(path).lines.each_with_index do |line, index|
+      fence = !fence if line.match?(/\A\s*```/)
+      if fence || line.match?(/\A\s*```/) || line.strip.empty? || line.match?(/\A\s*[|>]/)
+        flush.call unless path == 'protocol.md'
+        next
+      end
+      if (heading = line[/\A##+ (.+)/, 1])
+        flush.call
+        section = heading.strip if line.start_with?('## ')
+        next
+      end
+      if path == 'protocol.md' && line.match?(/\A\*\*\d+\.\d+\*\*/)
+        flush.call
+      elsif path == 'playbook.md' && line.match?(/\A(?:\s|[-*]\s|\d+\.\s)/)
+        flush.call
+        next
+      end
+      block << [index + 1, line.strip]
+    end
+    flush.call
+    errors
+  end
 
   def read_text(path)
     File.read(path, encoding: 'UTF-8').gsub(/\r\n?/, "\n")

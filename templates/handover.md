@@ -106,9 +106,10 @@ nomos v0 handover
 
 > Use all three parts above, adding the fields below to the note and readback. Protocol 9.4 and 9.5
 > govern the transfer; this form adds no authority. Start at the 80% notice or a planned boundary near
-> it, finish or park the current step, and save the checkpoint. With keryx today, leave, spawn the
-> same address from the unchanged root record and this note, and stay open without an address for
-> the checks in `../keryx.md`, Handover today. Delete these guidance lines after filling the form.
+> it, finish or park the current step, and save the checkpoint. With keryx today, leave, join a
+> temporary address of your own, and from it spawn the same address from the unchanged root record
+> and this note, for the checks in `../keryx.md`, Handover today. Delete these guidance lines after
+> filling the form.
 
 ### Additional note fields
 
@@ -117,7 +118,10 @@ nomos v0 handover
 - The root record is {its complete text, word for word, including its principal channel}; the launch
   prompt and handover request are {paths}. The successor uses {harness, window, ceiling and mode}.
 - The expected readback context is {range}, based on {same-harness measurements and the required
-  reading}. The outgoing process and pane are {pid, session id and pane}.
+  reading}.
+- The outgoing pane, pid and session id are {pane, pid and session id}, and its temporary address is
+  {address}. After the `[accept]` the outgoing incarnation starts nothing; the successor ends it by
+  the playbook's Cleanup order and retires the temporary address.
 
 | Live directed session | Pane | Request | Deadline | Heartbeat |
 |---|---|---|---|---|
@@ -156,10 +160,13 @@ nomos v0 handover
 Correct a mismatch with `[clarify]`. If it remains wrong, have the successor leave, check it cannot
 act, close it and start another from the same record and corrected note. A second failed successor
 goes to the principal. All checks must pass before the outgoing incarnation sends Part 3's timed
-`[accept]`, stops or hands over its watchers and exits. The successor records cutover, notifies peers
-with open work, and closes the old pane after checking its process is gone. Keep renewals, handovers
-and context figures in the run log; tell the principal only when the change needs them, such as a
-question, decision or changed commitment. A changed record or two failed successors still require
-their decision. (protocol 9.4, 9.5; N17; low; playbook, Cleanup)
+`[accept]`, stops or hands over its watchers, leaves the temporary address and starts nothing more.
+The successor records cutover, notifies peers with open work, and ends the outgoing session by the
+playbook's Cleanup order (screen read, `/exit` typed, composer read, Enter, the pid gone, pane closed),
+since leaving releases an address and only the exit ends the harness process; then it retires the
+temporary address. Keep renewals, handovers and context figures in the run log; tell the principal
+only when the change needs them, such as a question, decision or changed commitment. A changed record
+or two failed successors still require their decision. (protocol 9.4, 9.5; N17; low; playbook,
+Cleanup; LOG, 2026-10-26, closing sequence; medium)
 
 nomos v0 orchestrator handover

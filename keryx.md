@@ -88,18 +88,20 @@ These observations add no transport guarantee; distinguish a bell result from de
 
 When a dialog stops a spawned session, spawn quotes it once on stderr and in a message from
 `keryx.system@HOST` to the address it runs as, including `--as`; without an address it sends no message.
-The message says, "Take it to your human, and answer it with 'herdr pane send-keys' only on their
+The message first said, "Take it to your human, and answer it with 'herdr pane send-keys' only on their
 word." That instruction is in the mailbox message, not the stderr notice. This was delivered by
 237d221, merged in 42d43a7 (#24), with coverage in `test/cli/spawn_dialog_test.rb:44`, `:78` and `:88`.
-The current notice text is in `lib/keryx/dialog.rb:137`.
+Since 37056f1 (#52), the message says keryx never answers a dialog and tells the director
+to answer it now with `herdr pane send-keys` unless its human said not to, to allow once what the
+session's delegation record grants and never the option that changes a setting or stops later prompts,
+to decline what the record does not grant or reserves, and to take it to the human at once only when
+neither the record nor the human's standing rules cover it or the director's harness will not let it
+answer (`lib/keryx/dialog.rb:25`). keryx also sends that message for a dialog that stops a session long
+after its join, and the keryx skill says the same since that release.
 spawn keeps waiting, answers no dialog, and exits 3 if the session has not joined by its timeout.
-The keryx skill also says to take the dialog to the human. Under bootstrap 7 step 5 and N17, the
-orchestrator answers its spawned sessions' dialogs using the principal's standing rules, whether a
-named answer in the record or a standing word such as "Continue without trusting" for Codex hooks.
-Only uncovered dialogs go to the principal. A relayed copy suffices for what narrows and grants
-nothing; trusting a hook, allowing permission or changing a setting still needs the principal's
-word for that answer and its effects. The notice grants nothing. (LOG, 2026-10-23 08:44 and 09:01,
-spawn dialog authority; N17; low)
+Protocol 9.1 and bootstrap 7 step 5 hold the rule the notice now repeats. The notice grants nothing.
+(LOG, 2026-10-23 08:44 and 09:01, spawn dialog authority; N17; LOG, 2026-10-26, unanswered dialogs;
+low)
 
 ## Messages and the work life cycle
 
@@ -211,30 +213,30 @@ confirm its readback or transfer nomos ownership before protocol 9.4's confirmat
    carries the time, and records the cutover in its checkpoint.
 5. A question for the predecessor goes through the director, which types it into the predecessor's
    pane marked as its own (4.5). No renamed address is created.
-6. The director tells the peers with open work, then closes the predecessor's pane once the
-   obligations the note left with it are done.
+6. The director tells the peers with open work, then ends the predecessor by the playbook's Cleanup
+   order once the obligations the note left with it are done.
 
 For an orchestrator renewing itself under protocol 9.5, the outgoing session performs the director's
-steps for the transfer. After saving the checkpoint and note and running `keryx leave`, it uses
-`keryx spawn orq.alpha --as orq.alpha ... --file HANDOVER-REQUEST` for the same address, carrying the current
-record and principal channel unchanged in the first prompt. It remains open without an address and
-reads the handover request's reply using `--as orq.alpha`; the successor checks for the confirmation by
-mail before acting. Messages to the same address do not ring it, so both sessions poll for these
-specific handover messages until confirmation. Protocol 9.5 supplies the trigger, complete note,
-health checks, two-successor failure limit and cutover duties. The outgoing session checks the
-successor with `keryx who -o json | jq '.addresses[]'` and compares `keryx status -o json` with the note's requests.
-For the bell check, send a `[clarify]` ping request naming the handover id and a fresh token with
-`keryx ask orq.alpha --as orq.alpha --within 2m TEXT`, then run `keryx ring orq.alpha --as orq.alpha` while it is unread.
-The successor reports whether the bell arrived and replies with the token; the outgoing session
-reads that reply with `--as orq.alpha`. Reading the ping by polling is not evidence of a bell. Do not let
-the predecessor mark the ping read before the ring. The two-minute wait is a default.
+steps for the transfer. After saving the checkpoint and note it runs `keryx leave`, then
+`keryx join orq-out.alpha --role orchestrator` for a temporary address of its own (with `--revive` when
+an earlier renewal retired it), and from there `keryx spawn orq.alpha ... --file HANDOVER-REQUEST` for the
+stable address, carrying the current record and principal channel unchanged in the first prompt. The
+successor's readback and replies then ring the outgoing session, and its messages need no `--as`,
+which records forbid; an outgoing session that held no address could not send its `[accept]`.
+Protocol 9.5 supplies the trigger, complete note, health checks, two-successor failure limit and
+cutover duties. The outgoing session checks the successor with `keryx who -o json | jq '.addresses[]'`
+and compares `keryx status -o json` with the note's requests. For the bell check, send a `[clarify]`
+ping request naming the handover id and a fresh token with `keryx ask orq.alpha --within 2m TEXT`. The
+successor reports whether the bell arrived and replies with the token. Reading the ping by polling is
+not evidence of a bell. The two-minute wait is a default.
 
 The outgoing session sends the timed confirmation only after all health checks pass, stops or hands
-over its watchers and exits. Only the successor then directs the team, records cutover, tells peers
-and the principal, and closes the old pane after checking the old process is gone. Self-message
-suppression and the explicit `ring` path are code-grounded in `lib/keryx/postman.rb:73` and
-`lib/keryx/commands/ring.rb:46`; this review did not exercise them. (LOG, acceptance 1, stumble 13; LOG, 2026-10-23 about 08:45,
-orchestrator swap; low)
+over its watchers, leaves the temporary address and starts nothing more. Only the successor then
+directs the team, records cutover and tells peers with open work. It ends the outgoing session by the
+playbook's Cleanup order, since leaving released the address and only the exit ends the harness
+process, then runs `keryx retire orq-out.alpha`. (LOG, acceptance 1, stumble 13; LOG, 2026-10-23 about
+08:45, orchestrator swap; low; LOG, 2026-10-26, temporary outgoing address; LOG, 2026-10-26, closing
+sequence; medium)
 
 ## The human
 
