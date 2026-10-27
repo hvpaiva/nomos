@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require_relative '../lib/nomos/cli'
+
+exit Nomos::CLI.main(ARGV)

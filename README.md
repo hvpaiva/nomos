@@ -77,6 +77,7 @@ carry these rules.
 
 | File | Use |
 |---|---|
+| [bin/nomos](bin/nomos) | `nomos check`, the message check keryx runs before it writes a message, and `nomos compose`, with their library in [lib/nomos](lib/nomos) |
 | [hooks/pre-send.rb](hooks/pre-send.rb) | Optional message checks before keryx sends, with Claude Code, Codex and Cursor adapters |
 | [protocol.md](protocol.md) | Rules every team member can rely on, including delegation, messages, reports and session life cycles |
 | [playbook.md](playbook.md) | Recipes for implementation, review, audits, research and document work |
@@ -99,7 +100,7 @@ The templates are [first prompt](templates/first-prompt.md), [brief](templates/b
 [escalation](templates/escalation.md) and [human message](templates/human-message.md), read with
 protocol 10.5 to 10.9.
 
-[tool/check](tool/check) runs [the pre-send tests](test/pre_send_test.rb), [the style check](tool/check-style.sh),
+[tool/check](tool/check) runs [the pre-send tests](test/pre_send_test.rb), the `nomos check` and `nomos compose` tests, [the style check](tool/check-style.sh),
 [the evidence check](tool/check-evidence.rb), [the reading recount](tool/recount.rb) and
 [the package verifier](tool/verify.rb). [CI](.github/workflows/ci.yml) runs the same entry point.
 

@@ -18,6 +18,7 @@ run_check() {
 }
 run_check pre-send ruby -EUTF-8 test/pre_send_test.rb
 run_check compare-readback ruby -EUTF-8 test/compare_readback_test.rb
+run_check nomos ruby -EUTF-8 -e 'Dir.glob("test/nomos_*_test.rb").sort.each { |file| require File.expand_path(file) }'
 run_check style bash tool/check-style.sh
 run_check evidence ruby tool/check-evidence.rb
 run_check recount ruby tool/recount.rb --check --report-dir "$reports"

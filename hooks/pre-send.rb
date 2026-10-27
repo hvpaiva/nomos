@@ -44,27 +44,15 @@ module Nomos
                    harness: harness, output: $stdout, error: $stderr, check: check)
     end
 
+    require_relative '../lib/nomos/rules'
+    require_relative '../lib/nomos/vocabulary'
+
     ROOT = File.expand_path('..', __dir__)
     CONFIRMATION = 'NOMOS_PRESEND_CONFIRMED'
-    FOOTER = /^nomos v\d+ [a-z][a-z ]*$/
-    MULTIPART = %w[first-prompt handover plan-review].freeze
-    RELATIVE = [
-      'today', 'tomorrow', 'yesterday', 'tonight', 'this morning', 'this afternoon', 'this evening',
-      'last night', 'next week', 'last week', 'this week', 'next month', 'last month', 'this month',
-      'next year', 'last year', 'this year', 'next Monday', 'next Tuesday', 'next Wednesday',
-      'next Thursday', 'next Friday', 'next Saturday', 'next Sunday'
-    ].freeze
-    ZONE = /(?:Z|UTC|GMT)(?:[+-]\d{2}(?::?\d{2})?)?|[+-]\d{2}(?::?\d{2})?/
-    TIME = /(?<![\w:])(?!\d{2}:\d{2}-\d{2}:\d{2})(?:(\d{4}-\d{2}-\d{2})[T ])?(\d{2}):(\d{2})(?::(\d{2})(\.\d+)?)?\s*(#{ZONE})(?![\w:+-])/
-    PLACEHOLDER = /(?<![$\\{])\{[\p{L}][\p{L}\p{N}\s_@.'?|\/-]*\}(?!\})/
-    DEADLINE_WORDS = %w[by until before due deadline].freeze
-    STAMP_WORDS = %w[at sent checked ran].freeze
-    SECTIONS = %w[relative deadline stamp clock-prefix headings].freeze
-    Flag = Data.define(:line, :kind, :text) do
-      def to_s = "line #{line}: #{kind}: #{text.gsub(/\s+/, ' ')}"
-    end
+    KINDS = { 'ask' => 'request', 'send' => 'message', 'reply' => 'reply' }.freeze
+    Flag = Nomos::Flag
     Context = Data.define(:action, :recipient, :within, :human)
-    Message = Data.define(:body, :action, :recipient, :within, :sender)
+    Message = Data.define(:body, :action, :recipient, :within, :sender, :confirmed)
 
     def self.read_text(path, max_bytes: nil)
       raise IOError, "not a regular file: #{path}" unless File.file?(path)
@@ -78,632 +66,34 @@ module Nomos
       text
     end
 
-    JSON_STRING = %r{"(?:[^"\\\x00-\x1f]|\\(?:["\\/bfnrt]|u\h{4}))*"}
-    JSON_NUMBER = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/
-    JSON_SPACE = /[ \t\n\r]*/
+    def self.strict_json(text) = Nomos.strict_json(text)
 
-    # Parses one JSON text by RFC 8259 alone, refusing repeated keys, comments and invalid escapes
-    # whichever json gem is loaded; raises JSON::ParserError like JSON.parse.
-    def self.strict_json(text)
-      scanner = StringScanner.new(text)
-      value = lambda do |depth|
-        raise JSON::ParserError, 'nesting over 100' if depth > 100
+    def self.vocabulary(lines) = Nomos::Vocabulary.parse(lines)
 
-        scanner.skip(JSON_SPACE)
-        if scanner.skip(/\{/)
-          keys = {}
-          scanner.skip(JSON_SPACE)
-          unless scanner.skip(/\}/)
-            loop do
-              scanner.skip(JSON_SPACE)
-              key = scanner.scan(JSON_STRING) or raise JSON::ParserError, 'expected a key'
-              raise JSON::ParserError, "repeated key #{key}" if keys.key?(JSON.parse("[#{key}]").first)
+    def self.prose(body) = Nomos::Text.prose(body)
 
-              keys[JSON.parse("[#{key}]").first] = true
-              scanner.skip(JSON_SPACE)
-              scanner.skip(/:/) or raise JSON::ParserError, 'expected :'
-              value.call(depth + 1)
-              scanner.skip(JSON_SPACE)
-              next if scanner.skip(/,/)
-              break if scanner.skip(/\}/)
-
-              raise JSON::ParserError, 'expected , or }'
-            end
-          end
-        elsif scanner.skip(/\[/)
-          scanner.skip(JSON_SPACE)
-          unless scanner.skip(/\]/)
-            loop do
-              value.call(depth + 1)
-              scanner.skip(JSON_SPACE)
-              next if scanner.skip(/,/)
-              break if scanner.skip(/\]/)
-
-              raise JSON::ParserError, 'expected , or ]'
-            end
-          end
-        elsif !(scanner.skip(JSON_STRING) || scanner.skip(JSON_NUMBER) || scanner.skip(/true|false|null/))
-          raise JSON::ParserError, 'unexpected token'
-        end
-      end
-      value.call(1)
-      scanner.skip(JSON_SPACE)
-      raise JSON::ParserError, 'text after the value' unless scanner.eos?
-
-      JSON.parse(text)
-    end
-
-    # Reads a --words file: plain lines are relative words; [section] headers add other vocabulary.
-    def self.vocabulary(lines)
-      sections = SECTIONS.to_h { |name| [name, []] }
-      current = 'relative'
-      lines.each do |line|
-        text = line.strip
-        next if text.empty? || text.start_with?('#')
-
-        if (header = text[/\A\[([a-z-]+)\]\z/, 1])
-          raise ArgumentError, "unknown --words section [#{header}]" unless sections.key?(header)
-
-          current = header
-        else
-          sections[current] << text
-        end
-      end
-      unless [0, 4].include?(sections['headings'].length)
-        raise ArgumentError, '[headings] needs four lines: Situation, Background, Assessment, Recommendation'
-      end
-
-      sections
-    end
-
-    def self.alternation(words) = words.map { |word| Regexp.escape(word).gsub('\ ', '\s+') }.join('|')
-
-    def self.prose(body)
-      fence = nil
-      masked = body.lines.map do |line|
-        if line.match?(/^\s*>/)
-          line.gsub(/[^\n]/, ' ')
-        elsif fence
-          closing = /^ {0,3}#{Regexp.escape(fence[0])}{#{fence[1]},}\s*$/
-          fence = nil if line.match?(closing)
-          line.gsub(/[^\n]/, ' ')
-        elsif (match = line.match(/^ {0,3}(`{3,}|~{3,})/))
-          fence = [match[1][0], match[1].length]
-          line.gsub(/[^\n]/, ' ')
-        else
-          line
-        end
-      end.join
-      boundary = /\A(?:\s*\z| {0,3}\#+(?:\s|\z)| {0,3}(?:=+|-+)\s*\z)/
-      masked.lines.slice_when { |before, after| before.match?(boundary) || after.match?(boundary) }.map do |block|
-        block.join.gsub(/(?<!`)(`+)(?!`)(.*?)(?<!`)\1(?!`)/m) { |span| span.gsub(/[^\n]/, ' ') }
-      end.join
-    end
-
+    # The rules of lib/nomos, run on one message the command sends. A flag of level must is refused every time.
     class Checker
       def initialize(templates: File.join(ROOT, 'templates'), words: [], now: Time.now, vocabulary: {})
-        @vocabulary = vocabulary
-        @deadline_words = (DEADLINE_WORDS + vocabulary.fetch('deadline', [])).map(&:downcase)
-        @stamp_words = (STAMP_WORDS + vocabulary.fetch('stamp', [])).map(&:downcase)
-        @joined_words = ['at', *vocabulary.fetch('clock-prefix', [])].map(&:downcase)
-        @time_word = /(?<![\p{L}\p{N}_])(#{PreSend.alternation(@deadline_words + @stamp_words)})(?![\p{L}\p{N}_])/i
         @templates = templates
+        @words = words
         @now = now
-        terms = (RELATIVE + words + vocabulary.fetch('relative', [])).map(&:strip).reject(&:empty?).uniq
-        @relative = /(?<![\p{L}\p{N}_])(?:#{terms.map { |term| Regexp.escape(term).gsub('\\ ', '\\s+') }.join('|')})(?![\p{L}\p{N}_])/i
+        @vocabulary = vocabulary
       end
 
       def check(body, context = nil)
-        clean = PreSend.prose(body)
-        line = 1
-        @line_numbers = clean.each_char.map do |char|
-          current = line
-          line += 1 if char == "\n"
-          current
+        unless context
+          advice = Nomos::Advice.new(templates: @templates, words: @words, now: @now, vocabulary: @vocabulary)
+          return advice.check(body).sort_by { |flag| [flag.line, flag.kind, flag.text] }
         end
-        @line_numbers << line
-        flags = []
-        clean.to_enum(:scan, PLACEHOLDER).each do
-          match = Regexp.last_match
-          flags << Flag.new(line_number(clean, match.begin(0)), 'placeholder', match[0])
-        end
-        mentioned = mentions(clean)
-        relative_prose(mentioned).to_enum(:scan, @relative).each do
-          match = Regexp.last_match
-          flags << Flag.new(line_number(clean, match.begin(0)), 'relative time', match[0])
-        end
-        deadline = context&.action == 'ask' && context.within ? @now + context.within : nil
-        previous = 0
-        mentioned.to_enum(:scan, TIME).each do
-          match = Regexp.last_match
-          from = previous
-          previous = match.end(0)
-          time = timestamp(match)
-          next unless time && time > @now + 300
-          next if time.to_date > @now.getlocal(time.utc_offset).to_date
-          next if deadline ? (time - deadline).abs <= 300 : deadline_word?(mentioned, match.begin(0), from)
 
-          flags << Flag.new(line_number(clean, match.begin(0)), 'future time', match[0])
-        end
-        check_form(clean, flags)
-        flags.concat(BlockCheck.new(body, action: context.action, within: context.within, vocabulary: @vocabulary).flags) if block?(body, context)
-        flags.sort_by { |flag| [flag.line, flag.kind, flag.text] }
-      end
-
-      private
-
-      def block?(body, context)
-        return false if context.nil? || context.human == false
-
-        context.human || BlockCheck.claimed?(body)
-      end
-
-      def mentions(text)
-        text.lines.map do |line|
-          pattern = line.count('"').even? ? /(?:(?<=\A|[\s(])"[^"\n]*")|“[^”\n]*”|«[^»\n]*»/ : /“[^”\n]*”|«[^»\n]*»/
-          line.gsub(pattern) { |span| span.gsub(/[^\n]/, ' ') }
-        end.join
-      end
-
-      def deadline_word?(text, position, from = 0)
-        start = [(text.rindex("\n", position - 1) || -1) + 1, position - 200, from].max
-        clause = text[start...position].split(/[.;,](?=\s)/, -1).last.to_s
-        window = clause.split(/(?<=\s)(?=\S)/).last(6).join
-        found = window.to_enum(:scan, @time_word).map do
-          match = Regexp.last_match
-          [match[1].downcase.gsub(/\s+/, ' '), match.begin(0), match.end(0)]
-        end
-        direct = ->(ending) { window[ending..].strip.empty? }
-        deadline = found.select { |word, _, ending| @deadline_words.include?(word) && (word != 'by' || direct.call(ending)) }
-        stamps = found.select do |word, opening, ending|
-          next false unless @stamp_words.include?(word)
-
-          joined = @joined_words.include?(word) && direct.call(ending) &&
-                   deadline.any? { |_, _, close| window[close...opening].match?(/\A[\s:]*\z/) }
-          !joined
-        end
-        deadline.any? && stamps.empty?
-      end
-
-      def line_number(_text, position) = @line_numbers.fetch(position)
-
-      def relative_prose(clean)
-        text = clean.gsub(/\b(?:examples?|e\.g\.|such as|built in)\s*\(([^()]*)\)/im) do |span|
-          list = Regexp.last_match(1)
-          rest = list.gsub(/\band the like\b.*\z/im, '').gsub(@relative, '').gsub(/\band\b/i, '').gsub(/[\s,;]+/, '')
-          rest.empty? ? span.gsub(/[^\n]/, ' ') : span
-        end
-        text.gsub(/\b(?:never|no)\s+["“](today|tomorrow|yesterday|tonight)["”]/i) do |span|
-          span.gsub(/[^\n]/, ' ')
-        end
-      end
-
-      def timestamp(match)
-        date, hour, minute, second, fraction, zone = match.captures
-        offset = zone.sub(/\A(?:UTC|GMT|Z)/, '')
-        offset = '+00:00' if offset.empty?
-        offset += ':00' if offset.match?(/\A[+-]\d{2}\z/)
-        offset = "#{offset[0..2]}:#{offset[3..4]}" if offset.match?(/\A[+-]\d{4}\z/)
-        return unless offset[1..2].to_i < 24 && offset[-2..].to_i < 60
-        return unless hour.to_i < 24 && minute.to_i < 60 && second.to_i < 60
-
-        date ||= @now.getlocal(offset).strftime('%Y-%m-%d')
-        Date.iso8601(date)
-        Time.iso8601("#{date}T#{hour}:#{minute}:#{second || '00'}#{fraction}#{offset}")
-      rescue ArgumentError
-        nil
-      end
-
-      def check_form(clean, flags)
-        lines = clean.lines.map(&:strip)
-        footer_index = lines.rindex { |line| !line.empty? }
-        return unless footer_index && lines[footer_index].match?(FOOTER)
-
-        footer = lines[footer_index]
-        paths = Dir.glob(File.join(@templates, '*.md')).sort
-        raise IOError, "no templates in #{@templates}" if paths.empty?
-
-        forms = paths.filter_map do |path|
-          template = PreSend.read_text(path)
-          sections = template.split(/^(nomos v\d+ [a-z][a-z ]*)\s*$/)
-          index = sections.index(footer)
-          [path, template, sections[index - 1]] if index
-        end
-        return unless forms.length == 1
-
-        path, template, form = forms.first
-        return if MULTIPART.include?(File.basename(path, '.md'))
-
-        headings = PreSend.prose(form).scan(/^\#{2,6}\s+(.+?)\s*#*$/).flatten
-        headings.reject! { |heading| heading.include?('{') }
-        if File.basename(path) == 'report.md' && template.include?('any section with nothing to say')
-          headings = []
-        else
-          headings.reject! do |heading|
-            optional_heading?(heading, template)
-          end
-        end
-        present = clean.scan(/^\#{1,6}\s+(.+?)\s*#*$/).flatten.map { |heading| normalize(heading) }
-        headings.each do |heading|
-          next if present.include?(normalize(heading))
-
-          flags << Flag.new(footer_index + 1, 'missing heading', heading)
-        end
-        check_findings(clean, flags) if File.basename(path) == 'review-findings.md'
-      end
-
-      def optional_heading?(heading, template)
-        guidance = template.gsub(/^>\s?/, '').gsub(/\s+/, ' ')
-        names = guidance.scan(/delete the section (?:on|for) (.+?)(?: in |[.,])/i).flatten
-        words = ->(text) { normalize(text).split.reject { |word| %w[a an the for on].include?(word) }.map { |word| word.delete_suffix('s') } }
-        names.any? { |name| words.call(name) == words.call(heading) }
-      end
-
-      def normalize(heading) = heading.downcase.strip.gsub(/\s+/, ' ')
-
-      def check_findings(clean, flags)
-        heading = clean.match(/^ {0,3}\#{2,6}[ \t]+Findings[ \t]*#*[ \t]*$/i)
-        offset = heading ? heading.end(0) : 0
-        content = clean[offset..].split(/^ {0,3}\#{2,6}[ \t]+/, 2).first.to_s
-        rank = /\A\d+[.)]\s+(?:\*\*)?\[?(?:must-fix|suggestion)\b/i
-        starts = []
-        last_number = 0
-        steps = false
-        position = 0
-        blank = false
-        content.each_line do |line|
-          start = position
-          position += line.length
-          previous_blank = blank
-          blank = line.match?(/\A[ \t]*\n\z/)
-          match = line.match(/\A(\d+)[.)][ \t]+[^\n]*/)
-          next unless match
-
-          ranked = match[0].match?(rank)
-          steps = !ranked if match[1].to_i <= last_number
-          if steps && match[1].to_i > last_number && previous_blank
-            steps = false
-          end
-          next if steps && !ranked
-
-          steps = false
-          last_number = match[1].to_i
-          starts << start
-        end
-        starts.each_with_index do |position, index|
-          block = content[position...(starts[index + 1] || content.length)]
-          line = line_number(clean, offset + position)
-          title = block.lines.first.strip
-          unless block.match?(rank)
-            flags << Flag.new(line, 'finding missing rank', title)
-          end
-          unless block.match?(/\b(?:observed|code-grounded|sourced|hypothesis)\b/i)
-            flags << Flag.new(line, 'finding missing evidence class', title)
-          end
-        end
+        due = context.action == 'ask' && context.within ? @now + context.within : nil
+        message = Nomos::Message.new(body: body, kind: KINDS.fetch(context.action, 'reply'), from: nil,
+                                     to: context.recipient, due: due, human: context.human)
+        Nomos::Rules.check(message, vocabulary: @vocabulary, now: @now, templates: @templates, words: @words)
       end
     end
 
-    class BlockCheck
-      OPENING = /\A(`{3,}|~{3,})nomos[ \t]*\z/
-      CLAIM = /\A {0,3}(?:`{3,}|~{3,})nomos/
-      FENCE = /\A {0,3}(`{3,}|~{3,})[ \t]*(\S*)/
-      TITLE_BREAK = /\A\s*(?:#|`{3}|~{3}|>|[-*+]\s|\d+[.)]\s)/
-      HUMAN_FOOTER = 'nomos v0 human message'
-      MAX_LINES = 16
-      MAX_BYTES = 1024
-      ASKS = %w[decision choice question action].freeze
-      COMMON = %w[kind files links replaces follows].freeze
-      FIELDS = {
-        'decision' => %w[options select recommended text blocks meanwhile if_silent],
-        'choice' => %w[options select recommended text blocks meanwhile if_silent default],
-        'question' => %w[options select recommended text blocks meanwhile if_silent],
-        'action' => %w[blocks meanwhile if_silent],
-        'suggestion' => [], 'notice' => [], 'result' => %w[outcome], 'answer' => %w[answer]
-      }.freeze
-      KNOWN = (COMMON + FIELDS.values.flatten).uniq.freeze
-      OPTION_ID = /\A[a-z][a-z0-9-]{0,23}\z/
-      MESSAGE_ID = /\A[0-9A-HJKMNP-TV-Z]{26}\z/
-      HTML = %r{<[\p{L}/]}
-      DATE = %r{(?<![\d/-])(?:\d{4}-\d{2}-\d{2}|\d{2}/\d{2})(?![\d/])}
-      CLOCK = /(?<![\w:])\d{1,2}(?::\d{2}|h\d{2})(?![\w:])/
-      EXTENSIONS = %w[md markdown txt rb erb yml yaml json toml sh bash py go rs tf hcl js ts css html sql csv log conf
-                      ini].freeze
-      DENIED = /secret|credential|password|token|kubeconfig|\.env|id_rsa|id_ed25519|\.pem|\.key/i
-      MAX_FILE = 1024 * 1024
-      DECISION_HEADINGS = %w[Situation Background Assessment Recommendation].freeze
-      OPEN_HINT = 'the block opens on line 2 with a ```nomos fence'
-
-      def self.footer?(lines) = lines.map(&:strip).reject(&:empty?).last == HUMAN_FOOTER
-
-      def self.bare?(line, after = nil)
-        line.to_s.match?(/\A\s*\{\s*"kind"/) || (line.to_s.strip == '{' && after.to_s.match?(/\A\s*"kind"/))
-      end
-
-      def self.claimed?(body)
-        lines = body.lines.map(&:chomp)
-        lines.first(3).any? { |line| line.match?(CLAIM) } || footer?(lines) || bare?(lines[1], lines[2]) || bare?(lines[2], lines[3])
-      end
-
-      attr_reader :flags
-
-      def initialize(body, action:, within:, vocabulary: {})
-        @translations = vocabulary.fetch('headings', [])
-        prefixes = PreSend.alternation(['at', *vocabulary.fetch('clock-prefix', [])])
-        @clock = /#{CLOCK}|(?<![\p{L}])(?:#{prefixes})\s+\d{1,2}h(?![\w:])/i
-        @body = body
-        @lines = body.lines
-        @action = action || 'reply'
-        @within = within
-        @flags = []
-        run
-      end
-
-      private
-
-      def flag(line, kind, text) = @flags << Flag.new(line, kind, text)
-
-      def run
-        chomped = @lines.map(&:chomp)
-        fence = chomped[1].to_s[OPENING, 1]
-        unless fence
-          placed = placement(chomped)
-          title(chomped[0].to_s) if placed || self.class.claimed?(@body)
-          flag(1, 'ask without block', 'an ask to a human carries a nomos block on line 2') if @action == 'ask' && !placed
-          return
-        end
-        title(chomped[0].to_s)
-        data = parse(fence) or return
-        kind = data['kind']
-        if kind == 'answer'
-          flag(line_of('kind'), 'block kind', 'an agent message carries no answer block; the page draws nothing for it')
-          return
-        end
-        unless FIELDS.key?(kind)
-          flag(line_of('kind'), 'block field', "kind #{kind.inspect} is not one of the seven kinds or answer")
-          return
-        end
-        fields(data, kind)
-        asks(kind)
-        headings if kind == 'decision'
-      end
-
-      def placement(chomped)
-        second = chomped[1].to_s
-        found = chomped.first(3).each_with_index.find { |line, _| line.match?(CLAIM) }
-        reason =
-          if (index = [1, 2].find { |number| self.class.bare?(chomped[number], chomped[number + 1]) && !(number == 2 && second.match?(FENCE)) })
-            [index + 1, "line #{index + 1} holds a bare JSON object; #{OPEN_HINT}"]
-          elsif (match = second.match(FENCE)) && (match[2].start_with?('nomos') || self.class.bare?(chomped[2], chomped[3]))
-            info = match[2].empty? ? 'no info string' : "info string #{match[2]}"
-            [2, "line 2 opens a fence with #{info}; #{OPEN_HINT}"]
-          elsif found
-            [found[1] + 1, "the nomos fence is on line #{found[1] + 1}; #{OPEN_HINT}"]
-          elsif self.class.footer?(chomped)
-            [2, "the body ends with the human message footer and line 2 opens no nomos block; #{OPEN_HINT}"]
-          end
-        flag(*reason.first(1), 'block placement', reason.last) if reason
-        !reason.nil?
-      end
-
-      def title(line)
-        return if !line.strip.empty? && line.length <= 80 && !line.match?(TITLE_BREAK)
-
-        flag(1, 'block title', 'line 1 is a plain title of at most 80 characters, not a heading, list, quote or fence')
-      end
-
-      def parse(fence)
-        closing = /\A#{Regexp.escape(fence[0])}{#{fence.size},}[ \t]*\z/
-        @inner = @lines[2, MAX_LINES - 1].to_a
-        close = @inner.index { |line| line.chomp.match?(closing) }
-        unless close
-          later = @lines.drop(2).index { |line| line.chomp.match?(closing) }
-          return flag(2, 'block placement', 'the nomos block does not close') && nil unless later
-
-          return flag(2, 'block size', "the block runs #{later + 2} lines, over 16 including its fences") && nil
-        end
-        @inner = @inner.first(close)
-        @after = @lines.drop(close + 3).join
-        bytes = @lines[1, close + 2].sum(&:bytesize)
-        data = begin
-          PreSend.strict_json(@inner.join)
-        rescue JSON::ParserError, EncodingError
-          nil
-        end
-        if bytes > MAX_BYTES
-          name, size = data.is_a?(Hash) ? data.map { |key, value| [key, JSON.generate(value).bytesize] }.max_by(&:last) : nil
-          longest = name ? "longest field #{name} (#{size} bytes)" : "longest line #{@inner.map(&:bytesize).max} bytes"
-          flag(2, 'block size', "the block is #{bytes} bytes, over 1,024 including its fences; #{longest}")
-          return
-        end
-        return data if data.is_a?(Hash)
-
-        flag(2, 'block json', 'the block does not hold one JSON object')
-        nil
-      end
-
-      def line_of(key)
-        index = @inner.index { |line| line.include?("\"#{key}\"") }
-        index ? index + 3 : 2
-      end
-
-      def fields(data, kind)
-        @kind = kind
-        %w[due deadline].each { |key| flag(line_of(key), 'block time', "the block has #{key}; the deadline goes in the request and once in the text") if data.key?(key) }
-        flag(line_of('title'), 'block field', 'the block has title; the title is line 1') if data.key?('title')
-        ((data.keys & KNOWN) - COMMON - FIELDS.fetch(kind)).each do |key|
-          if key == 'default' && kind == 'decision'
-            flag(line_of(key), 'block default', 'a decision has no default; silence never decides it')
-          elsif key == 'options'
-            flag(line_of(key), 'block options', "#{kind} takes no options")
-          else
-            flag(line_of(key), 'block field', "#{kind} takes no #{key}")
-          end
-        end
-        strings(data).each { |text| flag(2, 'block html', text) if text.match?(HTML) }
-        ids = options(data, kind)
-        choices(data, ids)
-        facts(data, kind, ids)
-        identifiers(data, kind)
-        entries(data)
-      end
-
-      def strings(value)
-        case value
-        when String then [value]
-        when Hash then value.flat_map { |key, item| [key, *strings(item)] }
-        when Array then value.flat_map { |item| strings(item) }
-        else []
-        end
-      end
-
-      def free(value, max, what, key)
-        unless value.is_a?(String) && !value.strip.empty? && value.length <= max && !value.match?(/[[:cntrl:]]/)
-          return flag(line_of(key), 'block field', "#{what} is a non-blank single-line text of at most #{max} characters")
-        end
-
-        flag(line_of(key), 'block time', "#{what} holds a time or a date: #{value}") if [TIME, DATE, @clock].any? { |pattern| value.match?(pattern) }
-      end
-
-      def options(data, kind)
-        @labels = []
-        return [] if kind == 'action' || !(data.key?('options') || %w[decision choice].include?(kind))
-
-        list = data['options']
-        range = kind == 'question' ? 1..6 : 2..6
-        unless list.is_a?(Array) && range.cover?(list.size)
-          flag(line_of('options'), 'block options', "#{kind} needs #{range.first} to 6 options")
-          return [] unless list.is_a?(Array)
-        end
-        ids = list.map do |entry|
-          id, label = entry.values_at('id', 'label') if entry.is_a?(Hash)
-          flag(line_of('options'), 'block options', "option id #{id.inspect} breaks the id rule") unless id.is_a?(String) && id.match?(OPTION_ID)
-          free(label, 60, "option #{id}'s label", 'options')
-          @labels << label if label.is_a?(String)
-          id
-        end
-        flag(line_of('options'), 'block options', 'two options share an id') unless ids.uniq.size == ids.size
-        ids
-      end
-
-      def choices(data, ids)
-        if data.key?('select') && !(%w[one many].include?(data['select']) && ids.any?)
-          flag(line_of('select'), 'block field', 'select is one or many, with options')
-        end
-        if data.key?('recommended')
-          value = data['recommended']
-          list = value.is_a?(Array) && data['select'] == 'many' ? value : [value]
-          unless list.any? && list.uniq.size == list.size && list.all? { |id| ids.include?(id) }
-            flag(line_of('recommended'), 'block options', "recommended names no option: #{value.inspect}")
-          end
-        end
-        return unless data.key?('default') && @kind == 'choice' && !ids.include?(data['default'])
-
-        flag(line_of('default'), 'block default', "default names no option: #{data['default'].inspect}")
-      end
-
-      def facts(data, kind, ids)
-        return unless ASKS.include?(kind)
-
-        if kind != 'action' && data.key?('text')
-          flag(line_of('text'), 'block field', 'text is optional or required') unless %w[optional required].include?(data['text'])
-          if data['text'] == 'optional' && ids.empty? && kind == 'question'
-            flag(line_of('text'), 'block field', 'a question without options requires words')
-          end
-        end
-        if !data.key?('blocks')
-          flag(2, 'block field', 'an ask says what blocks, or null')
-        elsif !data['blocks'].nil?
-          free(data['blocks'], 80, 'blocks', 'blocks')
-        end
-        %w[meanwhile if_silent].each do |key|
-          data.key?(key) ? free(data[key], 80, key, key) : flag(2, 'block field', "an ask says #{key}")
-        end
-      end
-
-      def identifiers(data, kind)
-        if kind == 'result'
-          flag(line_of('outcome'), 'block field', 'a result says its outcome: done, partial or failed') unless %w[done partial failed].include?(data['outcome'])
-          flag(2, 'block id', 'a result says the request it follows') unless data.key?('follows')
-        end
-        %w[replaces follows].each do |key|
-          next unless data.key?(key)
-
-          flag(line_of(key), 'block id', "#{key} is not a transport message id") unless data[key].is_a?(String) && data[key].match?(MESSAGE_ID)
-        end
-      end
-
-      def entries(data)
-        { 'files' => 'path', 'links' => 'url' }.each do |key, target|
-          next unless data.key?(key)
-
-          list = data[key]
-          unless list.is_a?(Array) && list.size <= 3 && list.all?(Hash)
-            flag(line_of(key), 'block field', "#{key} holds at most 3 entries")
-            next
-          end
-          list.each do |entry|
-            free(entry['label'], 60, "a #{key.delete_suffix('s')} label", key)
-            key == 'files' ? file(entry['path']) : link(entry['url'])
-          end
-        end
-      end
-
-      def link(url)
-        uri = URI.parse(url.to_s)
-        return if uri.is_a?(URI::HTTPS) && !uri.host.to_s.empty?
-
-        flag(line_of('links'), 'block field', "a link is an https URL: #{url}")
-      rescue URI::InvalidURIError
-        flag(line_of('links'), 'block field', "a link is an https URL: #{url}")
-      end
-
-      def file(path)
-        problem = file_problem(path)
-        flag(line_of('files'), 'block file', "#{path}: #{problem}") if problem
-      end
-
-      def file_problem(path)
-        return 'a file path is absolute or starts with ~/' unless path.is_a?(String) && path.match?(%r{\A~?/})
-
-        real = File.realpath(File.expand_path(path))
-        home = File.join(File.realpath(Dir.home), '')
-        parts = [path.delete_prefix('~/'), real.start_with?(home) ? real.delete_prefix(home) : real].flat_map do |text|
-          text.split('/').reject(&:empty?)
-        end
-        return 'a folder or name in the path starts with a dot' if parts.any? { |part| part.start_with?('.') }
-        return 'the path has a secret-like name' if parts.any? { |part| part.match?(DENIED) }
-        return 'not a text extension the page opens' unless EXTENSIONS.include?(File.extname(real).delete_prefix('.').downcase)
-
-        stat = File.stat(real)
-        return 'not a regular file' unless stat.file?
-        return 'over 1 MiB' if stat.size > MAX_FILE
-        return 'not readable' unless File.readable?(real)
-
-        nil
-      rescue SystemCallError, ArgumentError
-        'no such readable file'
-      end
-
-      def asks(kind)
-        @labels.each do |label|
-          flag(line_of('options'), 'label not in text', label) unless @after.include?(label)
-        end
-        return unless ASKS.include?(kind)
-
-        flag(2, 'ask not a request', "a #{kind} goes as keryx ask with --within") unless @action == 'ask'
-        flag(2, 'ask without deadline', "a #{kind} goes with --within") unless @action == 'ask' && @within
-      end
-
-      def headings
-        present = PreSend.prose(@body).scan(/^\#{1,6}\s+(.+?)\s*#*$/).flatten.map { |heading| heading.strip.downcase }
-        line = @lines.rindex { |text| !text.strip.empty? }.to_i + 1
-        DECISION_HEADINGS.each_with_index do |heading, index|
-          names = [heading, @translations[index]].compact.map(&:downcase)
-          flag(line, 'missing heading', heading) if (names & present).empty?
-        end
-      end
-    end
 
     class Recipients
       COMMAND = %w[keryx who --all -o json].freeze
@@ -726,18 +116,17 @@ module Nomos
         end
       end
 
+      # The address form decides as nomos check does (a person is the team segment local, or a full address with
+      # no team segment); keryx who only resolves a bare member's team.
       def human?(address, sender: nil, session_id: nil)
-        key, host = address.to_s.split('/', 2).first.split('@', 2)
-        member, team = key.to_s.split('.', 2)
-        return nil if member.to_s.empty?
+        form = Nomos::Address.form(address)
+        return form == :person unless form == :unknown
 
-        team ||= team_of(sender) || session_team(session_id) || only(member)
-        return nil unless team
+        member = address.to_s.split('/', 2).first.split('@', 2).first.to_s
+        return nil if member.empty? || member.include?('.')
 
-        row = rows&.find { |entry| entry['member'] == member && entry['team'] == team && (host.nil? || entry['host'] == host) }
-        return row['role'] == 'human' if row
-
-        team == 'local' || nil
+        team = team_of(sender) || session_team(session_id) || only(member)
+        team && Nomos::Address.form("#{member}.#{team}") == :person
       end
 
       private
@@ -1562,6 +951,7 @@ module Nomos
           prefix = words.take_while { |word| assignment?(word) }.map { |word| word.split('=', 2) }.to_h
           if prefix.key?(CONFIRMATION) ? prefix[CONFIRMATION] == '1' : persistent_confirmation
             @checked_ranges.concat(@segment_ranges[index])
+            confirmed_body(words, prefix, index)
             next
           end
 
@@ -1596,6 +986,17 @@ module Nomos
       end
 
       private
+
+      # A confirmed segment's message is still read, since a confirmation passes only advice; one the parser cannot
+      # read passes as before.
+      def confirmed_body(words, prefix, index)
+        words = words.drop_while { |word| assignment?(word) }
+        return unless File.basename(words.first.to_s) == 'keryx'
+
+        body(words, stdin: @stdin_bodies[index], offset: @segment_ranges[index].first.first, sender: prefix['KERYX_AS'], confirmed: true)
+      rescue ArgumentError, IOError
+        nil
+      end
 
       def assignment?(word) = word&.match?(/\A[A-Za-z_][A-Za-z0-9_]*=/)
 
@@ -1751,7 +1152,7 @@ module Nomos
         [literal.sub(/\n+\z/, ''), ending + closing[0].length]
       end
 
-      def body(words, stdin: nil, offset: 0, sender: nil)
+      def body(words, stdin: nil, offset: 0, sender: nil, confirmed: false)
         words = words.drop(1)
         while %w[--as --color].include?(words.first) || words.first&.start_with?('--as=', '--color=')
           sender = words.first == '--as' ? words[1] : words.first.split('=', 2).last if words.first.start_with?('--as')
@@ -1786,14 +1187,12 @@ module Nomos
         end
         target = positional.shift unless action == 'send' && options['--re']
         sender = options['--as'] if options.key?('--as')
-        if options['--within'] && !options['--within'].match?(/\A(?:\d+[dhms])+\z/)
-          raise ArgumentError, "invalid --within #{options['--within']}"
-        end
+        within = options['--within'] && Nomos::Clock.duration(options['--within'])
+        raise ArgumentError, "invalid --within #{options['--within']}" if options['--within'] && within.nil?
 
         text = message_text(options, positional, stdin, offset)
-        within = options['--within']&.scan(/(\d+)([dhms])/)&.sum { |amount, unit| amount.to_i * { 'd' => 86_400, 'h' => 3600, 'm' => 60, 's' => 1 }.fetch(unit) }
         recipient = %w[send ask].include?(action) ? target : nil
-        messages << Message.new(body: text, action: action, recipient: recipient, within: within, sender: sender)
+        messages << Message.new(body: text, action: action, recipient: recipient, within: within, sender: sender, confirmed: confirmed)
         text
       end
 
@@ -1901,9 +1300,7 @@ module Nomos
           end
           options.on('--to ADDRESS') { |address| manual[:to] = address }
           options.on('--within DURATION') do |duration|
-            raise ArgumentError, "invalid --within #{duration}" unless duration.match?(/\A(?:\d+[dhms])+\z/)
-
-            manual[:within] = duration.scan(/(\d+)([dhms])/).sum { |amount, unit| amount.to_i * { 'd' => 86_400, 'h' => 3600, 'm' => 60, 's' => 1 }.fetch(unit) }
+            manual[:within] = Nomos::Clock.duration(duration) or raise ArgumentError, "invalid --within #{duration}"
           end
           options.on('--now TIME') { |time| manual[:now] = Time.iso8601(time) }
           options.on('--who FILE') { |path| manual[:who] = path }
@@ -1965,11 +1362,17 @@ module Nomos
                                  harness: @harness, output: @output, error: @error)
         end
         recipients = Recipients.new(source: @directory)
-        flags = bodies ? parsed.messages.flat_map { |message| checker.check(message.body, context(message, recipients, data)) } : []
+        flags = bodies ? parsed.messages.flat_map { |message| message_flags(checker, message, recipients, data) } : []
         return pass if flags.empty?
 
-        reason = "NOMOS pre-send found:\n#{flag_lines(flags).join("\n")}\n" \
-                 "Check these flags. To confirm, resend the same command prefixed with #{CONFIRMATION}=1."
+        musts = flags.select(&:must?).map(&:kind).uniq
+        reason = "NOMOS pre-send found:\n#{flag_lines(flags).join("\n")}\n" +
+                 if musts.empty?
+                   "Check these flags. To confirm, resend the same command prefixed with #{CONFIRMATION}=1."
+                 else
+                   "These flags break a MUST of the protocol and no confirmation passes them: #{musts.join(', ')}. " \
+                     "Correct the body; #{CONFIRMATION}=1 confirms only the other flags."
+                 end
         if @harness == 'cursor'
           @output.puts JSON.generate(permission: 'deny', user_message: reason, agent_message: reason)
         else
@@ -1990,6 +1393,11 @@ module Nomos
       def context(message, recipients, data)
         human = message.recipient && recipients.human?(message.recipient, sender: message.sender || ENV['KERYX_AS'], session_id: data['session_id'])
         Context.new(action: message.action, recipient: message.recipient, within: message.within, human: human)
+      end
+
+      def message_flags(checker, message, recipients, data)
+        flags = checker.check(message.body, context(message, recipients, data))
+        message.confirmed ? flags.select(&:must?) : flags
       end
 
       def flag_lines(flags)

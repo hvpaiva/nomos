@@ -97,7 +97,7 @@ to it. Harness startup is separate from reading cost but remains inside the sess
 | Claude Code member | Only the note needed for its own harness | `harness-notes.md`, Claude Code | 50 to 204 per note | 180 to 840 per note |
 | Codex member | Only the note needed for its own harness | `harness-notes.md`, Codex | 34 to 256 per note | 130 to 1,050 per note |
 | Cursor member | Only the note needed for its own harness | `harness-notes.md`, Cursor | 77 to 356 per note | 280 to 1,460 per note |
-| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 34,203 in catalog | 123,140 to 140,240 in catalog |
+| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 34,603 in catalog | 124,580 to 141,880 in catalog |
 
 The largest initial member load is 792 words, `cards/member.md` plus `cards/auditor.md`, below the 800-word
 limit. The common card has 500 words; role cards have implementer 273, reviewer 280, qa 255, auditor 292, writer 261; the orchestrator card has 600.
@@ -273,17 +273,17 @@ Within a finding, an unindented list that restarts its numbering is treated as s
 ranked item, or a blank-separated item above the previous finding's number, starts another finding.
 Indent nested steps to distinguish them from findings separated by blank lines.
 
-For a message to a human, the hook also checks the block of protocol 10.5 to 10.9, matching the
-inbox page's parser at revision de6b57b (`lib/inbox/nomos.rb`, `nomos/fields.rb` and `files.rb`).
-The recipient of `keryx send ADDRESS` and `keryx ask ADDRESS` is resolved as keryx resolves it: a
-bare member takes the team of `--as`, a `KERYX_AS=` prefix or `KERYX_AS` in the hook's environment, else
-of the address whose session id matches the hook input's, else the one team holding that member. The hook then runs one read-only call per
-checked send or ask, `keryx who --all -o json`, bounded at 2 seconds, and reads `role: "human"` on the
-recipient's row, stopping the call and any process holding its output at the bound. When keryx is
-not on PATH, the call fails or times out, or no row lists the address, a `local` address counts as a
-human and any other is checked as a reply to an unknown recipient, below. Only a recipient whose row
-names another role gets none of these checks, since its block is inert; a review draft goes inside a
-longer fence.
+For a message to a human, the hook also checks the block of protocol 10.5 to 10.9, restating the
+inbox page's rules at revision 6adc0dc (`lib/inbox/nomos.rb` and `nomos/fields.rb`) and its file
+checks at de6b57b (`files.rb`).
+The recipient of `keryx send ADDRESS` and `keryx ask ADDRESS` is read as `nomos check` reads it:
+a person is the team segment `local`, or a full address with no team segment, and any other team
+segment is an agent, whose block is inert; a review draft goes inside a longer fence. Only a bare
+member is resolved as keryx resolves it: it takes the team of `--as`, a `KERYX_AS=` prefix or
+`KERYX_AS` in the hook's environment, else of the address whose session id matches the hook
+input's, else the one team holding that member, which the hook reads with one read-only call,
+`keryx who --all -o json`, bounded at 2 seconds, stopping the call and any process holding its output
+at the bound. A bare member still unresolved is checked as a reply to an unknown recipient, below.
 
 `keryx reply ID` and `keryx send --re ID` do not show the recipient, so the hook runs the block checks
 only when the body claims the form: line 2 opens a fence whose info string starts with `nomos`, a
@@ -321,8 +321,19 @@ the page at de6b57b, the hook's block checks refuse every block the page refuses
 the reviewers' parity corpus show; it cannot judge whether the text and the
 block agree, whether an answer's ids match the original ask, or whether a `default` is reversible.
 
+The hook runs the rules of `lib/nomos`, the same code as `nomos check` below, so every rule exists
+once. Toward a person it also flags `block missing` for any message without a block on line 2,
+`block footer` for one that does not end with `nomos v0 human message`, `title tag` for a bracketed
+tag opening line 1, `request without ask` for a request whose block is no ask, `id not in text` for an
+option id missing as a whole word from the text, and `deadline not in text` for an ask whose text
+states no time within five minutes of the send time plus `--within`, read as described for
+`nomos check`. A reply opening with `[progress]` is flagged `progress reply` whatever its recipient.
+A toward-a-person flag of a rule the protocol states as a MUST, and `progress reply`, refuses every
+attempt. The other flags, and every flag on a reply to an unknown recipient, are advice.
+
 A flag refuses that attempt and tells the sending agent its line and text. The sender corrects the
-body or resends the same command prefixed with `NOMOS_PRESEND_CONFIRMED=1` to confirm the flags. This
+body, or for advice resends the same command prefixed with `NOMOS_PRESEND_CONFIRMED=1` to confirm the
+flags; a confirmed segment is still read, and a MUST flag on it still refuses. This
 confirms only the occurrences in that segment and grants no authority to send. A standalone
 assignment or `export NOMOS_PRESEND_CONFIRMED=1` confirms subsequent segments in the same command.
 Other segments still undergo accounting. Confirmation applies only where the body parser can
@@ -406,9 +417,12 @@ is built in. A file without section headers lists extra relative-time words or p
 With headers, each section adds to the English set of the same check: `[relative]` for relative
 time words, `[deadline]` and `[stamp]` for the future-time rule below, `[clock-prefix]` for the words
 before a bare hour such as `8h` in a block's free text, and `[headings]` for four lines translating
-Situation, Background, Assessment and Recommendation, in that order. Blank lines and lines starting
-with `#` are skipped; an unknown section or a `[headings]` section without four lines is a usage
-error. Explicit vocabulary lists in a body are still ignored. An example file follows.
+Situation, Background, Assessment and Recommendation, in that order. Three one-line sections serve
+the deadline: `[deadline-sentence]` with `%{time}` once (English `Answer by %{time}.`), `[clock]` a
+`strftime` format (English `%Y-%m-%d %H:%M %:z`) that must read back as a time, and `[zone]` a fixed
+offset such as `-03:00` (English `+00:00`). Blank lines and lines starting
+with `#` are skipped; an unknown section, a `[headings]` section without four lines or an invalid
+one-line section is a usage error. Explicit vocabulary lists in a body are still ignored. An example file follows.
 
 ```text
 [relative]
@@ -614,6 +628,73 @@ follows a space, `(` or the line start; single quotes and apostrophes are not. A
 claims a completed event. This calendar rule does not classify event wording. Section names and
 vocabulary examples outside quotes can still need confirmation. A flag is not proof of
 a mistake.
+
+Hooks and documents had not kept agents' messages to the principal in form (LOG, 2026-10-26, raw
+human messages), so keryx runs a check before it writes any message (R30), and nomos supplies the
+check. [`bin/nomos`](bin/nomos) and everything it loads live in [`lib/nomos`](lib/nomos), Ruby's
+standard library only, loaded by `require_relative`. `nomos check` reads one envelope on stdin, as
+keryx passes it: `check` (1), `event` (`send` or `receive`), `host`, `command` (null on receive) and
+`message`, the message as keryx would store it. It exits 0 to accept, 1 to refuse with one reason per
+line on stderr, each starting with the protocol section, such as `10.7 title over 80 characters (81)
+(line 1)`, within 4 KiB, and 2 on an invalid envelope, an invalid words file or an internal error,
+which keryx refuses too. It reads no environment variable, starts no process, opens no mailbox or
+network, and runs under `env -i PATH=/usr/bin:/bin LANG=C.UTF-8` from `/` on `/usr/bin/ruby` with
+`--disable-gems`, Ruby 3.3 and 4.0 tested.
+
+It refuses only rules the protocol states as MUST or MUST NOT and that the message alone decides,
+never reading the clock, the event, the host or the id, so a message accepted where it is sent is
+accepted where it arrives. A sender whose team segment is `local`, or that has no team segment, is a
+person and gets no rule. Toward a person (the same address form), every agent message of kind
+request, message or reply carries a plain title on line 1 with no bracketed tag, a valid block on
+line 2 and the footer `nomos v0 human message` (10.5, 10.7); the block keeps the field rules of 10.7
+and 10.8 that the inbox page applies, and JSON with no comment or repeated key; a block of an ask kind
+goes in a request with a deadline, and a request's block is an ask (10.5, 10.6); an ask's text names
+each option's label and id and states the request's deadline within five minutes (10.7). A
+withdrawal to a person gets advice only. Between agents, a reply opening with `[progress]` is
+refused (5.3). Everything else the hook flags, from relative dates to a missing file or a zoneless
+clock in a block, is advice that `nomos check` never refuses.
+
+The deadline is read in the text after the block, as a date (`YYYY-MM-DD`, or `DD/MM` with an
+optional `/YYYY`), an optional word between, and a clock (`HH:MM`, `HHhMM` or `HHh`), with an optional
+zone (`Z`, `UTC`, `GMT`, or an offset, in parentheses or not). A time without a zone is read in the
+words file's `[zone]`, and one without a date on the deadline's date in that zone. `[zone]` is a
+fixed offset, so a zone with daylight saving needs the file rewritten at each change.
+
+`nomos compose send|ask|reply --to ADDRESS` builds a body and prints it on stdout, with its advice on
+stderr as `advice SECTION reason`, and exits 1 without a body when the rules of `nomos check` refuse
+it, or 2 on a usage error. It never sends. The text comes from `--text FILE` or stdin; `ask` takes
+`--within DURATION` in keryx's form; `--from ADDRESS`, `--words FILE` and `--now TIME` are optional.
+Toward an agent the body is the text. Toward a person it takes `--title TEXT` and the block, either
+`--block FILE` with one JSON object of the fields or `--kind KIND` with `--option ID=LABEL` (split at
+the first `=`), `--select one|many`, `--recommended ID`, `--default ID`, `--answer-text
+optional|required`, `--blocks TEXT` or `--blocks-none`, `--meanwhile TEXT`, `--if-silent TEXT`,
+`--outcome done|partial|failed`, `--follows ID`, `--replaces ID`, `--attach PATH=LABEL` and `--link
+URL=LABEL` (both split at the last `=`). It writes the title, the block one key per line, the text,
+a numbered list of the options when the text lacks a label or an id, the words file's deadline
+sentence when the text states no time equal to the deadline, and the footer.
+
+```sh
+bin/nomos compose ask --to ana.local@box --within 1h --title 'Where process decisions live' \
+  --kind choice --option 'keep=Keep as it is' --option 'move=Move to the Project' --blocks-none \
+  --meanwhile 'I continue with the file' --if-silent 'I keep it as it is' --default keep < text.md
+bin/nomos check < envelope.json
+```
+
+The human's words come from one file at `/etc/nomos/words`, in the `--words` format above, read by
+both commands; without it they use English, the only language built in. `nomos compose --words FILE`
+and `nomos check --words FILE` read another file for tests. A sender that composes with
+`nomos compose`, checks with `nomos check` and sends with `keryx send`, `ask` or `reply` installs the
+check for keryx: a root-owned copy of `lib/nomos` under `/usr/local/lib/nomos`, a root-owned wrapper
+in a regular file there whose first line is `#!/usr/bin/ruby --disable-gems`, the words file, and
+last `/etc/keryx/check` with only `command` naming the wrapper and `timeout = 5`, each directory above
+them root's and not group or other writable, with no link on the path. That is the principal's step
+on each machine. A broken words file makes every check exit 2, so the installer runs the installed
+wrapper on an accepted and a refused message before it writes `/etc/keryx/check`.
+
+`nomos check` cannot judge whether the text and the block agree beyond labels, ids and the deadline,
+whether a `default` is reversible, whether `if_silent` waits, whether a file in the block opens on the
+page, whether a reply carries what its request asked for beyond the `[progress]` tag, or anything
+that needs the clock, a mailbox or another message.
 
 The optional [readback comparator](bin/compare-readback.rb) compares the five items in protocol 9.2
 against the first prompt's delegation record. It needs Ruby 3.3 or later and only its standard

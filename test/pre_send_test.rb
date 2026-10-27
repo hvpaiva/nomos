@@ -4,6 +4,7 @@ require 'minitest/autorun'
 require 'open3'
 require 'stringio'
 require 'tmpdir'
+require 'fileutils'
 require_relative '../hooks/pre-send'
 
 class PreSendTest < Minitest::Test
@@ -11,6 +12,12 @@ class PreSendTest < Minitest::Test
   FIXTURES = File.expand_path('fixtures/pre-send', __dir__)
   SCRIPT = File.expand_path('../hooks/pre-send.rb', __dir__)
   NOW = Time.utc(2026, 10, 25, 18, 0, 0)
+  # A keryx on PATH that lists no address and records each call, so no hook-mode run reaches the real keryx who.
+  KERYX_STUB = Dir.mktmpdir('nomos-keryx-stub-')
+  KERYX_CALLS = File.join(KERYX_STUB, 'calls')
+  File.write(File.join(KERYX_STUB, 'keryx'), "#!/bin/sh\necho \"$*\" >> '#{KERYX_CALLS}'\necho '{\"addresses\": []}'\n", perm: 0o755)
+  Minitest.after_run { FileUtils.rm_rf(KERYX_STUB) }
+  HERMETIC = { 'PATH' => "#{KERYX_STUB}:#{ENV.fetch('PATH', '/usr/bin:/bin')}", 'KERYX_AS' => nil }.freeze
 
   def flags(text, **options) = Hook::Checker.new(now: NOW, **options).check(text)
   def fixture(name) = File.read(File.join(FIXTURES, name), encoding: 'UTF-8')
@@ -32,7 +39,7 @@ class PreSendTest < Minitest::Test
     end
     output = StringIO.new
     error = StringIO.new
-    runner = Hook::Runner.new(input: StringIO.new(input || JSON.generate(data)), output: output, error: error)
+    runner = Hook::Runner.new(input: StringIO.new(input || JSON.generate(data)), output: output, error: error, directory: -> { [] })
     status = runner.run(['--harness', harness, *extra])
     [output.string, error.string, status]
   end
@@ -90,8 +97,8 @@ class PreSendTest < Minitest::Test
   end
 
   def test_custom_relative_words_use_unicode_boundaries_and_literal_text
-    result = flags('amanhã AMANHÃ até logo a+b camanhã', words: ['amanhã', 'até logo', 'a+b'])
-    assert_equal ['amanhã', 'AMANHÃ', 'até logo', 'a+b'], result.map(&:text).sort_by { |t| ['amanhã', 'AMANHÃ', 'até logo', 'a+b'].index(t) }
+    result = flags('glimdä GLIMDÄ zør lo a+b cglimdä', words: ['glimdä', 'zør lo', 'a+b'])
+    assert_equal ['glimdä', 'GLIMDÄ', 'zør lo', 'a+b'], result.map(&:text).sort_by { |t| ['glimdä', 'GLIMDÄ', 'zør lo', 'a+b'].index(t) }
   end
 
   def test_phrase_spanning_lines_keeps_original_line
@@ -899,7 +906,7 @@ class PreSendTest < Minitest::Test
         data = JSON.parse(fixture("#{harness}.json"))
         harness == 'cursor' ? data['command'] = command : data['tool_input']['command'] = command
         started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-        stdout, stderr, status = Open3.capture3(RbConfig.ruby, SCRIPT, '--harness', harness, stdin_data: JSON.generate(data))
+        stdout, stderr, status = Open3.capture3(HERMETIC, RbConfig.ruby, SCRIPT, '--harness', harness, stdin_data: JSON.generate(data))
         elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
         assert_operator elapsed, :<, 10.0, "#{harness}: #{elapsed}s"
         assert_equal 0, status.exitstatus
@@ -936,7 +943,7 @@ class PreSendTest < Minitest::Test
     stub = "Object.send(:remove_const, :RUBY_VERSION); RUBY_VERSION = '3.1.9'; " \
            "Object.send(:remove_const, :Data); load ARGV.shift"
     %w[claude codex cursor].each do |harness|
-      output, error, status = Open3.capture3(RbConfig.ruby, '-e', stub, SCRIPT, '--harness', harness)
+      output, error, status = Open3.capture3(HERMETIC, RbConfig.ruby, '-e', stub, SCRIPT, '--harness', harness)
       assert_equal 0, status.exitstatus
       assert_match(/Ruby 3.2 or later/, error)
       data = JSON.parse(output)
@@ -971,11 +978,11 @@ class PreSendTest < Minitest::Test
     assert_empty stdout
     assert_empty stderr
     Dir.mktmpdir('nomos-presend-') do |dir|
-      File.write(File.join(dir, 'words'), "amanhã\n")
-      File.write(File.join(dir, 'body'), "Retorno amanhã.\n")
+      File.write(File.join(dir, 'words'), "glimdä\n")
+      File.write(File.join(dir, 'body'), "Back glimdä.\n")
       stdout, stderr, status = Open3.capture3(RbConfig.ruby, SCRIPT, '--check', File.join(dir, 'body'), '--words', File.join(dir, 'words'))
       assert_equal 1, status.exitstatus
-      assert_match(/amanhã/, stdout.force_encoding('UTF-8'))
+      assert_match(/glimdä/, stdout.force_encoding('UTF-8'))
       assert_empty stderr
     end
   end
@@ -988,7 +995,7 @@ class PreSendTest < Minitest::Test
 
   def test_subprocess_contract_for_each_harness
     %w[claude codex cursor].each do |harness|
-      stdout, stderr, status = Open3.capture3(RbConfig.ruby, SCRIPT, '--harness', harness, stdin_data: fixture("#{harness}.json"))
+      stdout, stderr, status = Open3.capture3(HERMETIC, RbConfig.ruby, SCRIPT, '--harness', harness, stdin_data: fixture("#{harness}.json"))
       assert_equal 0, status.exitstatus
       assert_empty stderr
       assert_match(/deny/, stdout)
@@ -1155,7 +1162,7 @@ class PreSendTest < Minitest::Test
 
   def test_rev25_invalid_arguments_and_help
     [[], ['--harness', 'cursr'], ['--harness', 'claud'], ['--harness']].each do |arguments|
-      output, error, status = Open3.capture3(RbConfig.ruby, SCRIPT, *arguments, stdin_data: fixture('claude.json'))
+      output, error, status = Open3.capture3(HERMETIC, RbConfig.ruby, SCRIPT, *arguments, stdin_data: fixture('claude.json'))
       assert_equal 0, status.exitstatus
       assert_empty output
       assert_match(/Repair the pre-send hook/, error)
@@ -1259,7 +1266,7 @@ class PreSendTest < Minitest::Test
     end
     stub = "Object.send(:remove_const, :RUBY_VERSION); RUBY_VERSION = '3.1.9'; Object.send(:remove_const, :Data); load ARGV.shift"
     %w[claude codex cursor].each do |harness|
-      output, error, status = Open3.capture3(RbConfig.ruby, '-e', stub, SCRIPT, "--harness=#{harness}")
+      output, error, status = Open3.capture3(HERMETIC, RbConfig.ruby, '-e', stub, SCRIPT, "--harness=#{harness}")
       assert_equal 0, status.exitstatus
       assert_match(/Ruby 3.2 or later/, error)
       assert_match(/Ruby 3.2 or later/, output)
@@ -1381,10 +1388,14 @@ class PreSendTest < Minitest::Test
     2. Move to the Project (`move`).
 
     If no answer comes until 2026-10-26 08:00 -0300, I keep it as it is.
+
+    nomos v0 human message
   BODY
   NOTICE = "The usage page answers again\n```nomos\n{\"kind\": \"notice\"}\n```\nThe page answers again.\n"
 
-  def human(body, action: 'ask', within: 3600, human: true, now: BLOCK_NOW, vocabulary: {})
+  # A body to a human gets the footer it lacks, so each test sees only the rule it is about; footer: false keeps it out.
+  def human(body, action: 'ask', within: 3600, human: true, now: BLOCK_NOW, vocabulary: {}, footer: true)
+    body += "\n#{Nomos::Text::HUMAN_FOOTER}\n" if footer && human == true && !Nomos::Text.footer?(body.lines)
     Hook::Checker.new(now: now, vocabulary: vocabulary).check(body, Hook::Context.new(action: action, recipient: 'ana.local', within: within, human: human))
   end
 
@@ -1393,11 +1404,12 @@ class PreSendTest < Minitest::Test
   def test_block_spec_passes_and_ask_rules
     assert_empty human(CHOICE)
     assert_empty human(NOTICE, action: 'send', within: nil)
-    assert_empty human("The page is back\nNothing to do.\n", action: 'send', within: nil)
+    assert_equal ['block placement'], kinds("The page is back\nNothing to do.\n", action: 'send', within: nil)
+    assert_equal ['block footer', 'block missing'], kinds("The page is back\nNothing to do.\n", action: 'send', within: nil, footer: false)
     assert_equal ['block kind'], kinds("Keep as it is\n```nomos\n{\"kind\": \"answer\", \"answer\": \"keep\"}\n```\n", action: 'reply', within: nil, human: nil)
-    assert_equal ['ask without block'], kinds('Posso apagar a branch antiga?')
+    assert_equal ['ask without block', 'block footer'], kinds('May I delete the old branch?', footer: false)
     assert_equal ['ask not a request', 'ask without deadline'], kinds(CHOICE, action: 'send', within: nil)
-    assert_equal ['future time'], kinds(CHOICE, within: 7200)
+    assert_equal ['deadline differs', 'deadline not in text', 'future time'], kinds(CHOICE, within: 7200)
   end
 
   def test_block_placement_json_and_size
@@ -1437,7 +1449,8 @@ class PreSendTest < Minitest::Test
     ['## Title', '- Title', '> Title', '```', '', 'T' * 81].each do |title|
       assert_includes kinds(CHOICE.sub(/\A.*\n/, "#{title}\n")), 'block title', title
     end
-    assert_equal ['label not in text'], kinds(CHOICE.sub("2. Move to the Project (`move`).\n", ''))
+    assert_equal ['id not in text', 'label not in text'], kinds(CHOICE.sub("2. Move to the Project (`move`).\n", ''))
+    assert_equal ['id not in text'], kinds(CHOICE.sub("(`move`)", ''))
     decision = CHOICE.sub('"choice"', '"decision"').sub(",\n \"default\": \"keep\"", '')
     assert_equal ['Background'], human(decision + "## Situation\n## Assessment\n## Recommendation\n").map(&:text)
     assert_empty human("Done\n```nomos\n{\"kind\": \"notice\"}\n```\nReady.\n\nnomos v0 human message\n", action: 'send', within: nil)
@@ -1512,20 +1525,24 @@ class PreSendTest < Minitest::Test
               'join' => { 'session_id' => 's-1' } },
             { 'address' => 'rev-1.alpha@box', 'member' => 'rev-1', 'team' => 'alpha', 'host' => 'box', 'role' => 'reviewer' }]
     directory = Hook::Recipients.new(source: -> { rows })
-    assert directory.human?('ana.ops')
+    assert directory.human?('ana.local')
+    refute directory.human?('ana.ops')
     refute directory.human?('orq.alpha@box')
+    assert directory.human?('ana@box')
     assert_equal false, directory.human?('rev-1', session_id: 's-1')
     assert_equal false, directory.human?('rev-1', sender: 'orq.alpha')
-    assert_nil directory.human?('rev-1', sender: 'orq.beta')
-    assert directory.human?('ana')
+    assert_equal false, directory.human?('rev-1', sender: 'orq.beta')
+    assert_equal false, directory.human?('ana')
+    assert Hook::Recipients.new(source: -> { [{ 'member' => 'bob', 'team' => 'local' }] }).human?('bob')
     assert Hook::Recipients.new(source: -> { [] }).human?('ana.local')
     assert_nil Hook::Recipients.new(source: -> { raise 'down' }).human?('rev-1')
     Dir.mktmpdir('nomos-who-') do |dir|
       slow = File.join(dir, 'slow')
       File.write(slow, "#!#{RbConfig.ruby}\nsleep 5\n", perm: 0o755)
       started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      assert Hook::Recipients.new(command: [slow], timeout: 0.2).human?('ana.local')
+      assert_nil Hook::Recipients.new(command: [slow], timeout: 0.2).human?('ana')
       assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 2
+      assert_nil Hook::Recipients.new(command: [File.join(dir, 'missing')]).human?('orq')
       refute Hook::Recipients.new(command: [File.join(dir, 'missing')]).human?('orq.alpha')
       bad = File.join(dir, 'bad')
       File.write(bad, "#!#{RbConfig.ruby}\nputs 'no json'\n", perm: 0o755)
@@ -1534,20 +1551,20 @@ class PreSendTest < Minitest::Test
   end
 
   def test_hook_runs_block_checks_for_human_recipients_only
-    rows = [{ 'member' => 'ana', 'team' => 'ops', 'host' => 'box', 'role' => 'human' },
+    rows = [{ 'member' => 'ana', 'team' => 'local', 'host' => 'box', 'role' => 'human' },
             { 'member' => 'orq', 'team' => 'ops', 'host' => 'box', 'role' => 'orchestrator' }]
     Dir.mktmpdir('nomos-hook-') do |dir|
       path = File.join(dir, 'choice.md')
       File.write(path, CHOICE)
       %w[claude codex cursor].each do |harness|
         data = JSON.parse(fixture("#{harness}.json"))
-        command = "keryx send ana.ops --file #{path}"
+        command = "keryx send ana.local --file #{path}"
         harness == 'cursor' ? data['command'] = command : data['tool_input']['command'] = command
         output = StringIO.new
         Hook::Runner.new(input: StringIO.new(JSON.generate(data)), output: output, error: StringIO.new,
                          directory: -> { rows }).run(['--harness', harness])
         assert_match(/ask not a request/, output.string, harness)
-        data = JSON.parse(JSON.generate(data).sub('ana.ops', 'orq.ops'))
+        data = JSON.parse(JSON.generate(data).sub('ana.local', 'orq.ops'))
         output = StringIO.new
         Hook::Runner.new(input: StringIO.new(JSON.generate(data)), output: output, error: StringIO.new,
                          directory: -> { rows }).run(['--harness', harness])
@@ -1650,7 +1667,7 @@ class PreSendTest < Minitest::Test
       '{"kind": "notice", "links": [{"url": "https://example.com", "label": "a\u0007b"}]}' => 'block field',
       '{"kind": "notice", "answer": "keep"}' => 'block field', '{"kind": "eighth"}' => 'block field'
     }.each { |json, kind| assert_equal [kind], kinds("Notice\n```nomos\n#{json}\n```\nText.\n", **send), json }
-    ask = ->(fields) { "Question\n```nomos\n{\"kind\": \"question\", \"blocks\": null, \"meanwhile\": \"I continue\", \"if_silent\": \"I continue\"#{fields}}\n```\nText 1. Yes.\n" }
+    ask = ->(fields) { "Question\n```nomos\n{\"kind\": \"question\", \"blocks\": null, \"meanwhile\": \"I continue\", \"if_silent\": \"I continue\"#{fields}}\n```\nText 1. Yes (`yes`). Answer by 2026-10-26 08:00 -03:00.\n" }
     assert_empty human(ask.call(''))
     assert_equal ['block field'], kinds(ask.call(', "text": "optional"'))
     assert_equal ['block options'], kinds(ask.call(', "options": []'))
@@ -1662,7 +1679,7 @@ class PreSendTest < Minitest::Test
     assert_empty kinds(CHOICE.sub('I continue with the file"', 'I continue for 2h"'))
     decision = CHOICE.sub('"choice"', '"decision"').sub(",\n \"default\": \"keep\"", '')
     assert_equal ['Recommendation'], human(decision + "## Situation\n## Background\n## Assessment\n").map(&:text)
-    translated = decision + "## Lorem\n## ipsum\n## Dolor\n## Assessment\n## AMET\n"
+    translated = decision.sub("\nnomos v0 human message\n", '') + "## Lorem\n## ipsum\n## Dolor\n## Assessment\n## AMET\n\nnomos v0 human message\n"
     assert_equal %w[Background Recommendation Situation], human(translated).map(&:text)
     vocabulary = Hook.vocabulary(fixture('vocabulary.txt').lines)
     context = Hook::Context.new(action: 'ask', recipient: 'ana.local', within: 3600, human: true)
@@ -1721,28 +1738,30 @@ class PreSendTest < Minitest::Test
             { 'address' => 'bob.local@box', 'member' => 'bob', 'team' => 'local', 'host' => 'box', 'role' => 'assistant' },
             { 'address' => 'x.beta@box', 'member' => 'x', 'team' => 'beta', 'host' => 'box', 'role' => 'human', 'join' => 'gone' }]
     directory = Hook::Recipients.new(source: -> { rows })
-    assert_equal true, directory.human?('ana', sender: 'orq.ops')
+    assert_equal false, directory.human?('ana', sender: 'orq.ops')
     assert_equal false, directory.human?('ana', session_id: 's-1')
     assert_equal false, directory.human?('ana', sender: 'orq.alpha@box/abcdef')
     assert_nil directory.human?('ana')
-    assert_nil directory.human?('ana.ops@other')
-    assert_nil directory.human?('ana.ops@other', sender: 'x')
-    assert_equal false, directory.human?('bob.local')
-    assert_equal true, directory.human?('x', session_id: 'none')
+    assert_equal false, directory.human?('ana.ops@other')
+    assert_equal false, directory.human?('ana.ops@other', sender: 'x')
+    assert_equal true, directory.human?('bob.local')
+    assert_equal true, directory.human?('bob')
+    assert_equal false, directory.human?('x', session_id: 'none')
     assert_equal true, directory.human?('carla.local')
+    assert_equal true, directory.human?('carla@box')
     assert_nil directory.human?('carla', sender: 'me.local')
     Dir.mktmpdir('nomos-who-') do |dir|
       held = File.join(dir, 'held')
       File.write(held, "#!/bin/sh\n(sleep 5) &\necho '{}'\n", perm: 0o755)
       started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      assert_nil Hook::Recipients.new(command: [held], timeout: 0.3).human?('orq.alpha')
+      assert_nil Hook::Recipients.new(command: [held], timeout: 0.3).human?('orq')
       assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 2.5
       failing = File.join(dir, 'failing')
       File.write(failing, "#!/bin/sh\necho '{\"addresses\": [{\"member\": \"orq\", \"team\": \"alpha\", \"role\": \"human\"}]}'\nexit 3\n", perm: 0o755)
-      assert_nil Hook::Recipients.new(command: [failing]).human?('orq.alpha')
+      assert_nil Hook::Recipients.new(command: [failing]).human?('orq')
       listing = File.join(dir, 'listing')
-      File.write(listing, "#!/bin/sh\n[ \"$*\" = 'who --all -o json' ] || exit 4\necho '{\"addresses\": [{\"member\": \"orq\", \"team\": \"alpha\", \"role\": \"human\"}]}'\n", perm: 0o755)
-      assert_equal true, Hook::Recipients.new(command: [listing, *Hook::Recipients::COMMAND.drop(1)]).human?('orq.alpha')
+      File.write(listing, "#!/bin/sh\n[ \"$*\" = 'who --all -o json' ] || exit 4\necho '{\"addresses\": [{\"member\": \"orq\", \"team\": \"local\", \"role\": \"human\"}]}'\n", perm: 0o755)
+      assert_equal true, Hook::Recipients.new(command: [listing, *Hook::Recipients::COMMAND.drop(1)]).human?('orq')
     end
   end
 
@@ -1763,14 +1782,15 @@ class PreSendTest < Minitest::Test
       ensure
         saved.each { |key, value| ENV[key] = value }
       end
-      assert_match(/ask not a request/, run.call("keryx --as orq.ops send ana --file #{path}"))
-      assert_match(/ask not a request/, run.call("keryx send --as=orq.ops ana --file #{path}"))
-      assert_match(/ask not a request/, run.call("KERYX_AS=orq.ops keryx send ana --file #{path}"))
-      assert_match(/ask not a request/, run.call("keryx send ana --file #{path}", env: { 'KERYX_AS' => 'orq.ops' }))
+      refute_match(/ask not a request/, run.call("keryx --as orq.ops send ana --file #{path}", env: { 'KERYX_AS' => nil }))
+      refute_match(/ask not a request/, run.call("keryx send --as=orq.ops ana --file #{path}", env: { 'KERYX_AS' => nil }))
+      refute_match(/ask not a request/, run.call("KERYX_AS=orq.ops keryx send ana --file #{path}", env: { 'KERYX_AS' => nil }))
       refute_match(/ask not a request/, run.call("keryx send ana --file #{path}", env: { 'KERYX_AS' => 'orq.alpha' }))
+      assert_match(/ask not a request/, run.call("keryx send ana --file #{path}", env: { 'KERYX_AS' => nil }))
+      assert_match(/ask not a request/, run.call("keryx send ana.local --file #{path}", env: { 'KERYX_AS' => nil }))
       assert_empty run.call("keryx ask ana.ops --within 1h --file #{path}").then { |out| out.include?('future time') ? out : '' }
       refute_match(/ask without deadline/, run.call("keryx ask ana.ops --within 60m --file #{path}"))
-      assert_match(/ask without deadline/, run.call("keryx ask ana.ops --file #{path}"))
+      assert_match(/ask without deadline/, run.call("keryx ask ana.local --file #{path}"))
     end
     %w[claude codex cursor].each do |harness|
       ['timeout --kill-after=1 5', 'timeout -s KILL 5', 'timeout --signal=TERM 5', 'timeout -k1 5', 'timeout --preserve-status -v 5s'].each do |wrapper|
@@ -1781,7 +1801,8 @@ class PreSendTest < Minitest::Test
   end
 
   def test_fix_round_vocabulary_sections
-    assert_equal({ 'relative' => %w[glimday], 'deadline' => [], 'stamp' => [], 'clock-prefix' => [], 'headings' => [] },
+    assert_equal({ 'relative' => %w[glimday], 'deadline' => [], 'stamp' => [], 'clock-prefix' => [], 'headings' => [],
+                   'deadline-sentence' => [], 'clock' => [], 'zone' => [] },
                  Hook.vocabulary(["glimday\n", "\n"]))
     vocabulary = Hook.vocabulary(fixture('vocabulary.txt').lines)
     assert_equal [%w[glimday], ['zuntil', 'ante zo'], %w[stampo], %w[klo], %w[Lorem Ipsum Dolor Amet]],
@@ -1829,7 +1850,7 @@ class PreSendTest < Minitest::Test
       pids = File.join(dir, 'pids')
       held = File.join(dir, 'held')
       File.write(held, "#!/bin/sh\nsleep 30 &\necho $! > #{pids}\nwait\n", perm: 0o755)
-      assert_nil Hook::Recipients.new(command: [held], timeout: 0.3).human?('orq.alpha')
+      assert_nil Hook::Recipients.new(command: [held], timeout: 0.3).human?('orq')
       pid = File.read(pids).to_i
       gone = 20.times.any? do
         Process.kill(0, pid)
@@ -1842,4 +1863,26 @@ class PreSendTest < Minitest::Test
     end
   end
 
+  def test_within_takes_only_keryx_form
+    %w[1x 30 1h30 h 1.5h -1h 1H].each do |within|
+      error = assert_raises(ArgumentError, within) { Hook::Command.new("keryx ask ana.local --within #{within} 'Hi'").bodies }
+      assert_match(/invalid --within/, error.message, within)
+      %w[claude codex cursor].each do |harness|
+        output, error_text, status = run_hook(harness, command: "keryx ask ana.local --within #{within} 'Hi'")
+        assert_equal 0, status
+        assert_match(/invalid --within.*command passed unchecked/, error_text, "#{harness} #{within}")
+        refute_match(/deny/, output)
+      end
+    end
+    assert_equal 5400, Hook::Command.new("keryx ask ana.local --within 1h30m 'Hi'").tap(&:bodies).messages.first.within
+  end
+
+  def test_hook_mode_runs_never_reach_the_real_keryx
+    File.write(KERYX_CALLS, '')
+    stdout, _, status = Open3.capture3(HERMETIC, RbConfig.ruby, SCRIPT, '--harness', 'claude',
+                                       stdin_data: JSON.generate(JSON.parse(fixture('claude.json')).tap { |data| data['tool_input']['command'] = "keryx send orq 'Done.'" }))
+    assert_equal 0, status.exitstatus
+    assert_empty stdout
+    assert_equal "who --all -o json\n", File.read(KERYX_CALLS)
+  end
 end

@@ -2056,6 +2056,26 @@ Sourced from the director's trial report and correction request of 2026-10-26, i
 three saved member readbacks. Confidence low, three comparisons and a proposed form, with no
 new member launch testing that form. Protocol 9.2 carries the lesson.
 
+### LOG, 2026-10-26 UTC-3, raw human messages
+
+On 2026-10-26 every rule of protocol 10.5 to 10.7 existed in text from the afternoon, with the
+human-message template and an optional pre-send hook that refused once and passed a confirmation.
+Agents of six teams still sent the principal 458 messages that day. A trial of the new message check
+over the stored mail found 295 without a block on line 2, 43 of them written after the form was
+decided at 15:28 UTC-3, 33 asks sent as requests with no block, 228 first lines that were no title,
+17 asks whose text shortened an option's label, 5 that left an option's id out, and 3 whose text
+stated no deadline or one that differed from the request's. At 16:21 UTC-3 the principal decided
+that messages never go raw on the bus, whoever they are for, and that a MUST is refused every time.
+
+It taught that neither a text rule nor a check a sender may confirm past holds across sessions. The
+remedy is one validator the transport runs before it writes any message, fail closed, with the
+human's words in a local file and the advice that cannot be judged literally left to the composer.
+
+Sourced from the principal's decision recorded in the protocol run's charter on 2026-10-26 and from
+the trial of the message check over that day's stored messages, which counted refusals per rule
+and judged each one against its message. Confidence low, one day of mail and a check not yet run by
+the transport. Protocol 11.2 and bootstrap section 4 carry it.
+
 ## Field evidence from the keryx team (LOG)
 
 These entries summarize reports about pull requests in the public [keryx
@@ -2788,6 +2808,16 @@ The capability check located the thread, taken-state, stop-hook and refusal test
 `test/cli/thread_test.rb`, plus the cross-host taken-state test in `test/cli/machines_test.rb`.
 Those tests were not rerun for this update. Confidence low for the proposed remedy to that field
 case; the capability check establishes the implementation, not a new field test.
+
+**R30.** A check on every message keryx is about to write. keryx reads the root-owned
+`/etc/keryx/check`, with only `command` and `timeout`, and runs that command with a cleared
+environment from `/`, passing one JSON envelope on stdin: the version, the event (`send` where the
+message is written, `receive` where forwarded mail arrives), the host, the command, and the message
+as keryx would store it. Exit 0 accepts; any other exit, a signal, a timeout or an invalid file
+refuses it, with the command's stderr shown to the sender. Only keryx's own notices are exempt.
+nomos supplies the command, `nomos check` (bootstrap section 4). The keryx team confirmed the
+interface on 2026-10-26 after the principal's decision that messages never go raw (LOG, 2026-10-26,
+raw human messages); it was not yet merged when this entry was written.
 
 The keryx team's triage was approved unchanged on 2026-10-23 at 04:17 UTC-3. After the audit fixes
 and the spawn task, the order is R07, R13, a `who` and `status` view hiding addresses with no

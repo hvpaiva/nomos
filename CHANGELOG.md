@@ -7,6 +7,9 @@ The format follows Keep a Changelog. Before the first release, all entries are u
 
 ### Added
 
+- `nomos check`, the one message validator keryx runs before it writes any message, refusing only
+  the MUSTs a message alone decides, and `nomos compose`, which builds a body without sending it,
+  with a words file for the human's language and the pre-send hook moved onto the same rules.
 - Pre-send checks of the block in a message to a human, with its ask, deadline, title and files, by the
   recipient's directory role, with quoted mentions, deadline words and stricter wrapper reads.
 - Handover notices only when the change needs the principal, member dialogs handled under standing
