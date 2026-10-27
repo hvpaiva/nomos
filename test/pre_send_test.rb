@@ -104,7 +104,7 @@ class PreSendTest < Minitest::Test
     assert_empty flags('Use absolute dates, never "today".')
     assert_empty flags('Use no "tomorrow" in the document.')
     assert_equal 1, flags('Examples (deploy tomorrow).').length
-    assert_equal 1, flags('I will return "tomorrow".').length
+    assert_empty flags('I will return "tomorrow".')
     assert_equal 1, flags('No delivery tomorrow.').length
   end
 
@@ -181,12 +181,16 @@ class PreSendTest < Minitest::Test
      'Expected for 2026-10-26 06:00 -03.'].each do |body|
       assert_empty flags(body), body
     end
+    # Carried rule of hook-spec-r2: a deadline word exempts a same-day time unless a stamp word is near it.
     ['Reply by 18:06 UTC.', 'Wait until 18:06 UTC.', 'Due 18:06 UTC.',
-     'Prazo de entrega: 18:06 UTC.', 'Sent by nomos at 18:06 UTC.'].each do |body|
+     'Due 18:05:01 UTC.'].each do |body|
+      assert_empty flags(body), body
+    end
+    ['Sent by nomos at 18:06 UTC.', 'Prazo de entrega: 18:06 UTC.'].each do |body|
       assert_equal ['18:06 UTC'], flags(body).map(&:text), body
     end
     assert_empty flags('Observed 18:05 UTC.')
-    assert_equal ['18:05:01 UTC'], flags('Due 18:05:01 UTC.').map(&:text)
+    assert_equal ['18:05:01 UTC'], flags('Observed 18:05:01 UTC.').map(&:text)
   end
 
   def test_calendar_day_comparison_uses_the_timestamp_zone
@@ -200,8 +204,7 @@ class PreSendTest < Minitest::Test
   def test_reviewed_future_event_sentences_are_all_flagged
     ['The job failed due to a timeout at 19:30 UTC.',
      'The request due then arrived at 19:30 UTC.', 'Deadline met: merged at 19:30 UTC.',
-     'Finished by 19:30 UTC.', 'Sent by 19:30 UTC.',
-     'The run took longer than expected and ended at 19:30 UTC.', 'It worked until 19:30 UTC.',
+     'Sent by 19:30 UTC.', 'The run took longer than expected and ended at 19:30 UTC.',
      "- Due: Monday\n- Pushed 19:30 UTC", "## Due\nMerged at 19:30 UTC.",
      'Expected output appeared at 19:30 UTC.', 'Due diligence done at 19:30 UTC.',
      'The deadline passed and I replied at 19:30 UTC.', 'Observed 19:30 UTC.',
@@ -631,7 +634,6 @@ class PreSendTest < Minitest::Test
                 "echo 'keryx send peer tomorrow' | cat; bash",
                 "echo 'keryx inbox' | bash", "bash <<'EOF'\nrg 'keryx send' notes\nEOF",
                 "cat <<'EOF' | sh\nrg 'keryx send' notes\nEOF",
-                "mise exec -- bash -c 'rg \"keryx send\" notes'",
                 "watch -n 60 'rg \"keryx send\" notes'", "su --command='rg \"keryx send\" notes' user",
                 "keryx send peer \"$(cat <<'EOF'\nkeryx send peer Clean\nEOF\n)\""]
     %w[claude codex cursor].each do |harness|
@@ -1344,7 +1346,7 @@ class PreSendTest < Minitest::Test
     with_method(Hook::Checker, :new, ->(**options) {
       checker = original.call(**options)
       check = checker.method(:check)
-      checker.define_singleton_method(:check) { |body| sleep 0.25; check.call(body) }
+      checker.define_singleton_method(:check) { |body, context = nil| sleep 0.25; check.call(body, context) }
       checker
     }) do
       %w[claude codex cursor].each { |harness| assert_denied(harness, 'keryx send peer tomorrow') }
@@ -1360,6 +1362,483 @@ class PreSendTest < Minitest::Test
         assert_match(/deny/, output)
         assert_match(/missing heading/, output)
       end
+    end
+  end
+
+  BLOCK_NOW = Time.new(2026, 10, 26, 7, 0, 0, '-03:00')
+  CHOICE = <<~BODY
+    Where process decisions live
+    ```nomos
+    {"kind": "choice",
+     "options": [{"id": "keep", "label": "Keep as it is"},
+                 {"id": "move", "label": "Move to the Project"}],
+     "blocks": null, "meanwhile": "I continue with the file", "if_silent": "I keep it as it is",
+     "default": "keep"}
+    ```
+    Nothing waits on this; I continue with the file.
+
+    1. Keep as it is (`keep`).
+    2. Move to the Project (`move`).
+
+    If no answer comes until 2026-10-26 08:00 -0300, I keep it as it is.
+  BODY
+  NOTICE = "The usage page answers again\n```nomos\n{\"kind\": \"notice\"}\n```\nThe page answers again.\n"
+
+  def human(body, action: 'ask', within: 3600, human: true, now: BLOCK_NOW, vocabulary: {})
+    Hook::Checker.new(now: now, vocabulary: vocabulary).check(body, Hook::Context.new(action: action, recipient: 'ana.local', within: within, human: human))
+  end
+
+  def kinds(body, **options) = human(body, **options).map(&:kind).uniq.sort
+
+  def test_block_spec_passes_and_ask_rules
+    assert_empty human(CHOICE)
+    assert_empty human(NOTICE, action: 'send', within: nil)
+    assert_empty human("The page is back\nNothing to do.\n", action: 'send', within: nil)
+    assert_equal ['block kind'], kinds("Keep as it is\n```nomos\n{\"kind\": \"answer\", \"answer\": \"keep\"}\n```\n", action: 'reply', within: nil, human: nil)
+    assert_equal ['ask without block'], kinds('Posso apagar a branch antiga?')
+    assert_equal ['ask not a request', 'ask without deadline'], kinds(CHOICE, action: 'send', within: nil)
+    assert_equal ['future time'], kinds(CHOICE, within: 7200)
+  end
+
+  def test_block_placement_json_and_size
+    lines = CHOICE.lines
+    assert_includes kinds(([lines[1]] + [lines[0]] + lines[2..]).join), 'block placement'
+    assert_includes kinds(([lines[0], "\n"] + lines[1..]).join), 'block placement'
+    assert_equal ['block json'], kinds("Question\n```nomos\n{\"kind\": \"question\",\n```\nText.\n")
+    big = CHOICE.sub('"I continue with the file"', "\"#{'λ' * 40}\"").sub('"if_silent": "I keep it as it is"', "\"if_silent\": \"I keep it\", \"x\": \"#{'λ' * 400}\"")
+    flags = human(big)
+    assert_equal ['block size'], flags.map(&:kind).uniq, flags.inspect
+    assert_match(/longest field x/, flags.first.text)
+    pad = 1024 - CHOICE.lines[1..7].sum(&:bytesize)
+    exact = CHOICE.sub('"default": "keep"}', "\"default\": \"keep\", \"z\": \"#{'a' * (pad - 9)}\"}")
+    assert_equal 1024, exact.lines[1..7].sum(&:bytesize)
+    assert_empty human(exact)
+    assert_equal ['block size'], kinds(exact.sub('"z": "', '"z": "a'))
+    sixteen = CHOICE.sub("\"default\": \"keep\"}\n", "\"default\": \"keep\"\n#{" \n" * 8}}\n")
+    assert_equal 16, sixteen.lines[1..].index { |line| line.start_with?('```') && !line.include?('nomos') } + 2 - 1
+    assert_empty human(sixteen)
+    assert_equal ['block size'], kinds(sixteen.sub(" \n", " \n \n"))
+  end
+
+  def test_block_fields_options_default_time_title_labels
+    assert_equal ['block default'], kinds(CHOICE.sub('"choice"', '"decision"') + "## Situation\n## Background\n## Assessment\n## Recommendation\n")
+    assert_equal ['block options'], kinds(CHOICE.sub('"default": "keep"', '"recommended": "drop"'))
+    assert_includes kinds(CHOICE.sub('"id": "move"', '"id": "keep"')), 'block options'
+    one = CHOICE.sub('"choice"', '"decision"').sub(/,\n +\{"id": "move".*\}\]/, ']').sub(",\n \"default\": \"keep\"", '')
+    assert_includes kinds(one), 'block options'
+    [[%q("meanwhile": "I continue with the file"), %Q("meanwhile": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")], [%q("blocks": null), %q("blocks": " ")],
+     [%q("blocks": null), %q("blocks": null, "text": "only")]].each do |old, field|
+      assert_equal ["block field"], kinds(CHOICE.sub(old, field)), field
+    end
+    assert_equal ['block field', 'label not in text'], kinds(CHOICE.sub('Move to the Project"', "#{'b' * 61}\""))
+    four = Array.new(4) { |n| "{\"url\": \"https://example.com/#{n}\", \"label\": \"L#{n}\"}" }.join(', ')
+    assert_equal ['block field'], kinds(NOTICE.sub('"notice"', "\"notice\", \"links\": [#{four}]"), action: 'send', within: nil)
+    assert_equal ['block time'], kinds(CHOICE.sub('I keep it as it is"', 'I keep it, 08h00"'))
+    ['## Title', '- Title', '> Title', '```', '', 'T' * 81].each do |title|
+      assert_includes kinds(CHOICE.sub(/\A.*\n/, "#{title}\n")), 'block title', title
+    end
+    assert_equal ['label not in text'], kinds(CHOICE.sub("2. Move to the Project (`move`).\n", ''))
+    decision = CHOICE.sub('"choice"', '"decision"').sub(",\n \"default\": \"keep\"", '')
+    assert_equal ['Background'], human(decision + "## Situation\n## Assessment\n## Recommendation\n").map(&:text)
+    assert_empty human("Done\n```nomos\n{\"kind\": \"notice\"}\n```\nReady.\n\nnomos v0 human message\n", action: 'send', within: nil)
+  end
+
+  def test_block_files
+    file_flags = ->(path) { human(NOTICE.sub('"notice"', "\"notice\", \"files\": [{\"path\": #{path.to_json}, \"label\": \"Nota\"}]"), action: 'send', within: nil) }
+    Dir.mktmpdir('nomos-files-') do |dir|
+      base = File.realpath(dir)
+      File.write(File.join(base, 'note.md'), "ok\n")
+      File.write(File.join(base, 'exact.md'), 'a' * (1024 * 1024))
+      File.write(File.join(base, 'big.md'), 'a' * (1024 * 1024 + 1))
+      File.write(File.join(base, 'image.bin'), "x\n")
+      File.write(File.join(base, 'shut.md'), "x\n", perm: 0o000)
+      Dir.mkdir(File.join(base, '.hidden'))
+      File.write(File.join(base, '.hidden', 'note.md'), "x\n")
+      Dir.mkdir(File.join(base, 'folder.md'))
+      File.symlink(File.join(base, '.hidden', 'note.md'), File.join(base, 'link.md'))
+      File.write(File.join(base, 'tokens.md'), "x\n")
+      File.symlink(File.join(base, 'tokens.md'), File.join(base, 'plain.md'))
+      secrets = %w[secret credential password token kubeconfig .env id_rsa id_ed25519 .pem .key].map do |word|
+        File.join(base, "a#{word}b.md").tap { |path| File.write(path, "x\n") }
+      end
+      home = ENV.fetch('HOME', nil)
+      begin
+        ENV['HOME'] = base
+        assert_empty file_flags.call('~/note.md')
+        assert_empty file_flags.call('~/exact.md')
+        cases = {
+          '~/folder.md' => 'not a regular file', '~/missing.md' => 'no such readable file', '~/big.md' => 'over 1 MiB',
+          '~/image.bin' => 'not a text extension', '~/.hidden/note.md' => 'starts with a dot',
+          '~/link.md' => 'starts with a dot', '~/plain.md' => 'secret-like name', "~/no\0ta.md" => 'no such readable file',
+          'notes/note.md' => 'absolute or starts with ~/'
+        }.merge(Process.uid.zero? ? {} : { '~/shut.md' => 'not readable' })
+        cases.each do |path, reason|
+          flags = file_flags.call(path)
+          assert_equal ['block file'], flags.map(&:kind), path
+          assert_match(/#{reason}/, flags.first.text, path)
+        end
+        secrets.each do |path|
+          flags = file_flags.call("~/#{File.basename(path)}")
+          assert_equal ['block file'], flags.map(&:kind), path
+          assert_match(/secret-like name|starts with a dot/, flags.first.text, path)
+        end
+        assert_match(/secret-like name/, file_flags.call('~/asecretb.md').first.text)
+      ensure
+        ENV['HOME'] = home
+      end
+      if base.split('/').any? { |part| part.start_with?('.') }
+        assert_match(/starts with a dot/, file_flags.call(File.join(base, 'note.md')).first.text)
+      else
+        assert_empty file_flags.call(File.join(base, 'note.md'))
+      end
+    end
+  end
+
+  def test_claimed_form_and_recipients
+    bare = "Report delivered\n{\"kind\": \"result\", \"outcome\": \"done\", \"follows\": \"ZZZZZZZZZZZZZZZZZZZZZZZZZZ\"}\n\nText.\n\nnomos v0 human message\n\n"
+    assert_equal ['block placement'], kinds(bare, action: 'reply', within: nil, human: nil)
+    fenced = bare.sub(/^\{.*\}\n/) { |json| "```nomos\n#{json}```\n" }
+    assert_empty human(fenced, action: 'reply', within: nil, human: nil)
+    assert_equal ['block placement'], kinds("Done\nText.\n\nnomos v0 human message\n", action: 'send', within: nil)
+    assert_empty human("Done\nText.\n", action: 'reply', within: nil, human: nil)
+    assert_empty human(bare, action: 'send', within: nil, human: false)
+    assert_empty human(CHOICE, action: 'send', within: nil, human: false)
+    assert_empty human("Review\n````text\n#{CHOICE}````\n", action: 'reply', within: nil, human: nil)
+    %w[json nomos-1].push('').each do |info|
+      assert_equal ['block placement'], kinds(fenced.sub('```nomos', "```#{info}"), action: 'reply', within: nil, human: nil), info
+    end
+    rows = [{ 'address' => 'ana.ops@box', 'member' => 'ana', 'team' => 'ops', 'host' => 'box', 'role' => 'human' },
+            { 'address' => 'orq.alpha@box', 'member' => 'orq', 'team' => 'alpha', 'host' => 'box', 'role' => 'orchestrator',
+              'join' => { 'session_id' => 's-1' } },
+            { 'address' => 'rev-1.alpha@box', 'member' => 'rev-1', 'team' => 'alpha', 'host' => 'box', 'role' => 'reviewer' }]
+    directory = Hook::Recipients.new(source: -> { rows })
+    assert directory.human?('ana.ops')
+    refute directory.human?('orq.alpha@box')
+    assert_equal false, directory.human?('rev-1', session_id: 's-1')
+    assert_equal false, directory.human?('rev-1', sender: 'orq.alpha')
+    assert_nil directory.human?('rev-1', sender: 'orq.beta')
+    assert directory.human?('ana')
+    assert Hook::Recipients.new(source: -> { [] }).human?('ana.local')
+    assert_nil Hook::Recipients.new(source: -> { raise 'down' }).human?('rev-1')
+    Dir.mktmpdir('nomos-who-') do |dir|
+      slow = File.join(dir, 'slow')
+      File.write(slow, "#!#{RbConfig.ruby}\nsleep 5\n", perm: 0o755)
+      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      assert Hook::Recipients.new(command: [slow], timeout: 0.2).human?('ana.local')
+      assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 2
+      refute Hook::Recipients.new(command: [File.join(dir, 'missing')]).human?('orq.alpha')
+      bad = File.join(dir, 'bad')
+      File.write(bad, "#!#{RbConfig.ruby}\nputs 'no json'\n", perm: 0o755)
+      assert Hook::Recipients.new(command: [bad]).human?('ana.local')
+    end
+  end
+
+  def test_hook_runs_block_checks_for_human_recipients_only
+    rows = [{ 'member' => 'ana', 'team' => 'ops', 'host' => 'box', 'role' => 'human' },
+            { 'member' => 'orq', 'team' => 'ops', 'host' => 'box', 'role' => 'orchestrator' }]
+    Dir.mktmpdir('nomos-hook-') do |dir|
+      path = File.join(dir, 'choice.md')
+      File.write(path, CHOICE)
+      %w[claude codex cursor].each do |harness|
+        data = JSON.parse(fixture("#{harness}.json"))
+        command = "keryx send ana.ops --file #{path}"
+        harness == 'cursor' ? data['command'] = command : data['tool_input']['command'] = command
+        output = StringIO.new
+        Hook::Runner.new(input: StringIO.new(JSON.generate(data)), output: output, error: StringIO.new,
+                         directory: -> { rows }).run(['--harness', harness])
+        assert_match(/ask not a request/, output.string, harness)
+        data = JSON.parse(JSON.generate(data).sub('ana.ops', 'orq.ops'))
+        output = StringIO.new
+        Hook::Runner.new(input: StringIO.new(JSON.generate(data)), output: output, error: StringIO.new,
+                         directory: -> { rows }).run(['--harness', harness])
+        refute_match(/block|ask not/, output.string, harness)
+      end
+    end
+  end
+
+  def test_check_inputs_and_exit_codes
+    Dir.mktmpdir('nomos-check-') do |dir|
+      path = File.join(dir, 'choice.md')
+      File.write(path, CHOICE)
+      base = [RbConfig.ruby, SCRIPT, '--check', path, '--action', 'ask', '--to', 'ana.local', '--now', '2026-10-26T07:00:00-03:00']
+      stdout, _, status = Open3.capture3(*base, '--within', '1h')
+      assert_equal [0, ''], [status.exitstatus, stdout]
+      stdout, _, status = Open3.capture3(*base, '--within', '2h')
+      assert_equal 1, status.exitstatus
+      assert_match(/future time/, stdout)
+      [%w[--action shout], %w[--within soon], %w[--now never]].each do |option|
+        assert_equal 2, Open3.capture3(*base, *option)[2].exitstatus, option.inspect
+      end
+    end
+  end
+
+  def test_quoted_mentions_and_deadline_words
+    assert_empty flags('## Never "today"')
+    assert_empty flags('For example “glimday”.', words: ['glimday'])
+    assert_equal 1, flags('Quote "today without a close.').length
+    assert_equal 1, flags("Return 'today'.").length
+    assert_equal 1, flags('Back today.').length
+    # Carried rule of hook-spec-r2: a deadline word exempts a same-day time unless a stamp word is near it.
+    ['I will deliver the plan by 2026-10-25 21:00 UTC.', 'Finished by 19:30 UTC.', 'It worked until 19:30 UTC.'].each do |body|
+      assert_empty flags(body), body
+    end
+    assert_equal ['19:30 UTC'], flags('Sent at 19:30 UTC.').map(&:text)
+    assert_equal ['19:00 UTC'], flags('Ran at 19:00 UTC and I deliver by 21:00 UTC.').map(&:text)
+  end
+
+  def test_h5_wrapper_rows
+    reads = { 'mise exec -- grep' => true, 'mise x -- grep' => true, 'nohup grep' => false, 'exec grep' => false,
+              'timeout --foreground 5 grep' => false, 'timeout -k 1 5 grep' => false, 'command -p grep' => false }
+    %w[claude codex cursor].each do |harness|
+      reads.each do |wrapper, warns|
+        command = "#{wrapper} 'keryx send orq hi' notes"
+        warns ? assert_unchecked(harness, command: command) : assert_pass(harness, command: command)
+      end
+    end
+  end
+
+  def notice_with(fields) = "Notice\n```nomos\n{\"kind\": \"notice\"#{fields}}\n```\nText.\n"
+
+  def test_fix_round_block_json_is_strict_on_every_json_gem
+    ['{"kind":"notice","kind":"notice"}', '{"kind":"notice","files":[],"files":[]}', '{"kind":"nope","kind":"notice"}',
+     '{"kind":"notice","kind":"nope"}', '{"kind":"notice"} // c', '{"kind":"notice"} /* c */',
+     '{"kind":"notice", /* c */ "files": []}', '{"kind":"notice","x":"\q"}', '{"kind":"notice",}', "{'kind':'notice'}",
+     '{"kind":"notice","x":NaN}', '{"kind":"notice","x":01}', '{"kind":"notice","x":' + '[' * 100 + ']' * 100 + '}',
+     '{"kind":"notice","kind":"notice"}'].each do |json|
+      assert_equal ['block json'], kinds("Notice\n```nomos\n#{json}\n```\nText.\n", action: 'send', within: nil), json
+    end
+    assert_empty human("Notice\n```nomos\n{\"kind\": \"notice\", \"x\": [#{'[' * 98}#{']' * 98}], \"y\": \"a\\u00e7\\n\"}\n```\nText.\n", action: 'send', within: nil)
+  end
+
+  def test_fix_round_limits_at_and_past_each_bound
+    title = ->(text) { kinds(CHOICE.sub(/\A.*\n/, "#{text}\n")) }
+    assert_empty title.call('T' * 80)
+    assert_empty title.call('λ' * 80)
+    assert_equal ['block title'], title.call('λ' * 81)
+    label = ->(text) { kinds(CHOICE.gsub('Move to the Project', text)) }
+    assert_empty label.call('b' * 60)
+    assert_equal ['block field'], label.call('b' * 61)
+    assert_empty kinds(CHOICE.sub('"blocks": null', "\"blocks\": \"#{'w' * 80}\""))
+    assert_equal ['block field'], kinds(CHOICE.sub('"blocks": null', "\"blocks\": \"#{'w' * 81}\""))
+    id = ->(text) { kinds(CHOICE.gsub('move', text)) }
+    assert_empty id.call("m#{'a' * 23}")
+    assert_equal ['block options'], id.call("m#{'a' * 24}")
+    Dir.mktmpdir('nomos-limit-') do |dir|
+      home = ENV.fetch('HOME', nil)
+      ENV['HOME'] = File.realpath(dir)
+      File.write(File.join(dir, 'a.md'), "x\n")
+      files = ->(count) { notice_with(", \"files\": [#{Array.new(count) { '{"path": "~/a.md", "label": "A"}' }.join(', ')}]") }
+      assert_empty human(files.call(3), action: 'send', within: nil)
+      assert_equal ['block field'], kinds(files.call(4), action: 'send', within: nil)
+    ensure
+      ENV['HOME'] = home
+    end
+    over = "Notice\n```nomos\n{\"kind\": \"notice\",\n#{"\"x\": 1,\n" * 15}\"y\": 1}\n```\nText.\n"
+    assert_match(/runs 19 lines/, human(over, action: 'send', within: nil).first.text)
+  end
+
+  def test_fix_round_field_rules_each_pinned
+    send = { action: 'send', within: nil }
+    {
+      '{"kind": "result", "outcome": "done"}' => 'block id', '{"kind": "result", "follows": "ZZZZZZZZZZZZZZZZZZZZZZZZZZ"}' => 'block field',
+      '{"kind": "notice", "replaces": "01-not-an-id"}' => 'block id',
+      '{"kind": "notice", "links": [{"url": "http://example.com", "label": "L"}]}' => 'block field',
+      '{"kind": "notice", "links": [{"url": "https://", "label": "L"}]}' => 'block field',
+      '{"kind": "notice", "x": "a</b"}' => 'block html', '{"kind": "notice", "<b": 1}' => 'block html',
+      '{"kind": "notice", "title": "T"}' => 'block field', '{"kind": "notice", "due": "x"}' => 'block time',
+      '{"kind": "notice", "links": [{"url": "https://example.com", "label": "Until 26/10"}]}' => 'block time',
+      '{"kind": "notice", "links": [{"url": "https://example.com", "label": "a\u0007b"}]}' => 'block field',
+      '{"kind": "notice", "answer": "keep"}' => 'block field', '{"kind": "eighth"}' => 'block field'
+    }.each { |json, kind| assert_equal [kind], kinds("Notice\n```nomos\n#{json}\n```\nText.\n", **send), json }
+    ask = ->(fields) { "Question\n```nomos\n{\"kind\": \"question\", \"blocks\": null, \"meanwhile\": \"I continue\", \"if_silent\": \"I continue\"#{fields}}\n```\nText 1. Yes.\n" }
+    assert_empty human(ask.call(''))
+    assert_equal ['block field'], kinds(ask.call(', "text": "optional"'))
+    assert_equal ['block options'], kinds(ask.call(', "options": []'))
+    assert_equal ['block field'], kinds(ask.call(', "options": [{"id": "yes", "label": "Yes"}], "select": "all"'))
+    assert_equal ['block default'], kinds(CHOICE.sub('"default": "keep"', '"default": "drop"'))
+    seven = (1..7).map { |n| "{\"id\": \"o#{n}\", \"label\": \"O#{n}\"}" }.join(', ')
+    assert_includes kinds(CHOICE.sub(/"options": \[.*?\],\n/m, "\"options\": [#{seven}],\n")), 'block options'
+    assert_equal ['block time'], kinds(CHOICE.sub('I keep it as it is"', 'I keep it at 8h"'))
+    assert_empty kinds(CHOICE.sub('I continue with the file"', 'I continue for 2h"'))
+    decision = CHOICE.sub('"choice"', '"decision"').sub(",\n \"default\": \"keep\"", '')
+    assert_equal ['Recommendation'], human(decision + "## Situation\n## Background\n## Assessment\n").map(&:text)
+    translated = decision + "## Lorem\n## ipsum\n## Dolor\n## Assessment\n## AMET\n"
+    assert_equal %w[Background Recommendation Situation], human(translated).map(&:text)
+    vocabulary = Hook.vocabulary(fixture('vocabulary.txt').lines)
+    context = Hook::Context.new(action: 'ask', recipient: 'ana.local', within: 3600, human: true)
+    assert_empty Hook::Checker.new(now: BLOCK_NOW, vocabulary: vocabulary).check(translated, context)
+    Dir.mktmpdir('nomos-headings-') do |dir|
+      body = File.join(dir, 'decision.md')
+      File.write(body, translated)
+      base = [RbConfig.ruby, SCRIPT, '--check', body, '--action', 'ask', '--to', 'ana.local', '--within', '1h', '--now', '2026-10-26T07:00:00-03:00']
+      assert_equal 0, Open3.capture3(*base, '--words', File.join(FIXTURES, 'vocabulary.txt'))[2].exitstatus
+      assert_equal 1, Open3.capture3(*base)[2].exitstatus
+      File.write(File.join(dir, 'three'), "[headings]\nLorem\nIpsum\nDolor\n")
+      assert_equal 2, Open3.capture3(*base, '--words', File.join(dir, 'three'))[2].exitstatus
+    end
+  end
+
+  def test_fix_round_claimed_forms_and_placement
+    unknown = { action: 'reply', within: nil, human: nil }
+    bare = "Done\n%s\nText.\n"
+    ['{ "kind": "notice" }', "{\n  \"kind\": \"notice\"\n}", "Line\n{\"kind\": \"notice\"}"].each do |json|
+      assert_equal ['block placement'], kinds(format(bare, json), **unknown), json
+    end
+    assert_equal ['block placement'], kinds("Done\n```json\n{\"kind\": \"notice\"}\n```\n", **unknown)
+    assert_equal ['block placement', 'block title'], kinds("   ```nomos\nDone\n{\"kind\": \"notice\"}\n```\n", **unknown)
+    assert_equal ['block title'], kinds("## Done\n```nomos\n{\"kind\": \"notice\"}\n```\n", **unknown)
+    assert_empty human("Done\n```text\nnada\n```\n", **unknown)
+    Dir.mktmpdir('nomos-m1-') do |dir|
+      path = File.join(dir, 'bare.md')
+      File.write(path, "Done\n{\"kind\": \"notice\"}\nText.\n")
+      stdout, _, status = Open3.capture3(RbConfig.ruby, SCRIPT, '--check', path)
+      assert_equal 1, status.exitstatus
+      assert_match(/block placement/, stdout)
+    end
+  end
+
+  def test_fix_round_mentions_and_deadline_words
+    silent = ['Ran at 18:00 UTC, deliver by 21:00 UTC.', 'I ran the job. Reply by 21:00 UTC.', 'Look at the plan; I deliver by 21:00 UTC.',
+              'Event ran 17:00 UTC; next by 21:00 UTC', 'Due at 21:00 UTC.', 'Deadline: at 21:00 UTC.', 'I deliver zuntil klo 21:00 UTC.',
+              'Ante zo 21:00 UTC.', 'I deliver ante zo 21:00 UTC.', '«glimday» is an example.']
+    flagged = ['Pushed by Ana 21:00 UTC.', 'Reviewed by rev-1, 21:00 UTC.', 'By the way, observed 21:00 UTC.',
+               'Written by Ana, covers 21:00 UTC.', 'Stampo 21:00 UTC.', 'The job failed due to a timeout at 21:00 UTC.',
+               "Reply by\n21:00 UTC.", 'A 5" pipe is due tomorrow, then "x".', 'Use 5" screws, back tomorrow at 19:30 UTC, said "ok".']
+    vocabulary = Hook.vocabulary(fixture('vocabulary.txt').lines)
+    silent.each { |body| assert_empty flags(body, vocabulary: vocabulary), body }
+    flagged.each { |body| refute_empty flags(body, vocabulary: vocabulary), body }
+    assert_equal ['today'], flags('He said "today" and later today').map(&:text)
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    flags("#{'Reply by 19:30 UTC and ' * 3000}\n")
+    assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 1
+    assert_equal ['future time'], kinds(CHOICE.sub('until 2026-10-26 08:00', 'at 2026-10-26 08:00'), action: 'send', within: 3600) - ['ask not a request', 'ask without deadline']
+  end
+
+  def test_fix_round_recipient_resolution_and_bounds
+    rows = [{ 'address' => 'ana.ops@box', 'member' => 'ana', 'team' => 'ops', 'host' => 'box', 'role' => 'human' },
+            { 'address' => 'ana.alpha@box', 'member' => 'ana', 'team' => 'alpha', 'host' => 'box', 'role' => 'implementer',
+              'join' => { 'session_id' => 's-1' } },
+            { 'address' => 'bob.local@box', 'member' => 'bob', 'team' => 'local', 'host' => 'box', 'role' => 'assistant' },
+            { 'address' => 'x.beta@box', 'member' => 'x', 'team' => 'beta', 'host' => 'box', 'role' => 'human', 'join' => 'gone' }]
+    directory = Hook::Recipients.new(source: -> { rows })
+    assert_equal true, directory.human?('ana', sender: 'orq.ops')
+    assert_equal false, directory.human?('ana', session_id: 's-1')
+    assert_equal false, directory.human?('ana', sender: 'orq.alpha@box/abcdef')
+    assert_nil directory.human?('ana')
+    assert_nil directory.human?('ana.ops@other')
+    assert_nil directory.human?('ana.ops@other', sender: 'x')
+    assert_equal false, directory.human?('bob.local')
+    assert_equal true, directory.human?('x', session_id: 'none')
+    assert_equal true, directory.human?('carla.local')
+    assert_nil directory.human?('carla', sender: 'me.local')
+    Dir.mktmpdir('nomos-who-') do |dir|
+      held = File.join(dir, 'held')
+      File.write(held, "#!/bin/sh\n(sleep 5) &\necho '{}'\n", perm: 0o755)
+      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      assert_nil Hook::Recipients.new(command: [held], timeout: 0.3).human?('orq.alpha')
+      assert_operator Process.clock_gettime(Process::CLOCK_MONOTONIC) - started, :<, 2.5
+      failing = File.join(dir, 'failing')
+      File.write(failing, "#!/bin/sh\necho '{\"addresses\": [{\"member\": \"orq\", \"team\": \"alpha\", \"role\": \"human\"}]}'\nexit 3\n", perm: 0o755)
+      assert_nil Hook::Recipients.new(command: [failing]).human?('orq.alpha')
+      listing = File.join(dir, 'listing')
+      File.write(listing, "#!/bin/sh\n[ \"$*\" = 'who --all -o json' ] || exit 4\necho '{\"addresses\": [{\"member\": \"orq\", \"team\": \"alpha\", \"role\": \"human\"}]}'\n", perm: 0o755)
+      assert_equal true, Hook::Recipients.new(command: [listing, *Hook::Recipients::COMMAND.drop(1)]).human?('orq.alpha')
+    end
+  end
+
+  def test_fix_round_hook_level_sender_within_and_wrappers
+    rows = [{ 'member' => 'ana', 'team' => 'ops', 'host' => 'box', 'role' => 'human' },
+            { 'member' => 'ana', 'team' => 'alpha', 'host' => 'box', 'role' => 'reviewer' }]
+    Dir.mktmpdir('nomos-hook-') do |dir|
+      path = File.join(dir, 'choice.md')
+      File.write(path, CHOICE)
+      run = lambda do |command, env: {}|
+        data = JSON.parse(fixture('claude.json'))
+        data['tool_input']['command'] = command
+        output = StringIO.new
+        saved = env.to_h { |key, _| [key, ENV.fetch(key, nil)] }
+        env.each { |key, value| ENV[key] = value }
+        Hook::Runner.new(input: StringIO.new(JSON.generate(data)), output: output, error: StringIO.new, directory: -> { rows }).run(['--harness', 'claude'])
+        output.string
+      ensure
+        saved.each { |key, value| ENV[key] = value }
+      end
+      assert_match(/ask not a request/, run.call("keryx --as orq.ops send ana --file #{path}"))
+      assert_match(/ask not a request/, run.call("keryx send --as=orq.ops ana --file #{path}"))
+      assert_match(/ask not a request/, run.call("KERYX_AS=orq.ops keryx send ana --file #{path}"))
+      assert_match(/ask not a request/, run.call("keryx send ana --file #{path}", env: { 'KERYX_AS' => 'orq.ops' }))
+      refute_match(/ask not a request/, run.call("keryx send ana --file #{path}", env: { 'KERYX_AS' => 'orq.alpha' }))
+      assert_empty run.call("keryx ask ana.ops --within 1h --file #{path}").then { |out| out.include?('future time') ? out : '' }
+      refute_match(/ask without deadline/, run.call("keryx ask ana.ops --within 60m --file #{path}"))
+      assert_match(/ask without deadline/, run.call("keryx ask ana.ops --file #{path}"))
+    end
+    %w[claude codex cursor].each do |harness|
+      ['timeout --kill-after=1 5', 'timeout -s KILL 5', 'timeout --signal=TERM 5', 'timeout -k1 5', 'timeout --preserve-status -v 5s'].each do |wrapper|
+        assert_pass(harness, command: "#{wrapper} grep 'keryx send orq hi' notes")
+      end
+      assert_unchecked(harness, command: "timeout --bogus 5 grep 'keryx send orq hi' notes")
+    end
+  end
+
+  def test_fix_round_vocabulary_sections
+    assert_equal({ 'relative' => %w[glimday], 'deadline' => [], 'stamp' => [], 'clock-prefix' => [], 'headings' => [] },
+                 Hook.vocabulary(["glimday\n", "\n"]))
+    vocabulary = Hook.vocabulary(fixture('vocabulary.txt').lines)
+    assert_equal [%w[glimday], ['zuntil', 'ante zo'], %w[stampo], %w[klo], %w[Lorem Ipsum Dolor Amet]],
+                 vocabulary.values_at('relative', 'deadline', 'stamp', 'clock-prefix', 'headings')
+    assert_raises(ArgumentError) { Hook.vocabulary(["[other]\n", "x\n"]) }
+    assert_raises(ArgumentError) { Hook.vocabulary(["[headings]\n", "Lorem\n"]) }
+    assert_equal ['glimday'], flags('Back glimday.', vocabulary: vocabulary).map(&:text)
+    assert_equal ['21:00 UTC'], flags('Klo 21:00 UTC.', vocabulary: vocabulary).map(&:text)
+    assert_empty flags('Zuntil klo 21:00 UTC.', vocabulary: vocabulary)
+    assert_equal ['block time'], kinds(CHOICE.sub('I keep it as it is"', 'I keep it klo 8h"'), vocabulary: vocabulary)
+    assert_empty kinds(CHOICE.sub('I keep it as it is"', 'I keep it klo 8h"'))
+    Dir.mktmpdir('nomos-words-') do |dir|
+      body = File.join(dir, 'body')
+      File.write(body, "Ready zuntil 2026-10-25 21:00 UTC, glimday.\n")
+      stdout, _, status = Open3.capture3(RbConfig.ruby, SCRIPT, '--check', body, '--now', '2026-10-25T18:00:00Z',
+                                         '--words', File.join(FIXTURES, 'vocabulary.txt'))
+      assert_equal [1, "line 1: relative time: glimday\n"], [status.exitstatus, stdout]
+      File.write(File.join(dir, 'bad'), "[nope]\nx\n")
+      assert_equal 2, Open3.capture3(RbConfig.ruby, SCRIPT, '--check', body, '--words', File.join(dir, 'bad'))[2].exitstatus
+    end
+  end
+
+  def test_fix_round_rules_named_by_surviving_mutants
+    unknown = { action: 'reply', within: nil, human: nil }
+    assert_empty flags('He wrote "merged at 19:30 UTC" as an example.')
+    assert_empty flags('Due for the whole team 21:00 UTC.')
+    fenced = human("Done\n```json\n{\"kind\": \"notice\"}\n```\n", **unknown)
+    assert_match(/line 2 opens a fence with info string json/, fenced.first.text)
+    assert_includes kinds("   ```nomos\nDone\nnothing\n```\n", **unknown), 'block placement'
+    assert_equal ['block placement'], kinds("Done\nText.\n\nnomos v0 human message\n", **unknown)
+    assert_equal ['block field'], kinds("Done\n```nomos\n{\"kind\": \"result\", \"follows\": \"ZZZZZZZZZZZZZZZZZZZZZZZZZZ\", \"outcome\": \"maybe\"}\n```\n", **unknown)
+    assert_equal ['block id'], kinds("Done\n```nomos\n{\"kind\": \"notice\", \"replaces\": \"01abcdefghijklmnopqrstuvwx\"}\n```\n", **unknown)
+    message = ->(command) { Hook::Command.new(command).tap(&:bodies).messages.first }
+    assert_equal 5400, message.call("keryx ask ana.ops --within 1h30m 'Hi'").within
+    assert_equal 90, message.call("keryx ask ana.ops --within 1m30s 'Hi'").within
+    assert_equal 'orq.ops', message.call("keryx --as orq.ops send ana 'Hi'").sender
+    assert_equal 'orq.ops', message.call("keryx send --as=orq.ops ana 'Hi'").sender
+    assert_equal 'orq.ops', message.call("KERYX_AS=orq.ops keryx send ana 'Hi'").sender
+    assert_nil message.call("keryx reply ZZZZZZZZZZZZZZZZZZZZZZZZZZ 'Hi'").recipient
+    assert_equal 'ana', message.call("keryx send ana 'Hi'").recipient
+    %w[claude codex cursor].each do |harness|
+      assert_unchecked(harness, command: "mise x -- read x; rg 'keryx send peer tomorrow' .")
+    end
+    Dir.mktmpdir('nomos-kill-') do |dir|
+      pids = File.join(dir, 'pids')
+      held = File.join(dir, 'held')
+      File.write(held, "#!/bin/sh\nsleep 30 &\necho $! > #{pids}\nwait\n", perm: 0o755)
+      assert_nil Hook::Recipients.new(command: [held], timeout: 0.3).human?('orq.alpha')
+      pid = File.read(pids).to_i
+      gone = 20.times.any? do
+        Process.kill(0, pid)
+        sleep 0.05
+        false
+      rescue Errno::ESRCH
+        true
+      end
+      assert gone, 'the directory call left its process group running'
     end
   end
 

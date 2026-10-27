@@ -2609,6 +2609,21 @@ points to work items and decisions kept under 5.5, since a transport reply close
 necessarily finishing the work (N16). Confidence low, one instance; the new forms have no fresh-user
 acceptance test yet.
 
+**2026-10-26, bare block.** An orchestrator's result to the principal put its block's JSON object
+bare on line 2, without the `nomos` fence, then text and the human-message footer. The principal's
+page found no block on line 2, showed the JSON and the footer as text with its amber note, and the
+principal called it an error. The contract and the page both held; only the page checked, after
+delivery. It taught that a form a sender claims (a footer, a fence, a `{"kind"` line) must be checked
+before sending, and that the hook should flag the page's note rather than guess the sender's
+intent. The pre-send hook now flags that shape as `block placement`. Confidence low, one message.
+
+**2026-10-26, a "by when" flagged.** An orchestrator's commitment, "I will deliver the plan by" a
+same-day time in UTC, made the pre-send hook exit 1 with `future time`, although 5.3 asks for that
+future deadline; later calendar days were already exempt. It taught that the clock comparison needs
+the word that governs the time: a deadline word marks a future time as intended, while a stamp word
+such as "at" or "sent" still marks an event that cannot lie ahead. The hook now exempts the first and
+keeps the flag for the second. Confidence low, one case.
+
 ## Decisions, requirements and rulings
 
 ### Charter decisions

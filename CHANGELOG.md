@@ -7,6 +7,8 @@ The format follows Keep a Changelog. Before the first release, all entries are u
 
 ### Added
 
+- Pre-send checks of the block in a message to a human, with its ask, deadline, title and files, by the
+  recipient's directory role, with quoted mentions, deadline words and stricter wrapper reads.
 - Handover notices only when the change needs the principal, member dialogs handled under standing
   rules, and an explicit no-footer rule for the page's human answers.
 - Roster, roadmap and progress forms, with the orchestrator's update duties and their first case.

@@ -1,0 +1,15 @@
+# Placeholder vocabulary for the tests; not a real language.
+[relative]
+glimday
+[deadline]
+zuntil
+ante zo
+[stamp]
+stampo
+[clock-prefix]
+klo
+[headings]
+Lorem
+Ipsum
+Dolor
+Amet

@@ -750,9 +750,9 @@ acceptance 3, 2026-10-23, message times; LOG, field PR 24, message times; low fo
 more message lapses and a separate log case) `keryx.md` says where each check runs in keryx.
 `bootstrap.md` section 4 names the supported forms, parser limits and hook setup.
 
-The optional human-message checks for the block, request and deadline under 10.5 to 10.9 are
-planned for a later hook round. They are not implemented by the hook described here. (LOG,
-2026-10-26, inbox page; low, designed)
+The same optional hook is the pre-send check of a human message's block, request and deadline
+under 10.5 to 10.9, run before the page's own check after delivery. (LOG, 2026-10-26, bare block;
+low, one message)
 
 **11.3** Each template names the protocol version in its title, and a filled form ends with a line that
 names the form and the version, such as "nomos v0 brief", since its first line belongs to the outcome.

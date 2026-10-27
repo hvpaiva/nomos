@@ -97,7 +97,7 @@ to it. Harness startup is separate from reading cost but remains inside the sess
 | Claude Code member | Only the note needed for its own harness | `harness-notes.md`, Claude Code | 50 to 204 per note | 180 to 840 per note |
 | Codex member | Only the note needed for its own harness | `harness-notes.md`, Codex | 34 to 256 per note | 130 to 1,050 per note |
 | Cursor member | Only the note needed for its own harness | `harness-notes.md`, Cursor | 77 to 356 per note | 280 to 1,460 per note |
-| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 33,988 in catalog | 122,360 to 139,360 in catalog |
+| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 34,203 in catalog | 123,140 to 140,240 in catalog |
 
 The largest initial member load is 792 words, `cards/member.md` plus `cards/auditor.md`, below the 800-word
 limit. The common card has 500 words; role cards have implementer 273, reviewer 280, qa 255, auditor 292, writer 261; the orchestrator card has 600.
@@ -273,6 +273,54 @@ Within a finding, an unindented list that restarts its numbering is treated as s
 ranked item, or a blank-separated item above the previous finding's number, starts another finding.
 Indent nested steps to distinguish them from findings separated by blank lines.
 
+For a message to a human, the hook also checks the block of protocol 10.5 to 10.9, matching the
+inbox page's parser at revision de6b57b (`lib/inbox/nomos.rb`, `nomos/fields.rb` and `files.rb`).
+The recipient of `keryx send ADDRESS` and `keryx ask ADDRESS` is resolved as keryx resolves it: a
+bare member takes the team of `--as`, a `KERYX_AS=` prefix or `KERYX_AS` in the hook's environment, else
+of the address whose session id matches the hook input's, else the one team holding that member. The hook then runs one read-only call per
+checked send or ask, `keryx who --all -o json`, bounded at 2 seconds, and reads `role: "human"` on the
+recipient's row, stopping the call and any process holding its output at the bound. When keryx is
+not on PATH, the call fails or times out, or no row lists the address, a `local` address counts as a
+human and any other is checked as a reply to an unknown recipient, below. Only a recipient whose row
+names another role gets none of these checks, since its block is inert; a review draft goes inside a
+longer fence.
+
+`keryx reply ID` and `keryx send --re ID` do not show the recipient, so the hook runs the block checks
+only when the body claims the form: line 2 opens a fence whose info string starts with `nomos`, a
+`nomos` fence sits on line 1 or 3, the body ends with `nomos v0 human message`, or line 2 or 3 holds
+a bare object whose first key is `"kind"`, on the same line as its `{` or on the next. Such a reply is not proven to go to a human, and a reply to a human that
+claims nothing, with no block and no footer, is not checked for a missing block.
+
+The flags are these. `ask without block` for an ask to a human with no block on line 2; `ask not a
+request` and `ask without deadline` for a `decision`, `choice`, `question` or `action` block not sent
+by `keryx ask` with `--within`. `block placement` when line 2 is not a fence with the info string
+`nomos` though the body claims the form, including a bare JSON object on line 2 or 3, a `json` or
+unlabeled fence holding `{"kind"`, an unknown info string such as `nomos-1`, a fence on line 1 or 3,
+or a footer with no block, or when the block never closes. `block size` over 16 lines or 1,024 bytes
+counted from the opening fence through the closing fence's line ending, naming the longest field;
+`block json` when it does not hold one JSON object under RFC 8259 alone, which also refuses a
+repeated key, a comment and an invalid escape, whichever json gem the Ruby carries. These three stop the field checks. `block title`
+for a blank line 1, one over 80 characters, or one opening a heading, list, quote or fence. `block
+field`, `block options`, `block default` and `block id` for the field, option, default and message id
+rules of 10.7 and 10.8, including a known field on a kind that does not take it, every broken rule
+listed rather than the first. `block time` for a time or date in a free-text field, or a `due` or
+`deadline` key; it also flags a zoneless `8:00`, `08:00` or `08h00`, and a bare hour such as `8h`
+only after `at` or a clock prefix from the words file, which the page still draws, so a duration such
+as "I continue for 2h" passes. `block kind` for a block of kind `answer`, which only the page writes and draws nothing for in
+an agent's message. `block html` for `<` before a letter or `/` in any string. `label not in text` for an option
+label missing from the text after the block. `block file` for a `files` path that is not absolute or
+`~/`, has a folder or name starting with a dot or matching the page's secret pattern in any part
+after `~/`, lacks one of the page's text extensions (md, markdown, txt, rb, erb, yml, yaml, json,
+toml, sh, bash, py, go, rs, tf, hcl, js, ts, css, html, sql, csv, log, conf, ini), or is not a readable
+regular file of at most 1 MiB. The rules read the path as written and its real path, so a symlink
+into a dot folder or to a secret-like name flags, as the page refuses it. A path under `~/.cache` therefore flags, as the page cannot open it
+either. The hook knows no configured page root, so passing proves no file opens. A `decision` block
+also needs Situation, Background, Assessment and Recommendation headings in the text, or the
+translations in the words file's `[headings]` section, in any case (`missing heading`). Against
+the page at de6b57b, the hook's block checks refuse every block the page refuses, as the tests and
+the reviewers' parity corpus show; it cannot judge whether the text and the
+block agree, whether an answer's ids match the original ask, or whether a `default` is reversible.
+
 A flag refuses that attempt and tells the sending agent its line and text. The sender corrects the
 body or resends the same command prefixed with `NOMOS_PRESEND_CONFIRMED=1` to confirm the flags. This
 confirms only the occurrences in that segment and grants no authority to send. A standalone
@@ -353,12 +401,41 @@ and the Cursor response contract; that reading did not repeat the installed bund
 a live harness test. Check the contract of another harness version before wiring it.
 
 For a manual check, run the command below. Exit 0 means no flags, 1 means flags, and 2 means the
-check could not finish. Add `--words FILE` to either mode for a UTF-8 file with extra relative-time
-words or phrases, one per line. English terms are built in; explicit vocabulary lists are ignored.
+check could not finish. Add `--words FILE` to either mode for a UTF-8 file with another language's vocabulary. Only English
+is built in. A file without section headers lists extra relative-time words or phrases, one per line.
+With headers, each section adds to the English set of the same check: `[relative]` for relative
+time words, `[deadline]` and `[stamp]` for the future-time rule below, `[clock-prefix]` for the words
+before a bare hour such as `8h` in a block's free text, and `[headings]` for four lines translating
+Situation, Background, Assessment and Recommendation, in that order. Blank lines and lines starting
+with `#` are skipped; an unknown section or a `[headings]` section without four lines is a usage
+error. Explicit vocabulary lists in a body are still ignored. An example file follows.
+
+```text
+[relative]
+the day after
+[deadline]
+no later than
+[stamp]
+logged
+[clock-prefix]
+around
+[headings]
+Situation
+Context
+Evaluation
+Proposal
+```
 
 ```sh
 ruby hooks/pre-send.rb --check MESSAGE_FILE
+ruby hooks/pre-send.rb --check MESSAGE_FILE --action ask --to ana.local --within 1h
 ```
+
+For the human-message checks above, `--check` takes `--action send|ask|reply`, `--to ADDRESS`,
+`--within DURATION` in keryx's form (such as `30m` or `1h30m`), `--now TIME` in ISO 8601 for the
+clock, and `--who FILE`, a saved `keryx who --all -o json` document. Without `--who` it reads the
+recipient by its team segment only; without `--action` and `--to` it checks as a reply to an unknown
+recipient. Hook mode takes these from the command and refuses them as options.
 
 The shell parser handles literal inline text or `--file` bodies, leading environment assignments,
 `--as`, executable paths and compound commands separated by `&&`, `||`, `;` or `|`. It follows a
@@ -454,8 +531,11 @@ including through a pipeline or nested producer. The rule is conservative when a
 subsequent consumer is uncertain. Writing a script without running it in the same command remains
 a data operation when no variable mutation disables its read exemption.
 
-The scanner recognizes reads behind `command`, `exec`, `nohup`, a literal timeout and
-`mise exec --`, or within literal shell command strings, ssh commands and watch operands. Shell
+The scanner recognizes reads behind `command` (including `command -p`, which uses the default
+PATH), `exec`, `nohup` and a literal `timeout` with its options and duration, since these resolve
+the command through the same lookup, or within literal shell command strings, ssh commands and
+watch operands. `mise exec` and `mise x` before a read make it unknown and the command warns, since
+a `mise.toml` in the working directory can set PATH and the environment. Shell
 stdin containing recognized reads can be accounted for too. Supported shell no-execution options
 exempt literal input, while expansions evaluated by the calling shell remain exposed. These paths
 only account for reads; a wrapper never makes an unresolved send silent. Comments and quoted
@@ -518,11 +598,21 @@ Date-only values, dates joined by a comma or the word `at`, named zones such as 
 hours and 12-hour clocks are not recognized as complete timestamps. A separate time and zone in
 that text can still match using the current date. Times more than five minutes ahead of the check
 are flagged unless their date is a later calendar day than the clock's date in the timestamp's own
-zone. A time without a date uses that zone's current day and gets no such exemption. Every same-day
-future time beyond the five-minute tolerance is flagged, including deadlines; the sender confirms
-a correct deadline with one resend. A timestamp dated on a later day is exempt even if its prose
-claims a completed event. This calendar rule does not classify event wording. Section names,
-vocabulary examples and quoted relative dates can still need confirmation. A flag is not proof of
+zone. A time without a date uses that zone's current day and gets no such exemption. A same-day
+future time beyond the five-minute tolerance is flagged unless a deadline word (until, before, due,
+deadline, by directly before the time, and the words file's `[deadline]` lines) stands among the six
+words before it and no stamp word (at, sent, checked, ran, and the `[stamp]` lines) does. The words are read in the same clause, from
+the last `.`, `;` or `,` followed by a space, the line start, or the previous time, within 200
+characters. An `at`, or a `[clock-prefix]` word, directly before the time joins a deadline word directly
+before it, as in "due at" or "Deadline: at". So a 5.3 commitment's "by when" passes and "sent at" is
+flagged. An event phrased with a deadline word, such as "finished by" or "worked until", passes
+too, and a deadline wrapped onto the line after its word is flagged. In a `keryx ask` with `--within`, the word rule gives way to the deadline itself: only a time
+within five minutes of the send time plus the duration is exempt. Text between “ ” or « », opened
+and closed on one line, is a mention and is skipped by the relative and future time checks, and so is
+text between straight double quotes when the line holds an even number of them and the opening one
+follows a space, `(` or the line start; single quotes and apostrophes are not. A timestamp dated on a later day is exempt even if its prose
+claims a completed event. This calendar rule does not classify event wording. Section names and
+vocabulary examples outside quotes can still need confirmation. A flag is not proof of
 a mistake.
 
 The optional [readback comparator](bin/compare-readback.rb) compares the five items in protocol 9.2

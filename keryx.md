@@ -235,10 +235,11 @@ orchestrator swap; low)
 
 ## The human
 
-For human-message checks, use `keryx who -o json` reporting `role: "human"` for the recipient,
-with the reserved `local` team segment as the fallback. This is the recipient test for the
-optional human-message hook checks planned in protocol 11.2; those checks are not implemented yet.
-(protocol 10.5 to 10.9; LOG, 2026-10-26, inbox page; low, designed)
+The optional pre-send hook decides whether a recipient is human with one read-only call,
+`keryx who --all -o json`, bounded at 2 seconds, reading `role: "human"` on the recipient's row.
+When the call fails, times out or lists no row, the reserved `local` team segment decides, and a
+recipient still unresolved is checked as a reply to an unknown recipient (bootstrap section 4).
+(protocol 10.5 to 10.9 and 11.2; LOG, 2026-10-26, bare block; low, one message)
 
 The orchestrator's first prompt uses the root form of `templates/first-prompt.md` to declare the
 team's one channel to the principal (10.2). The principal may talk live in the orchestrator's own harness session. A
@@ -301,6 +302,7 @@ peer". (protocol 10.2; LOG, 2026-10-25, principal inbox; low, one counterexample
 | 5.5, 5.6 | Track work and decisions in the project layer and list overdue transport requests | `keryx status`, with `-o json`, lists overdue requests (`keryx help status`) | Until the project layer holds work items, keep them and their decisions in the requester's checkpoint (N16) |
 | 5.7, 6.4, 7.2, 8.1 | Flag relative dates, missing headings, leftover placeholders, findings without rank or evidence class, per form and outside code and quotes | None in keryx (`lib/keryx/commands/send.rb:35`, `lib/keryx/commands/ask.rb:58`, `lib/keryx/commands/reply.rb:22`) | R06 item 4 declined for now in the triage recorded under R06 as a new trust boundary; nomos ships the optional `hooks/pre-send.rb` outside the transport, wired as bootstrap section 4 describes |
 | 9.1, 9.3 | Remind of unread mail and unanswered requests before a turn ends | `keryx hook stop` in all three harnesses; `send --re ID` marks an open received request taken (`keryx help hook`, `keryx help send`) | R13 delivered in da068ef (#28); taken requests keep their obligation until reply or withdrawal |
+| 10.5 to 10.9 | Check the block, the ask and its deadline in a message to a human before it is sent | None in keryx; the inbox page checks the block after delivery | nomos ships the checks in the optional `hooks/pre-send.rb` outside the transport, as bootstrap section 4 describes |
 | 9.4 | Show the handover note first to the next holder | Nothing (`lib/keryx/message.rb:17`; `keryx help inbox`) | R03 |
 | 9.5 | Notify the session and its director near and past the criterion | CONTEXT and message figures (R09); `--ceiling` and courier notices at 80% and at the ceiling (R10) (`keryx help join`) | Delivered in 60b1abb and fde5548; checkpoint and handover stay with the team |
 | How keryx knows nomos | Load conventions only when configured | Nothing yet (`lib/keryx/config.rb:10`, `lib/keryx/commands/skill.rb:21`; `keryx help spawn`) | R06 items 1 to 3 deferred in the triage recorded under R06; opt-in send/ask/reply checks (item 4) declined for now |
