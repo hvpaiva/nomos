@@ -16,7 +16,7 @@ run_check() {
     printf '%s exit %s\n' "$name" "$code"
     [ "$code" -eq 0 ] || status=1
 }
-# shellcheck disable=SC2329 # called by the two checks below
+# shellcheck disable=SC2317,SC2329 # called by the two checks below
 sources() {
     find . -type d -name '.*' ! -name . -prune -o -type f -print0 |
         while IFS= read -r -d '' file; do
@@ -26,7 +26,7 @@ sources() {
             esac
         done
 }
-# shellcheck disable=SC2329 # run_check calls it by name
+# shellcheck disable=SC2317,SC2329 # run_check calls it by name
 check_shell() {
     local file found=0 failed=0
     while IFS= read -r -d '' file; do
@@ -36,7 +36,7 @@ check_shell() {
     printf 'shell scripts checked: %s\n' "$found"
     [ "$found" -gt 0 ] && [ "$failed" -eq 0 ]
 }
-# shellcheck disable=SC2329 # run_check calls it by name
+# shellcheck disable=SC2317,SC2329 # run_check calls it by name
 check_ruby() {
     local file output found=0 failed=0
     while IFS= read -r -d '' file; do
