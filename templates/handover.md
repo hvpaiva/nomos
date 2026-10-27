@@ -119,9 +119,9 @@ nomos v0 handover
   prompt and handover request are {paths}. The successor uses {harness, window, ceiling and mode}.
 - The expected readback context is {range}, based on {same-harness measurements and the required
   reading}.
-- The outgoing pane, pid and session id are {pane, pid and session id}, and its temporary address is
-  {address}. After the `[accept]` the outgoing incarnation starts nothing; the successor ends it by
-  the playbook's Cleanup order and retires the temporary address.
+- The outgoing pane, pid and session id are {multiplexer, pane, pid and session id}, and its
+  temporary address is {address}. After the `[accept]` the outgoing incarnation starts nothing;
+  the successor ends it by the playbook's Cleanup order and retires the temporary address.
 
 | Live directed session | Pane | Request | Deadline | Heartbeat |
 |---|---|---|---|---|
@@ -162,11 +162,13 @@ act, close it and start another from the same record and corrected note. A secon
 goes to the principal. All checks must pass before the outgoing incarnation sends Part 3's timed
 `[accept]`, stops or hands over its watchers, leaves the temporary address and starts nothing more.
 The successor records cutover, notifies peers with open work, and ends the outgoing session by the
-playbook's Cleanup order (screen read, `/exit` typed, composer read, Enter, the pid gone, pane closed),
-since leaving releases an address and only the exit ends the harness process; then it retires the
-temporary address. Keep renewals, handovers and context figures in the run log; tell the principal
-only when the change needs them, such as a question, decision or changed commitment. A changed record
-or two failed successors still require their decision. (protocol 9.4, 9.5; N17; low; playbook,
-Cleanup; LOG, 2026-10-26, closing sequence; medium)
+playbook's Cleanup order (screen read, `/exit` typed, composer read, Enter, the pid gone, pane closed)
+in the team's multiplexer, whose commands the playbook gives for herdr and tmux, since leaving
+releases an address and only the exit ends the harness process; then it retires the temporary
+address. Keep renewals, handovers and context figures in the run log; tell the principal only when
+the change needs them, such as a question, decision or changed commitment. A changed record or two
+failed successors still require their decision. (protocol 9.4, 9.5; N17; low; playbook,
+Cleanup; LOG, 2026-10-26, closing sequence; medium; LOG, 2026-10-26, multiplexer-neutral closing;
+low)
 
 nomos v0 orchestrator handover

@@ -2741,6 +2741,44 @@ two lines or more. It leaves out list items, a later paragraph of a rule block, 
 another paragraph's trace, and the kind of parenthesis, so a confidence word in any parenthesis
 passes. Confidence low, one audit.
 
+**2026-10-26, multiplexer-neutral closing.** The principal directed every team, through another
+team's orchestrator, that no team's text depend directly on one terminal multiplexer, with tmux and
+herdr as the first ones, and that other community harnesses and Cursor's support are still to be
+validated. The playbook's close order and the harness notes named herdr commands only, and protocol
+9.5 and the handover template reached the steps through them. They now state the order in
+multiplexer terms, with herdr and tmux commands side by side in the playbook and the harness notes;
+the tmux commands were checked against its manual page, not run on a team session. It taught that an
+example written as the only way becomes a dependency. Confidence low, the principal's direction,
+closes seen in herdr only. Protocol 9.5, the playbook's Cleanup, the handover template and the
+harness notes carry it.
+
+**2026-10-26, doing line.** Another team, building a launcher whose page shows a person one status
+line per session, asked for the norm of that line. The protocol team ruled that the line follows the
+language rule of human messages, the person's language and a sober register, states present work in
+the person's terms and what a wait waits for, carries no ids, paths, figures or clock times, names the
+task and leaves the request id to a field, and is true at every moment it shows. Confidence low, one
+ruling, not yet seen on a page. Protocol 10.10 carries it.
+
+**2026-10-26, folder trust.** The transport's team reported a harness whose folder-trust dialog has
+no once-only answer, so every answer persists, and whose trust flag writes the same entry. The
+protocol team ruled that a persisting answer is a setting change under the dialog rule, given by a
+director only within its own record; where settings are reserved it needs the principal's word, best
+once as a standing grant naming a parent path, with each entry in the cleanup inventory. The first
+choice is a folder the harness already trusts, as the protocol team's own launches from the home
+folder use. Whether a subfolder inherits the trust was not observed. Confidence low, one harness.
+Protocol 9.1, the harness notes and the playbook's Cleanup carry it.
+
+**2026-10-26, terminal field.** An orchestrator of another team asked the principal to type an
+authorization in its own terminal, because its harness's auto-mode classifier accepted that
+authorization only when typed there. That team then asked whether a message can have the
+principal's page open that terminal with the exact text filled in. The protocol team ruled an
+optional field on `action` asks only, holding the text alone within fixed limits, with any other key
+refused, so the sender picks neither the target nor the submit. The target is the sender's own
+session as the transport recorded it, the page fills the text in and never submits it, and the text
+authorizes only the act the message describes, never a standing grant or a setting change. The check
+then ignored unknown keys, so the page held its button until the check knew the field. Confidence
+low, one instance. Protocol 10.7 carries it.
+
 ## Decisions, requirements and rulings
 
 ### Charter decisions

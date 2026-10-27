@@ -426,6 +426,13 @@ covers or one its own harness will not let it answer. A director MUST NOT leave 
 out or to an automatic deny, since silence is not an answer. (N17; LOG, 2026-10-26, unanswered
 dialogs; low, one incident and a rule confirmed by three orchestrators)
 
+An answer to a harness dialog that persists, such as trusting a folder, is a setting change. A
+director gives it only under a grant that names the folder or a parent path of it, within its own
+record, so where settings are reserved it needs the principal's word, best given once as a standing
+grant naming a parent path, with each entry it adds recorded in the cleanup inventory. The first
+choice is to start the session in a folder the harness already trusts, which needs no answer at all.
+(LOG, 2026-10-26, folder trust; low, one harness without a once-only answer)
+
 **9.2** After any spawn, relaunch or handover, the new incarnation MUST send its director a readback
 (its full address, role, task, authority and next action) before it acts, and the director compares
 it with what it sent. A launcher reporting the session ready is no evidence that the role, the brief
@@ -538,16 +545,20 @@ transfer pending throughout. After a second successor fails, save the failures a
 do not start a third on this procedure. (LOG, 2026-10-23 about 08:45, orchestrator swap; low)
 
 When every check passes, the outgoing incarnation sends `[accept]` with an absolute cutover time,
-stops or hands over its background watchers with the new holder recorded, leaves the temporary address
-and starts nothing more. The successor records the cutover, tells peers with open work and ends the
-outgoing session by the playbook's Cleanup sequence, since leaving releases an address and only the
-harness's exit ends its process. It closes the outgoing pane after checking that process is gone and
-retires the temporary address. Apply the playbook's Cleanup inventory. Renewals, handovers and context
-figures stay in the run log; tell the principal only when the change needs them, such as a question, a
-decision or a changed commitment. A changed record or two failed successors still require their
-decision; an unchanged record needs no renewed approval. (LOG, 2026-10-23 about 08:45, orchestrator
-swap; N17; low; LOG, 2026-10-26, closing sequence; medium for the successor ending the outgoing
-session, two handovers)
+stops or hands over its background watchers with the new holder recorded, leaves the temporary
+address and starts nothing more. The successor records the cutover, tells peers with open work and
+ends the outgoing session by the playbook's Cleanup sequence, since leaving releases an address and
+only the harness's exit ends its process. In the terms of whatever terminal multiplexer the team
+runs, it reads the outgoing pane's screen, types `/exit` as literal text, reads the composer,
+submits Enter and waits for the process to end. It closes the outgoing pane after checking that
+process is gone and retires the temporary address. The playbook gives each step's commands for herdr
+and tmux, the first multiplexers, and no step depends on one of them. Apply the playbook's Cleanup
+inventory. Renewals, handovers and context figures stay in the run log; tell the principal only when
+the change needs them, such as a question, a decision or a changed commitment. A changed record or
+two failed successors still require their decision; an unchanged record needs no renewed approval.
+(LOG, 2026-10-23 about 08:45, orchestrator swap; N17; low; LOG, 2026-10-26, closing sequence; medium
+for the successor ending the outgoing session, two handovers; LOG, 2026-10-26, multiplexer-neutral
+closing; low, the principal's direction, closes seen in herdr only)
 
 Finishing beyond the ceiling requires the director's or principal's explicit yes for stated remaining
 work and a hard token cap, recorded with an absolute time. Apply the changed ceiling in the transport
@@ -670,9 +681,10 @@ The block starts on line 2, the only place a reader looks for it. It is a fenced
 info string `nomos`, holding one JSON object, at most 16 lines including the fences and 1,024 bytes.
 Both limits bind even when every field fits its own limit. It holds no HTML. Free-text fields
 (`blocks`, `meanwhile`, `if_silent` and labels) hold no time or date; paths, URLs and ids are exempt
-from that restriction. Unknown keys are ignored. A changed field meaning takes a new info string, such
-as `nomos-1`, with no version key. (LOG, 2026-10-26, inbox page; low, title placement observed on one
-page, block and limits designed; LOG, 2026-10-26, footer and block; low)
+from that restriction. Unknown keys are ignored, except inside `terminal`. A changed field meaning
+takes a new info string, such as `nomos-1`, with no version key. (LOG, 2026-10-26, inbox page; low,
+title placement observed on one page, block and limits designed; LOG, 2026-10-26, footer and block;
+low)
 
 A block that does not parse, is over a limit, names an unknown kind or breaks a field or ask rule
 stays in the body as a code box and the message renders as plain text, with no answer buttons. An
@@ -684,10 +696,12 @@ A draft forwarded for review sits inside a longer fence, so its block is not on 
 The text below the block MUST stand alone, so the human can answer from it when the block is
 ignored. An ask's text lists each option with its number, its label and its id, says what waits,
 what the team does meanwhile and what it does if no answer comes, and states the deadline once,
-equal to the request's. The transport holds the deadline; it is repeated in the text and never
-in the block, which has no `due`, `deadline` or `title` field. When the block and the text disagree,
-the text governs and the sender sends a correction with `replaces`. (10.3; LOG, 2026-10-26,
-inbox page; LOG, 2026-10-26, human messages; low, designed)
+equal to the request's. The deadline is written with its offset beside the clock or in parentheses
+right after it, such as `2026-10-27 12:00 -03:00`, `12:00 (-03)` or `15:00 (UTC)`, and `nomos check`
+refuses an ask whose text states it without one (11.2). The transport holds the deadline; it is
+repeated in the text and never in the block, which has no `due`, `deadline` or `title` field. When
+the block and the text disagree, the text governs and the sender sends a correction with `replaces`.
+(10.3; LOG, 2026-10-26, inbox page; LOG, 2026-10-26, human messages; low, designed)
 
 | Field | Type | Kinds | Meaning |
 |---|---|---|---|
@@ -706,11 +720,19 @@ inbox page; LOG, 2026-10-26, human messages; low, designed)
 | `follows` | transport request id | `result` required, others optional | The request this answers or continues |
 | `outcome` | `"done"`, `"partial"` or `"failed"` | `result`, required | The result's state |
 | `answer` | an option id, an array of ids for `"many"`, an action outcome, or `"take"` or `"skip"` for a suggestion | `answer`, optional for a reply in words only | The human's choice, checked against the original message under 10.9 |
+| `terminal` | `{"text"}` and no other key; `text` of 1 to 300 characters on one line, with no control or format character (Unicode categories Cc and Cf, and U+2028 and U+2029), no leading or trailing space, no HTML, not beginning with `/`, `!` or `#`, and word for word in the text below the block | `action` only, optional | Text the human may type in the sender's own session; no field names the target or the submit |
 
 An answer with an option and no words is complete unless `text` is `"required"`. Without options,
 a question needs words. An `action` has no options and uses the fixed answers `done`, `failed`
 and `declined`; only `failed` requires words to report what went wrong. (LOG, 2026-10-26, human
 messages; LOG, 2026-10-26, inbox page; low, designed)
+
+The target of `terminal` is the sender's own session as the transport recorded it, so the page
+offers no prefill when that session is gone or another session holds the sender's address. The page
+prefills the text in that session's terminal and never submits it; the human reads it there and
+presses Enter or not. The text authorizes only the act the message describes, never a standing
+grant, a setting change or an answer that stops later prompts. `nomos check` refuses a `terminal`
+that breaks the row above. (LOG, 2026-10-26, terminal field; low, one instance)
 
 **10.8** Silence never decides a `decision`. Its `if_silent` MUST be waiting or keeping things as
 they are, and it MUST NOT carry a `default`. A `choice` MAY name a `default` only when that option
@@ -748,6 +770,14 @@ for a `suggestion`, including their wording in the human's language, count like 
 question's words-only reply is read as the information asked for. Refusal and cancel
 acknowledgment sent to a human are `notice` replies with no bracketed tag. (LOG, 2026-10-26, human
 messages; LOG, 2026-10-26, answers without a choice; low, designed)
+
+**10.10** A status line that a page shows a person about a session's present work, its doing line,
+is written for that person in the person's language, as 10.5 asks of a message's first line, and in
+a sober register. It states the work in the person's terms and, during a wait, what the wait waits
+for. It carries no ids, paths, figures or clock times, and names the task by its name; the request
+id goes only in a separate field beside the line. The line is true at every moment it shows, so
+whoever writes it changes it when the work or the wait changes, before the old line would mislead.
+(LOG, 2026-10-26, doing line; low, one ruling, not yet seen on a page)
 
 ## 11. Conformance, checks and versioning
 

@@ -17,7 +17,8 @@ illustrative names, spelled MEMBER.TEAM@HOST, as in `rev-1.alpha@box1`. A sessio
 R01, R02, R07, R08, R09, R10, R11 and R13 are delivered. R07 and the filtered list view arrived in
 0186dcd (#27); R11's last-activity column and R13's taken requests arrived in da068ef (#28).
 R01 and R08 arrived in 143fbb8 (#30); 92ab75d (#31) keeps older addresses working during a move.
-R03, R04, R05 and R06 remain open; R12 stays in the director's routine.
+R05 is delivered, narrowed to a deferral to the first prompt, in 88561bf (#54). R03, R04 and R06
+remain open; R12 stays in the director's routine.
 
 The historical triage recorded under R06 and R13, approved on 2026-10-23 at 04:17 UTC-3, put
 R07, R13, the view hiding empty addresses, R01 with R08, and R05 after the audit fixes and spawn
@@ -63,20 +64,19 @@ holds waits without a bell. Code-grounded in `lib/keryx/resolver.rb:37`, `lib/ke
 `:62` and `lib/keryx/address.rb:79`. This is a change of address with the old obligations settled
 there under protocol 3.8, not a rename or an automatic transfer of history.
 
-`keryx who -o json` returns an object with `view`, `hidden` and `addresses`. Iterate
-`.addresses[]`; `view` is `short` or `all` and `hidden` counts omitted addresses.
-Both `who` and `status` hide an address by default only when its session is `none` or `gone`,
-it has no unread mail and no open request involves it as recipient or local sender. Taken requests
-keep addresses visible, as do sessions whose state is unknown. Use `--all` for a run inventory,
-cleanup or checking an inactive address; the short view suffices for active-session heartbeats. Retired addresses never
-appear, including with `--all`, so absence alone does not prove retirement. Keep the successful
-`retire` output with the inventory. `status -o json` keeps its other request and delivery fields;
+`keryx who -o json` returns an object with `view`, `hidden` and `addresses`. Iterate `.addresses[]`;
+`view` is `short` or `all` and `hidden` counts omitted addresses. Both `who` and `status` hide an
+address by default only when its session is `none` or `gone`, it has no unread mail and no open
+request involves it as recipient or local sender. Taken requests keep addresses visible, as do
+sessions whose state is unknown. Use `--all` for a run inventory, cleanup or checking an inactive
+address; the short view suffices for active-session heartbeats. Retired addresses never appear,
+including with `--all`, so absence alone does not prove retirement. Keep the successful `retire`
+output with the inventory. `status -o json` keeps its other request and delivery fields;
 `.addresses[]` selects only its address records. Delivered by 8262ea4, merged in 0186dcd (#27).
-Code-grounded in
-`lib/keryx/commands/who.rb:66`, `lib/keryx/commands/status.rb:92`,
-`lib/keryx/roster.rb:16` and `lib/keryx/commands/retire.rb:106`;
-`test/cli/short_view_test.rb:32` covers hiding quiet addresses and `:70` the JSON shape.
-(LOG, 2026-10-23 09:43, address retirement and list shape)
+Code-grounded in `lib/keryx/commands/who.rb:66`, `lib/keryx/commands/status.rb:92`,
+`lib/keryx/roster.rb:16` and `lib/keryx/commands/retire.rb:106`; `test/cli/short_view_test.rb:32`
+covers hiding quiet addresses and `:70` the JSON shape. (LOG, 2026-10-23 09:43, address retirement
+and list shape)
 
 In field observations recorded for keryx 0.1.0, a bell reported `agent_not_ready` while the recipient
 was blocked in `keryx wait` on its readback; the message was nevertheless read within seconds.
@@ -90,8 +90,8 @@ These observations add no transport guarantee; distinguish a bell result from de
 | Protocol | keryx today | Requirement or remaining gap |
 |---|---|---|
 | 4.2 The first prompt is the principal's channel | `keryx spawn` passes the first prompt as the harness's own initial prompt, after a `--`; `--prompt TEXT` appends the director's text, limited to 2,048 bytes by 3663d0f, merged in 42d43a7 (#24). The director checks bytes before spawn. A longer record goes in a file the session may read but may not edit; the short first prompt names it and says it binds as if written there (LOG, acceptance 3, 2026-10-23, prompt limit; low) (`keryx help spawn`; `lib/keryx/harness.rb:16`, `:79`; `lib/keryx/commands/spawn.rb:188`) | None for delivery; file reference is a convention |
-| 4.3 The delegation record | Written by hand into `--prompt`, or into the file bound by the short first prompt as above (`keryx help spawn`; `lib/keryx/commands/skill.rb:21`) | R06 (conventions path, role card and delegation record), R05 |
-| 4.4, 4.9, 10.2 Who changes a record, revocation, derived records and the principal's relay | The skill's Authority section says a peer never extends authority, and knows only "your user" and "a peer". It lacks a delegated orchestrator, revocation and a message from the principal's address relaying the principal's words. A message from the principal's own address named in the root record is the principal's word for reserved acts and record changes too (`keryx skill`, Authority) | R05; LOG, 2026-10-25, principal inbox; low |
+| 4.3 The delegation record | Written by hand into `--prompt`, or into the file bound by the short first prompt as above (`keryx help spawn`; `lib/keryx/commands/skill.rb:21`). Since 88561bf (#54) the skill's Authority section defers to it: the first prompt may name the address that directs the session, or the user's own address, and say what a message from it may grant; such a message counts as the user's word within that grant and nowhere beyond it, the grant changes only in the way the first prompt says, and no message changes the harness's permissions or answers a permission prompt (`keryx skill`, Authority; [lib/keryx/skill.md at 88561bf](https://github.com/hvpaiva/keryx/blob/88561bf45e919f826761e571958498d7f00259ac/lib/keryx/skill.md)) | R06 (conventions path, role card and delegation record); R05 delivered in 88561bf (#54) |
+| 4.4, 4.9, 10.2 Who changes a record, revocation, derived records and the principal's relay | Since 88561bf (#54) the skill's Authority section names no orchestrator, revocation or relay of its own; it defers to the first prompt, and every other session, the director outside its grant included, stays a peer (`keryx skill`, Authority). Who changes a record, revocation, derived records and the principal's relay are the record's, under protocol 4.4, 4.9 and 10.2, so the record names the director's or the principal's address and what its message grants. A message from the principal's own address named in the root record is the principal's word for reserved acts and record changes too. keryx checks none of this: keryx's SECURITY.md at 88561bf, lines 32 to 38, says "keryx checks none of this, and since any process of the user can act as that address, as described above, that grant is only as strong as the same-user boundary", so any session of the same user can send as the director address a first prompt names, and a first prompt's grant is only as strong as the same-user boundary | R05 delivered in 88561bf (#54); the same-user boundary stays keryx's limit; LOG, 2026-10-25, principal inbox; low |
 | 4.5 Relayed text marked as the orchestrator's | Outside keryx; text typed into a pane goes through herdr (`keryx help spawn`; protocol 4.5) | None |
 | 4.7 Declared authority and capability | spawn sets `crossSessionInbound` to accept and the stop hook for Claude Code sessions only; Codex and Cursor hooks need the user's own trust (`keryx help spawn`; `lib/keryx/harness.rb:11`) | Harness notes |
 
@@ -118,11 +118,12 @@ Answer a [clarify] with `keryx reply CLARIFY_ID TEXT`, the result of that questi
 the original work request or add a [decision] kind; delivered-item decisions remain in the
 requester's checkpoint under 5.5. (protocol 5.2; LOG, field PR 26, clarify answer; low)
 
-keryx stores each message as one JSON file with `keryx` (format 2 for team or session addresses, format 1 between two old addresses), `id`, `kind`, `from`, `to`,
-`thread`, `in_reply_to`, `created_at`, `due_at` and `body`, plus `context` when stamped. The transport
-kinds are `message`, `request`, `reply` and `withdrawal` (`lib/keryx/message.rb:17`, `:82`). Withdrawal
-arrived in a5157e6 (#19); `send --re` uses `message`, with no new kind. The nomos kinds ride on top
-as the tag at the start of the first line (protocol 5.2).
+keryx stores each message as one JSON file with `keryx` (format 2 for team or session addresses,
+format 1 between two old addresses), `id`, `kind`, `from`, `to`, `thread`, `in_reply_to`,
+`created_at`, `due_at` and `body`, plus `context` when stamped. The transport kinds are `message`,
+`request`, `reply` and `withdrawal` (`lib/keryx/message.rb:17`, `:82`). Withdrawal arrived in
+a5157e6 (#19); `send --re` uses `message`, with no new kind. The nomos kinds ride on top as the tag
+at the start of the first line (protocol 5.2).
 
 Command forms in the following table are from `keryx help ask`, `send`, `reply`, `withdraw`
 and `spawn`; the tags and their meanings are nomos conventions under protocol 5.2.
@@ -141,18 +142,18 @@ and `spawn`; the tags and their meanings are nomos conventions under protocol 5.
 | handover | `keryx ask ADDRESS --file NOTE-REQUEST`, or the request `keryx spawn` posts | R03 for a kind of its own |
 | handover-ack | `keryx reply ID "[handover-ack] ..."` with the readback | R03 |
 
-Only the recipient of an open request can use `keryx send --re ID TEXT`, with the ID from its
-own mailbox. It sends to the requester in that request's thread, without an ADDRESS argument.
-The requester cannot use `--re` on the request it sent. The recipient's send marks the request
-read and taken; `status` keeps it open, and the stop hook no longer reminds of it. Use it for [accept] and [progress], naming the
-id in the body so the message stands alone. It works only while the request is open; an answered
-or withdrawn request is refused. After the reply, send a message or a new request naming the
-original id under protocol 5.5. A requester sends amendments and delivered-item decisions with
-`keryx send ADDRESS`; a [clarify] uses `keryx ask` and names the original id. Tags are not parsed.
-A requester can reply to the worker's threaded message to stay in the thread; that reply settles
-nothing. After a commitment reply under 5.3, send the result with `keryx send ADDRESS`, naming
-the original request in the body; `send --re` is no longer available. Follow-up work is a new
-request under protocol 5.5.
+Only the recipient of an open request can use `keryx send --re ID TEXT`, with the ID from its own
+mailbox. It sends to the requester in that request's thread, without an ADDRESS argument. The
+requester cannot use `--re` on the request it sent. The recipient's send marks the request read and
+taken; `status` keeps it open, and the stop hook no longer reminds of it. Use it for [accept] and
+[progress], naming the id in the body so the message stands alone. It works only while the request
+is open; an answered or withdrawn request is refused. After the reply, send a message or a new
+request naming the original id under protocol 5.5. A requester sends amendments and delivered-item
+decisions with `keryx send ADDRESS`; a [clarify] uses `keryx ask` and names the original id. Tags
+are not parsed. A requester can reply to the worker's threaded message to stay in the thread; that
+reply settles nothing. After a commitment reply under 5.3, send the result with
+`keryx send ADDRESS`, naming the original request in the body; `send --re` is no longer available.
+Follow-up work is a new request under protocol 5.5.
 
 R13 was delivered by 00849e5, merged in da068ef (#28). Its coverage includes
 `test/cli/thread_test.rb:25` for the thread, `:37` for taken state, `:47` for the recipient-only
@@ -175,16 +176,17 @@ code-grounded; this review did not exercise repeated sends. (R13; low, help and 
 ## Briefs, reports and reviews
 
 keryx carries text and paths, and nothing in it knows a brief from a report. A brief goes with
-`keryx ask ADDRESS --file BRIEF` or as the request `keryx spawn MEMBER.TEAM --file BRIEF` posts before the session
-exists. A report goes with `keryx reply ID --file REPORT`. Probes, findings and notes live in files
-the messages point to, which is how the traces stay on disk (7.6). One writer per shared resource
-(6.5) is kept outside keryx, by worktrees or by the director. keryx reads the context figure (7.1),
-shows it in the CONTEXT column of `who` and `status`, and stamps it on a message sent by a session
-holding its own address when the figure can be measured (R09, delivered in 60b1abb, #20). Messages
-sent with `--as`, from a plain terminal or by the courier carry no context stamp. This includes the
-predecessor's `--as` messages during handover; use an observed `who` figure or report unknown.
-`test/cli/context_figures_test.rb:90` covers a session's stamp and `:115` the unstamped terminal
-and `--as` cases. Context stamping is in `lib/keryx/app.rb:95`. An unavailable figure remains unknown; CONTEXT is `-` when no session runs.
+`keryx ask ADDRESS --file BRIEF` or as the request `keryx spawn MEMBER.TEAM --file BRIEF` posts
+before the session exists. A report goes with `keryx reply ID --file REPORT`. Probes, findings and
+notes live in files the messages point to, which is how the traces stay on disk (7.6). One writer
+per shared resource (6.5) is kept outside keryx, by worktrees or by the director. keryx reads the
+context figure (7.1), shows it in the CONTEXT column of `who` and `status`, and stamps it on a
+message sent by a session holding its own address when the figure can be measured (R09, delivered in
+60b1abb, #20). Messages sent with `--as`, from a plain terminal or by the courier carry no context
+stamp. This includes the predecessor's `--as` messages during handover; use an observed `who` figure
+or report unknown. `test/cli/context_figures_test.rb:90` covers a session's stamp and `:115` the
+unstamped terminal and `--as` cases. Context stamping is in `lib/keryx/app.rb:95`. An unavailable
+figure remains unknown; CONTEXT is `-` when no session runs.
 
 ## The session life cycle and handover
 
@@ -213,13 +215,15 @@ confirm its readback or transfer nomos ownership before protocol 9.4's confirmat
 1. The director asks the outgoing session for the note with `keryx ask`, giving the path to write.
 2. The outgoing session writes the note, with its table of obligations by id, replies with its path,
    runs `keryx leave`, and stays open in its pane without an address until the readback is confirmed.
-3. If herdr still assigns the outgoing pane the member's agent name, the director frees that
-   herdr name within its record before spawning from another pane. This does not rename the keryx
-   address (`lib/keryx/spawner.rb:54`). The director starts the incoming session with `keryx spawn MEMBER.TEAM ... --file HANDOVER-REQUEST`,
-   whose first prompt asks for a readback before any action.
+3. If herdr still assigns the outgoing pane the member's agent name, the director frees that herdr
+   name within its record before spawning from another pane. This does not rename the keryx address
+   (`lib/keryx/spawner.rb:54`). The director starts the incoming session with
+   `keryx spawn MEMBER.TEAM ... --file HANDOVER-REQUEST`, whose first prompt asks for a readback
+   before any action.
 4. The incoming session replies to the handover request with `[handover-ack]` and its readback. The
-   director checks it against the note and confirms with `keryx send MEMBER.TEAM "[accept] ID, ..."`, which
-   carries the time, and records the cutover in its checkpoint.
+   director checks it against the note and confirms with
+   `keryx send MEMBER.TEAM "[accept] ID, ..."`, which carries the time, and records the cutover in
+   its checkpoint.
 5. A question for the predecessor goes through the director, which types it into the predecessor's
    pane marked as its own (4.5). No renamed address is created.
 6. The director tells the peers with open work, then ends the predecessor by the playbook's Cleanup
@@ -227,17 +231,18 @@ confirm its readback or transfer nomos ownership before protocol 9.4's confirmat
 
 For an orchestrator renewing itself under protocol 9.5, the outgoing session performs the director's
 steps for the transfer. After saving the checkpoint and note it runs `keryx leave`, then
-`keryx join orq-out.alpha --role orchestrator` for a temporary address of its own (with `--revive` when
-an earlier renewal retired it), and from there `keryx spawn orq.alpha ... --file HANDOVER-REQUEST` for the
-stable address, carrying the current record and principal channel unchanged in the first prompt. The
-successor's readback and replies then ring the outgoing session, and its messages need no `--as`,
-which records forbid; an outgoing session that held no address could not send its `[accept]`.
-Protocol 9.5 supplies the trigger, complete note, health checks, two-successor failure limit and
-cutover duties. The outgoing session checks the successor with `keryx who -o json | jq '.addresses[]'`
-and compares `keryx status -o json` with the note's requests. For the bell check, send a `[clarify]`
-ping request naming the handover id and a fresh token with `keryx ask orq.alpha --within 2m TEXT`. The
-successor reports whether the bell arrived and replies with the token. Reading the ping by polling is
-not evidence of a bell. The two-minute wait is a default.
+`keryx join orq-out.alpha --role orchestrator` for a temporary address of its own (with `--revive`
+when an earlier renewal retired it), and from there
+`keryx spawn orq.alpha ... --file HANDOVER-REQUEST` for the stable address, carrying the current
+record and principal channel unchanged in the first prompt. The successor's readback and replies
+then ring the outgoing session, and its messages need no `--as`, which records forbid; an outgoing
+session that held no address could not send its `[accept]`. Protocol 9.5 supplies the trigger,
+complete note, health checks, two-successor failure limit and cutover duties. The outgoing session
+checks the successor with `keryx who -o json | jq '.addresses[]'` and compares
+`keryx status -o json` with the note's requests. For the bell check, send a `[clarify]` ping request
+naming the handover id and a fresh token with `keryx ask orq.alpha --within 2m TEXT`. The successor
+reports whether the bell arrived and replies with the token. Reading the ping by polling is not
+evidence of a bell. The two-minute wait is a default.
 
 The outgoing session sends the timed confirmation only after all health checks pass, stops or hands
 over its watchers, leaves the temporary address and starts nothing more. Only the successor then
@@ -256,13 +261,13 @@ team; a recipient still unresolved is checked as a reply to an unknown recipient
 section 4). (protocol 10.5 to 10.9 and 11.2; LOG, 2026-10-26, bare block; low, one message)
 
 The orchestrator's first prompt uses the root form of `templates/first-prompt.md` to declare the
-team's one channel to the principal (10.2). The principal may talk live in the orchestrator's own harness session. A
-terminal uses NAME.local in keryx (`keryx help whoami`); it is a principal's channel only when the
-record names it. When the principal's channel is a pane a relay reads, the root record may name
-that relay by full address. The orchestrator puts each escalation in the declared channel and
-sends its text or accessible file to the relay through keryx, so it rings a reader. Naming the
-relay grants no decision authority and creates no second channel beyond the one 10.2 declares.
-(protocol 10.2; LOG, acceptance 1, N2; low)
+team's one channel to the principal (10.2). The principal may talk live in the orchestrator's own
+harness session. A terminal uses NAME.local in keryx (`keryx help whoami`); it is a principal's
+channel only when the record names it. When the principal's channel is a pane a relay reads, the
+root record may name that relay by full address. The orchestrator puts each escalation in the
+declared channel and sends its text or accessible file to the relay through keryx, so it rings a
+reader. Naming the relay grants no decision authority and creates no second channel beyond the one
+10.2 declares. (protocol 10.2; LOG, acceptance 1, N2; low)
 
 When the principal has an inbox, the root record names its full address, host included, together
 with the orchestrator's own session as that one channel. At keryx 7debfde (#38), the principal's
@@ -302,9 +307,10 @@ local address. `lib/keryx/identity.rb` checks the caller; f1a9063 supplies the r
 terminal-specific hint, and 515b178's test definition covers `send --on` succeeding from a plain
 terminal and being refused to an agent. This is a caller check, not sender authentication; the
 source and test definitions were read, not executed here. A human address on another host is a
-third party under 4.6 unless a record names it. R05 must add to the skill's Authority section that
-a message from the principal's named address is the principal's word, beside "your user" and "a
-peer". (protocol 10.2; LOG, 2026-10-25, principal inbox; low, one counterexample)
+third party under 4.6 unless a record names it. Since R05 (88561bf, #54) the skill's Authority
+section defers to the first prompt, so the root record names the principal's address and what a
+message from it grants; the skill names no principal of its own.
+(protocol 10.2; LOG, 2026-10-25, principal inbox; low, one counterexample)
 
 ## Checks and packaging
 
@@ -339,7 +345,7 @@ errors and request deadlines and sends the stall notice from its routine.
 | R02 | Withdrawing a request, delivered in a5157e6 (#19) (`keryx help withdraw`) | 3.8, 5.2, 5.6 |
 | R03 | Open, after 0.1.0. A handover kind that `inbox` shows first and `join` mentions (`lib/keryx/message.rb:17`; `keryx help inbox`, `keryx help join`) | 5.2, 9.4 |
 | R04 | Open, after 0.1.0. `spawn --takeover`, and spawn waiting for a readback (`keryx help spawn`; `lib/keryx/commands/spawn.rb:201`) | 9.2, 9.4 |
-| R05 | Open (`keryx skill`, Authority), planned before 0.1.0. A delegated orchestrator, record changes and revocation in the skill's Authority section, plus the principal's address relaying the principal's words beside "your user" and "a peer". A message from the principal's own address named in the root record is the principal's word for reserved acts and record changes too | 4.3, 4.4, 4.9, 10.2 |
+| R05 | Delivered in 88561bf (#54), narrowed to a deferral: the skill's Authority section lets the session's first prompt name the directing address or the user's own address and what its message grants, within that grant only (`keryx skill`, Authority; [lib/keryx/skill.md at 88561bf](https://github.com/hvpaiva/keryx/blob/88561bf45e919f826761e571958498d7f00259ac/lib/keryx/skill.md)). A delegated orchestrator, record changes, revocation and the principal's relay stay in the record. keryx checks none of this: keryx's SECURITY.md at 88561bf, lines 32 to 38, says "keryx checks none of this, and since any process of the user can act as that address, as described above, that grant is only as strong as the same-user boundary", so any session of the same user can send as the director address a first prompt names, and a first prompt's grant is only as strong as the same-user boundary | 4.3, 4.4, 4.9, 10.2 |
 | R06 | Open (`lib/keryx/config.rb:10`, `lib/keryx/commands/skill.rb:21`; `keryx help spawn`). Conventions-directory config path, first prompt from member and role cards and delegation record, and `keryx skill` printing the member-card path; items 1 and 3 after 0.1.0, item 2 awaiting safe first-prompt delivery, opt-in message checks (item 4) declined for now in the triage recorded under R06 | 4.3, 11.2 |
 | R07 | Retiring an address, delivered in 0186dcd (#27); `retire ADDRESS` and `join MEMBER.TEAM --revive` (`keryx help retire`) | 3.8 |
 | R08 | Delivered in 143fbb8 (#30). Session selectors, displaced-session reachability and refusal after departure (`keryx help join`, `keryx help read`, `keryx help reply`; `lib/keryx/postman.rb:40`) | 3.3, 3.4, 9.4 |

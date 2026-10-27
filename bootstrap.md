@@ -79,14 +79,14 @@ to it. Harness startup is separate from reading cost but remains inside the sess
 | QA | At start | `cards/member.md` + `cards/qa.md` | 755 | 2,720 to 3,100 |
 | Auditor | At start | `cards/member.md` + `cards/auditor.md` | 792 | 2,860 to 3,250 |
 | Writer | At start | `cards/member.md` + `cards/writer.md` | 761 | 2,740 to 3,130 |
-| Orchestrator | At start | `cards/orchestrator.md` (598), `orchestrator.md` (2,500), bootstrap sections 7 and 8 (2,414), harness notes for all three harnesses (1,565); omit notes for harnesses not being spawned | 7,077 | 25,480 to 29,020 |
+| Orchestrator | At start | `cards/orchestrator.md` (598), `orchestrator.md` (2,500), bootstrap sections 7 and 8 (2,445), harness notes for all three harnesses (1,705); omit notes for harnesses not being spawned | 7,248 | 26,100 to 29,720 |
 | Harness start, outside nomos | Record the context stamped on the first readback | On 2026-10-23, third-run Claude Code 50.2K at its first turn and 60.9K after join and skill; first-run Claude Code 50.9K and 61.8K after join, skill and inbox; first-run Codex about 23K on its readback | Not a word count | Observed context, not a text estimate |
 | Hook reader | Only to read or change the pre-send hook | `hooks/pre-send.rb`, then the one file in `hooks/pre_send/` for the class, and `lib/nomos/` for the shared rules | Not a word count | Code, not a text estimate |
 | Whoever fills this form | Only when filling it | `templates/audit-brief.md` | 781 | 2,820 to 3,210 |
 | Whoever fills this form | Only when filling it | `templates/brief.md` | 1,257 | 4,530 to 5,160 |
 | Whoever fills this form | Only when filling it | `templates/escalation.md` | 495 | 1,790 to 2,030 |
 | Whoever fills this form | Only when filling it | `templates/first-prompt.md` | 2,140 | 7,710 to 8,780 |
-| Whoever fills this form | Only when filling it | `templates/handover.md` | 1,616 | 5,820 to 6,630 |
+| Whoever fills this form | Only when filling it | `templates/handover.md` | 1,635 | 5,890 to 6,710 |
 | Whoever fills this form | Only when filling it | `templates/human-message.md` | 1,156 | 4,170 to 4,740 |
 | Whoever fills this form | Only when filling it | `templates/plan-review.md` | 420 | 1,520 to 1,730 |
 | Whoever fills this form | Only when filling it | `templates/report.md` | 512 | 1,850 to 2,100 |
@@ -98,7 +98,7 @@ to it. Harness startup is separate from reading cost but remains inside the sess
 | Claude Code member | Only the note needed for its own harness | `harness-notes.md`, Claude Code | 50 to 204 per note | 180 to 840 per note |
 | Codex member | Only the note needed for its own harness | `harness-notes.md`, Codex | 34 to 256 per note | 130 to 1,050 per note |
 | Cursor member | Only the note needed for its own harness | `harness-notes.md`, Cursor | 77 to 356 per note | 280 to 1,460 per note |
-| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 36,087 in catalog | 129,920 to 147,960 in catalog |
+| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 36,604 in catalog | 131,780 to 150,080 in catalog |
 
 The largest initial member load is 792 words, `cards/member.md` plus `cards/auditor.md`, below the 800-word
 limit. The common card has 500 words; role cards have implementer 273, reviewer 280, qa 255, auditor 292, writer 261; the orchestrator card has 598.
@@ -877,8 +877,14 @@ When nomos says "the local layer", it means these instructions.
      the watcher loop of the playbook (Keeping the orchestrator light) as a background command of its
      harness, and starts it again after every compaction or relaunch. Section 8 checks this mode
      separately.
-5. The orchestrator tells the principal, in a few lines, what it understood and what it will do
-   first, and records the principal's answer in the decision log in their own words.
+5. Before it starts a member, the orchestrator gives the principal, through the declared channel, its
+   readback in the five labeled lines of protocol 9.2, `Address`, `Role`, `Task`, `Authority` and
+   `Next action`, as the root form asks, and records the principal's answer in the decision log in
+   their own words. Compare the readback with the first prompt file before you confirm it. The
+   optional [readback comparator](#4-make-every-session-load-nomos) flags lexical differences, as
+   in `ruby bin/compare-readback.rb --record FIRST_PROMPT_FILE --readback READBACK_FILE`, after you
+   save the readback as a text file; a match never replaces your confirmation. (protocol 9.2; LOG,
+   2026-10-26, run-start readback; LOG, 2026-10-26, readback form; low)
 
 ## 7. Start the first team
 
@@ -965,19 +971,23 @@ When nomos says "the local layer", it means these instructions.
    record and the principal's standing rules, such as "Continue without trusting" for Codex hooks.
    Allow once what the record grants, never the option that changes a setting or stops later prompts,
    and decline what the record does not grant or reserves. Hook trust, folder trust or a setting change
-   is granted only where the record names it with its configuration effects and directory (HN02, HN20,
-   HN26). Bring the principal, at once through the declared channel, only a dialog none of these
-   covers or one your harness will not let you answer, and never leave one to time out or to an
-   automatic deny. spawn answers no dialog; the session joins once it is answered, even after timeout
-   status 3 (HN28). keryx also tells the director about a dialog that stops a session long after its
-   join. Read `keryx who` before spawning again. Name the pane with `herdr pane rename PANE NAME`.
+   is granted only where the record names it with its configuration effects and its directory or a
+   parent directory (HN02, HN20, HN26). Bring the principal, at once through the declared channel,
+   only a dialog none of these covers or one your harness will not let you answer, and never leave
+   one to time out or to an automatic deny. spawn answers no dialog; the session joins once it is
+   answered, even after timeout status 3 (HN28). keryx also tells the director about a dialog that
+   stops a session long after its join. Read `keryx who` before spawning again. Name the pane with
+   `herdr pane rename PANE NAME`.
    Since keryx 37056f1 the dialog notice and the keryx skill say the same; the notice grants nothing.
    (LOG, 2026-10-23 08:44 and 09:01 UTC-3, spawn dialog authority; LOG, field PR 27, dialog notices;
    N17; LOG, 2026-10-26, unanswered dialogs; low, three earlier quoted dialogs without a recorded
    grant, the principal's standing instruction and one incident)
 6. Wait for the member's readback by mail and compare it, line by line, with the delegation file and
    the brief. A join is not readiness (protocol, The session life cycle and handover). A readback that
-   misses a field, or adds authority, gets a correction before the member acts.
+   misses a field, or adds authority, gets a correction before the member acts. The optional
+   [readback comparator](#4-make-every-session-load-nomos) helps, as in
+   `ruby bin/compare-readback.rb --record DELEGATION_FILE --readback READBACK_FILE --brief BRIEF_FILE`;
+   its match is lexical and never replaces your confirmation (protocol 9.2).
 7. Set the stored ceiling so its 80% notice falls at the intended handover trigger; the brief sets
    no separate lower token stop. The member reads `keryx who` after each work unit. (playbook,
    The ceiling; LOG, field PR 26, stop lines; low)
@@ -1093,12 +1103,14 @@ only what its record grants. The principal decides reserved removals. (protocol 
 
 - [ ] Decide each delivered result and settle or transfer each open request; check the team's ids in
   `keryx status -o json` and name the holder of anything still pending.
-- [ ] After a Codex member leaves, send `/quit` or `/exit` with `herdr pane send-text`, pause about
-  one second, then send Enter with `herdr pane send-keys`. Check that the process exited; immediate
-  Enter can leave the text in the composer. (HN35; LOG, field PR 25; LOG, 2026-10-23 09:00 UTC-3; low)
+- [ ] After a Codex member leaves, type `/quit` or `/exit` as literal text with the multiplexer's
+  command, pause about one second, then submit Enter with its command (playbook, Cleanup table).
+  Check that the process exited; immediate Enter can leave the text in the composer. (HN35; LOG,
+  field PR 25; LOG, 2026-10-23 09:00 UTC-3; low)
 - [ ] Confirm departing members ran leave, exited and have no surviving harness process before
-  closing their panes; compare `keryx who --all -o json | jq '.addresses[]'`, `herdr pane process-info --pane PANE`,
-  `ps -p PID -o pid=,lstart=,args=` and `herdr pane list` with the inventory.
+  closing their panes; compare `keryx who --all -o json | jq '.addresses[]'`, the multiplexer's
+  process query, `ps -p PID -o pid=,lstart=,args=` and its pane list with the inventory (playbook,
+  Cleanup table).
 - [ ] Account for every run-created address with `keryx who --all -o json | jq '.addresses[]'` and
   `keryx status --all -o json`. In 0186dcd, who returns `{view, hidden, addresses}`; iterate
   `.addresses[]`, not the top level. `--all` includes inactive addresses hidden by the short view.
@@ -1115,7 +1127,7 @@ only what its record grants. The principal decides reserved removals. (protocol 
 - [ ] Stop or hand over all recorded loops, heartbeats and watchers; use PID and scheduler checks to
   prove the old instances ended and any continuing instance has its new holder and next check.
 - [ ] If the run created a status board, stop its watch process and close its pane; verify the
-  recorded PID is gone and the pane is absent from `herdr pane list`.
+  recorded PID is gone and the pane is absent from the multiplexer's pane list.
 - [ ] Check the exact harness trust entries this run added against the saved pre-run entries. Remove
   only with the settings grant and only at run end, preserving other changes; otherwise propose the
   entries to the principal and list them as retained. Repeat the scoped `rg` check from Cleanup.

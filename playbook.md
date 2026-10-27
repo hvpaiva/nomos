@@ -217,7 +217,8 @@ pool each of your accounts draws from, how full it is, and which harness shows i
 - Route one class of work to another harness by account boundary when a pool runs short. One
   principal drew the line by how a task ends. A task that ends in a command run and its output read
   went to a harness on another account, and a task that ends in code someone will maintain stayed
-  with the strongest coding model. It is a rule by the shape of the work, not by model strength. (P06; low, seen once as a decision)
+  with the strongest coding model. It is a rule by the shape of the work, not by model strength.
+  (P06; low, seen once as a decision)
 - A pool is drawn by every session on the account at once, so a parallel batch spends it in a burst,
   and a tool's rate limit is a pool too. Check how full each pool is before a batch. (P06; low)
 - A usage limit that cuts a session mid-task can kill a background subtask with it, and the harness's
@@ -347,10 +348,11 @@ orchestrator checks each one itself. (P03, P12; high)
 The gates are quality and the record is authority, and a change needs both. In the one coordinated
 round with a publication token, each authorization also pinned the commit it was given for. The
 second review round is the budget for small fixes. A blocker left after it never merges; the
-orchestrator narrows the scope, asks for another fix or escalates (protocol, Reviews). After the merge
-the orchestrator updates the main checkout and reinstalls what the team runs on only under grants
-that cover those acts, and closes the members whose task ended (leave first). In the first round the
-second review rounds found only edge cases. (P03, P12; high for the gates; M14; medium for pinning the head)
+orchestrator narrows the scope, asks for another fix or escalates (protocol, Reviews). After the
+merge the orchestrator updates the main checkout and reinstalls what the team runs on only under
+grants that cover those acts, and closes the members whose task ended (leave first). In the first
+round the second review rounds found only edge cases. (P03, P12; high for the gates; M14; medium for
+pinning the head)
 
 Remove the team's merged worktrees and branches only when the record grants that cleanup and after
 checking that no member or unmerged work still needs them. Otherwise leave them in place and propose
@@ -376,18 +378,39 @@ cleanup; low)
 At a swap, keep resources needed by live work, transfer the inventory and watchers explicitly, and
 close the outgoing pane only after its process is gone. At each task end, settle its requests and
 remove or retain its resources under the record. At run end, check every inventory row, including
-the board, test directories and trust entries; leave no leftover without a reason and owner.
-The acceptance run left cleanup to its director, which removed four worktrees and a merged branch,
-while the later handover still listed test directories, a trust entry and inactive addresses.
-Later, the director archived all three tests' evidence before removing their directories, removed
-the first test's trust entry, and retained inactive addresses, measurement transcripts and inert
-project entries with reasons. (protocol 9.4, 9.5; LOG, 2026-10-23 05:13 UTC-3 and about 08:45 UTC-3, cleanup;
-LOG, acceptance 3, 2026-10-23, cleanup; low)
+the board, test directories and trust entries; leave no leftover without a reason and owner. The
+acceptance run left cleanup to its director, which removed four worktrees and a merged branch, while
+the later handover still listed test directories, a trust entry and inactive addresses. Later, the
+director archived all three tests' evidence before removing their directories, removed the first
+test's trust entry, and retained inactive addresses, measurement transcripts and inert project
+entries with reasons. (protocol 9.4, 9.5; LOG, 2026-10-23 05:13 UTC-3 and about 08:45 UTC-3,
+cleanup; LOG, acceptance 3, 2026-10-23, cleanup; low)
 
-When closing a Codex member after leave, send `/quit` or `/exit` with `herdr pane send-text`, pause
-about one second, then submit Enter with `herdr pane send-keys`. Verify process exit before closing
-the pane; immediate Enter can leave the command in the composer. The field also proposes `ctrl+c`
-to clear the composer first. (HN35; LOG, field PR 25, harness operation; LOG, 2026-10-23 09:00 UTC-3; low)
+When closing a Codex member after leave, type `/quit` or `/exit` as literal text, pause about one
+second, then submit Enter. Verify process exit before closing the pane; immediate Enter can leave
+the command in the composer. The field also proposes `ctrl+c` to clear the composer first. (HN35;
+LOG, field PR 25, harness operation; LOG, 2026-10-23 09:00 UTC-3; low)
+
+The close order depends on no one multiplexer. The table gives each step's commands for herdr and
+tmux, the first two, with PANE the recorded pane id. The herdr column is what the team ran; the tmux
+column was checked against the tmux 3.7c manual page on 2026-10-27 and has not closed a team session
+yet. tmux's `#{pane_pid}` is the first process in the pane, which is the harness only when the pane
+was started with it as its command, so read the harness's own pid with `ps` when a shell started it.
+When the harness was the pane's command, tmux removes the pane as the process ends, so
+`tmux kill-pane` and `tmux list-panes` may report no pane or no server; after the pid check, read
+that as the pane being gone. A probe on a scratch tmux 3.7c server showed both commands exiting 1
+with "no server running" once the pane's only command had ended. Another multiplexer needs the same
+six steps, checked the same way. (protocol 9.5; LOG, 2026-10-26, multiplexer-neutral closing; low,
+closes seen in herdr only)
+
+| Step | herdr 0.9.5 | tmux 3.7c |
+|---|---|---|
+| Read the screen, and later the composer | `herdr pane read PANE` | `tmux capture-pane -p -t PANE` |
+| Type `/exit` as literal text | `herdr pane send-text PANE /exit` | `tmux send-keys -t PANE -l /exit` |
+| Submit Enter | `herdr pane send-keys PANE Enter` | `tmux send-keys -t PANE Enter` |
+| Find the process to wait for | `herdr pane process-info --pane PANE` | `tmux display-message -p -t PANE '#{pane_pid}'` |
+| Close the pane | `herdr pane close PANE` | `tmux kill-pane -t PANE` |
+| Check the pane is gone | `herdr pane list` | `tmux list-panes -a -F '#{pane_id}'` |
 
 Use the commands below with your run's recorded ids and paths. Save the command, output, exit code
 and time before and after the covered cleanup. A denied or failed query proves no absence. These
@@ -396,13 +419,13 @@ are verification commands, not a grant to remove anything. (protocol 7.3, 7.4; L
 
 | Resource | At swap, task end and run end | Check |
 |---|---|---|
-| Member and outgoing panes | Send the acceptance while the member still holds its address; it settles or transfers its obligations and leaves after that acceptance, never after its reply alone. Then close it in this order. Read its screen with `herdr pane read`, type `/exit` with `herdr pane send-text`, read the composer (again when the first read shows it empty), submit Enter with `herdr pane send-keys`, wait until `ps -p PID` shows the process gone, run `herdr pane close`, then `keryx retire` the address under the record. Leaving releases the address; only the exit ends the harness process. At swap retain working members; after the `[accept]` the outgoing orchestrator starts nothing, and the successor ends it by the same order and retires its temporary address. Retain a specialist only for named next work. Recheck all run panes at run end. A launcher that closes finished sessions is the later mechanism; until the team uses one, this order is the close. (LOG, 2026-10-26, closing sequence; LOG, 2026-10-26, leave after acceptance; high for the order, six closes; medium for the successor's close, two handovers) | `keryx who --all -o json \| jq '.addresses[]'` checks the address holder; `herdr pane process-info --pane PANE` and `ps -p PID -o pid=,lstart=,args=` check the recorded harness process; `herdr pane list` checks the pane is gone. An idle pane or released address alone does not prove process exit. |
+| Member and outgoing panes | Send the acceptance while the member still holds its address; it settles or transfers its obligations and leaves after that acceptance, never after its reply alone. Then close it in this order, with the team's multiplexer's commands from the table above. Read its screen, type `/exit` as literal text, read the composer (again when the first read shows it empty), submit Enter, wait until `ps -p PID` shows the process gone, close the pane, then `keryx retire` the address under the record. Leaving releases the address; only the exit ends the harness process. At swap retain working members; after the `[accept]` the outgoing orchestrator starts nothing, and the successor ends it by the same order and retires its temporary address. Retain a specialist only for named next work. Recheck all run panes at run end. A launcher that closes finished sessions is the later mechanism; until the team uses one, this order is the close. (LOG, 2026-10-26, closing sequence; LOG, 2026-10-26, leave after acceptance; high for the order, six closes; medium for the successor's close, two handovers) | `keryx who --all -o json \| jq '.addresses[]'` checks the address holder; the multiplexer's process query above and `ps -p PID -o pid=,lstart=,args=` check the recorded harness process; the multiplexer's pane list checks the pane is gone. An idle pane or released address alone does not prove process exit. |
 | Addresses created by the run | Retain the stable address through swaps. At task or run end, under the record, run `keryx retire ADDRESS` on the address's host after its live holder and open requests in either direction are gone. Keep the mailbox files; `keryx join MEMBER.TEAM --revive` restores the address with them. A purge that deletes them follows only the principal's confirmation and a verified full export, a byte-for-byte copy of every message of each address folder with a manifest of sha256 per file, checked before the purge against the current mailbox, with every id the team's records cite present and matching. (LOG, 2026-10-26, export before purge; low) Otherwise retain and record the reason and holder. | Before retirement compare `keryx who --all -o json \| jq '.addresses[]'` and `keryx status --all -o json` with the run's inventory. Keep the successful retirement output, then check the address is absent from both full lists. Absence alone is not proof. `keryx help retire` states the refusal conditions and restoration command; R07 is delivered in 0186dcd. |
 | Merged worktrees and branches | At swap keep those used by live work. At task end remove only merged, unused resources with the cleanup grant; otherwise propose the exact removals. At run end account for every retained tree and branch. | `git -C REPO worktree list --porcelain`, `git -C TREE status --porcelain`, `git -C TREE stash list` and `git -C REPO branch --merged BASE` establish registration, saved or unsaved work and merge state. Recheck the list and `git -C REPO branch --list BRANCH` after removal. A stash needs review, not deletion. |
 | Scratch directories and temporary files | Transfer required probes and handover evidence at swap. At task and run end remove the run's disposable paths when covered, keeping evidence until its report no longer depends on them. | `ls -ld -- PATH` and `test -L PATH` distinguish the recorded path and a symlink; `test ! -e PATH && test ! -L PATH` checks removal. Check the creation inventory before considering any existing path disposable. |
 | Loops, heartbeats and watchers | At swap name one continuing holder and stop or transfer each old instance after the new heartbeat is armed. At task end stop watchers whose purpose ended. At run end stop every run-owned instance; leave shared services running. | `ps -p PID -o pid=,lstart=,args=` checks the recorded process and start time. For scheduled work use the scheduler's exact listing command recorded when it was armed, such as `systemctl --user list-timers --all` for a user timer or `crontab -l` for a cron entry. Record the successor's id and next check, and verify the old instance stopped. |
-| Board pane | Transfer it at swap, keep it while team work remains, and stop its watch process and close the pane at run end. | `herdr pane process-info --pane BOARD` identifies its watch process; the recorded PID check above and `herdr pane list` verify both process and pane are gone. |
-| Harness trust entries | Preserve entries needed by active sessions at swaps and task ends. At run end remove only entries your run added, only when the record grants the settings edit; otherwise propose them to the principal. Preserve pre-existing and concurrently added settings. | `rg -n -F -- 'RUN_PATH' 'CONFIG_FILE'` locates the recorded entry. Compare with the saved pre-run entry and inspect the exact block, then repeat the query after removal. Exit 1 means no matching text; exit 2 is a failed check. Never restore a whole old config over newer settings. |
+| Board pane | Transfer it at swap, keep it while team work remains, and stop its watch process and close the pane at run end. | The multiplexer's process query for the board's pane identifies its watch process; the recorded PID check above and the multiplexer's pane list verify both process and pane are gone. |
+| Harness trust entries | Preserve entries needed by active sessions at swaps and task ends. Record each entry the run adds, one row per path, including those added under a standing grant naming a parent path and any that a harness writes for a launch flag, as the transport's team reported of Cursor's `--trust` (reported, not observed; harness notes, HN26). At run end remove only entries your run added, only when the record grants the settings edit; otherwise propose them to the principal. Preserve pre-existing and concurrently added settings. (protocol 9.1; LOG, 2026-10-26, folder trust; low) | `rg -n -F -- 'RUN_PATH' 'CONFIG_FILE'` locates the recorded entry. Compare with the saved pre-run entry and inspect the exact block, then repeat the query after removal. Exit 1 means no matching text; exit 2 is a failed check. Never restore a whole old config over newer settings. |
 | Test directories | At swap retain live test state. At task or run end preserve accepted reports and probes first, check no session or test process still needs the directory, then remove only under its grant; otherwise retain and propose it. | `keryx who --all -o json \| jq '.addresses[]'`, the recorded test PID check and `git -C REPO worktree list --porcelain` check known users and registered trees. Use `ls -ld -- TEST_PATH` before and `test ! -e TEST_PATH && test ! -L TEST_PATH` after cleanup. |
 
 Bootstrap section 10 supplies the end-of-run checklist. A check can finish with a retained resource
@@ -552,8 +575,9 @@ and one more late notice)
   to finish the step it is in. (LOG; low)
 - Watch the output, not only the figure. A reviewer at maximum effort read until its ceiling with
   almost nothing written, twice in the recorded nomos run. At each check, look at whether the
-  session's output file has grown, and when it has not, tell the session to write what it has. Size a
-  review task to the window, and split a large review by lens into separate sessions. (LOG; low, seen twice in one run)
+  session's output file has grown, and when it has not, tell the session to write what it has. Size
+  a review task to the window, and split a large review by lens into separate sessions. (LOG; low,
+  seen twice in one run)
 - Renew at a stopping point, never mid-edit, through the handover note and a readback. Check that the
   new session has its role, brief and authority before it acts. (M34, P05; medium)
 - Renew early when answers drift, whatever the figure. One swap addressed drifting answers rather
@@ -562,15 +586,16 @@ and one more late notice)
 Before this practice, context monitoring and saving state before compaction needed manual checks
 in single-session work. The practice above moves those checks to the director. (P05; medium)
 
-keryx now implements R09 and R10 in `evidence.md`. At 60b1abb (#20), it reads each session's
-context from the harness's files, shows CONTEXT in `who` and `status`, and carries the sender's figure
-on each message a session sends from its own address; a send with `--as`, from a terminal or from the
-courier carries none. At fde5548 (#21), `join` and `spawn` accept `--ceiling TOKENS`; the courier notifies
-at 80% and at the ceiling. It tells the session and its director, the spawner or else the sender of
-its oldest open request, and only the session when neither exists. The director still chooses the
-ceiling, checks output and stalls, keeps the checkpoint and arranges handover. A missing figure needs
-the harness-specific check above; a delayed notice still needs margin. (R09, R10; help and display
-checked at fde5548, notice routing code-grounded, threshold delivery not probed here; low)
+keryx now implements R09 and R10 in `evidence.md`. At 60b1abb (#20), it reads each session's context
+from the harness's files, shows CONTEXT in `who` and `status`, and carries the sender's figure on
+each message a session sends from its own address; a send with `--as`, from a terminal or from the
+courier carries none. At fde5548 (#21), `join` and `spawn` accept `--ceiling TOKENS`; the courier
+notifies at 80% and at the ceiling. It tells the session and its director, the spawner or else the
+sender of its oldest open request, and only the session when neither exists. The director still
+chooses the ceiling, checks output and stalls, keeps the checkpoint and arranges handover. A missing
+figure needs the harness-specific check above; a delayed notice still needs margin. (R09, R10; help
+and display checked at fde5548, notice routing code-grounded, threshold delivery not probed here;
+low)
 
 ### The director's heartbeat
 
@@ -578,10 +603,10 @@ While any session is working, the director never waits without a deadline. Give 
 `--within` suited to its task. Set the heartbeat interval to about a quarter of the expected run,
 never more than fifteen minutes, even when no message arrives; a 22-minute audit needs a check about
 every five minutes. Check output-file or transcript growth, errors in the pane and each request's
-deadline. Compare with
-the previous check; silence is not progress. Use `keryx who -o json | jq '.addresses[]'` to list sessions for the routine,
-then inspect those signals. The transport's context notice does not show whether useful work advances. (LOG, field audits of
-fde5548; LOG, 2026-10-23 02:28 UTC-3; low)
+deadline. Compare with the previous check; silence is not progress. Use
+`keryx who -o json | jq '.addresses[]'` to list sessions for the routine, then inspect those
+signals. The transport's context notice does not show whether useful work advances. (LOG, field
+audits of fde5548; LOG, 2026-10-23 02:28 UTC-3; low)
 
 Know which pool each session uses and that it can run out, including when several sessions share
 it. In the recorded nomos run the director waited two and a half hours for a stalled session
@@ -624,14 +649,15 @@ interval) The benchmark found the binding still describing this delivered featur
   the note as the handover request, so the readback rings you and the `[accept]` needs no `--as`.
   Follow `keryx.md`, Handover today. (protocol 9.4, 9.5; LOG, 2026-10-23 about 08:45 UTC-3,
   orchestrator swap; low; LOG, 2026-10-26, temporary outgoing address; medium)
-- Before confirming your successor, compare the readback and record, the holder shown by `keryx who`,
-  the stamped context against the expected harness and reading range, a ping that rings and gets a
-  reply, the team and request inventory, and the armed heartbeat. Save each result. Correct a failed
-  check with `[clarify]`; if it stays wrong, have that successor leave and close it after checking it
-  cannot act, then try one replacement. Ask the principal after the second failure. A historical swap
-  was refused while the outgoing pane still held the same herdr agent name; inspect `herdr agent list`
-  and `keryx who` before retrying, distinguishing a pane name from an occupied address. (protocol 9.5;
-  LOG, 2026-10-23 04:59 UTC-3, swap name collision; LOG, 2026-10-23 about 08:45 UTC-3, orchestrator swap; low)
+- Before confirming your successor, compare the readback and record, the holder shown by
+  `keryx who`, the stamped context against the expected harness and reading range, a ping that rings
+  and gets a reply, the team and request inventory, and the armed heartbeat. Save each result.
+  Correct a failed check with `[clarify]`; if it stays wrong, have that successor leave and close it
+  after checking it cannot act, then try one replacement. Ask the principal after the second
+  failure. A historical swap was refused while the outgoing pane still held the same herdr agent
+  name; inspect `herdr agent list` and `keryx who` before retrying, distinguishing a pane name from
+  an occupied address. (protocol 9.5; LOG, 2026-10-23 04:59 UTC-3, swap name collision; LOG,
+  2026-10-23 about 08:45 UTC-3, orchestrator swap; low)
 - Send the timed `[accept]` only after all checks pass, stop or hand over your watchers, leave the
   temporary address and start nothing more. The successor records cutover, tells affected peers, ends
   your session by the Cleanup order, closes your pane once your process is gone and retires the
@@ -748,14 +774,15 @@ and nobody has measured the reread against the idle cost. (M02, M33, L08; defaul
 
 When the principal corrects the same thing a second time, write a check that runs before the output
 is shown (a write hook, a pre-send hook, a lint rule), not a memory note. The second time is a
-default; the evidence shows that memory did not hold, not that two is the right threshold. One writing
-rule needed repeated corrections, every time with the rule already in memory, and held once
-it moved into a write hook that refuses the text. A rule kept only in a skill also failed, since a review skill still lacked the blind lens
-two months after the lesson was written down. One script can serve the hooks of several harnesses,
-run with a flag for each. Loading a rule is necessary and not enough, because a reviewer still cited a
-precedent that did not exist with a rule against invented examples loaded; the check that runs is what
-held. Write each lesson at the grain of the trap, the wrong reflex and what to do instead. (M10, M45;
-high for the mechanism, default for the threshold)
+default; the evidence shows that memory did not hold, not that two is the right threshold. One
+writing rule needed repeated corrections, every time with the rule already in memory, and held once
+it moved into a write hook that refuses the text. A rule kept only in a skill also failed, since a
+review skill still lacked the blind lens two months after the lesson was written down. One script
+can serve the hooks of several harnesses, run with a flag for each. Loading a rule is necessary and
+not enough, because a reviewer still cited a precedent that did not exist with a rule against
+invented examples loaded; the check that runs is what held. Write each lesson at the grain of the
+trap, the wrong reflex and what to do instead. (M10, M45; high for the mechanism, default for the
+threshold)
 
 Do not add gates of your own over a skill that already defines its flow. A session that added a wait
 for "continue" before each step of a review skill doubled the round trips. (M31; low)

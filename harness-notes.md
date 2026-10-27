@@ -5,6 +5,12 @@ Each fact was seen on one machine at the version given, and most were seen once.
 behavior between versions, so check a fact again before you build on it, with the check given under
 it. When a check disagrees, update the note with the new version and date, and keep the old line.
 
+The facts below were observed on Claude Code, Codex and Cursor's CLI (`cursor-agent`), run under the
+herdr multiplexer, and a few earlier ones under another launcher, as each note says. The tmux
+commands in HN38 come from tmux's manual page, not from a team run. Other community harnesses and
+multiplexers are not covered yet, and these notes make no claim about them. (LOG, 2026-10-26,
+multiplexer-neutral closing; low)
+
 Each note gives the harness and its version, the date seen, the symptom, what to do, and how to check
 it again. A note keeps apart what was seen at a version, what the tool's help or code says today, and
 what you would have to do to see it again; when that check needs a new session, a dialog or a change
@@ -32,20 +38,22 @@ restart the server only when no team runs in it. To check, run `herdr status` an
 
 **HN02. Some startup dialogs are reported as idle.** Seen 2026-10-22, client 0.9.5, likely server
 0.9.3, for Codex's "Hooks need review", Cursor's "Workspace Trust Required" and Claude Code's folder
-trust, not rechecked on server 0.9.5; the same Codex dialog stopped two seats launched by another tool on 2026-09-26. A spawner that
-waits for "idle" then types into a dialog. Read the screen with `herdr pane read` before you trust a
-state. The director answers each dialog at once under protocol 9.1, by the session's record and the
-principal's standing rules; it allows once what the record grants, never the option that changes a
-setting or stops later prompts, and brings the principal only a dialog none of these covers. A
-trust or setting change is granted only where the record names its configuration write and
-directory (N17; LOG, 2026-10-26, unanswered dialogs; low). Earlier harness probes recorded
-Claude Code folder trust in `~/.claude.json`
-and Cursor workspace trust in `~/.cursor/projects/<project>/.workspace-trusted`; Codex records folder
-trust in `~/.codex/config.toml` (HN20). These writes are outside the workspace. On 2026-10-23 the
+trust, not rechecked on server 0.9.5; the same Codex dialog stopped two seats launched by another
+tool on 2026-09-26. A spawner that waits for "idle" then types into a dialog. Read the screen
+(`herdr pane read PANE`, or `tmux capture-pane -p -t PANE` in tmux) before you trust a state. The
+director answers each dialog at once under protocol 9.1, by the session's record and the principal's
+standing rules; it allows once what the record grants, never the option that changes a setting or
+stops later prompts, and brings the principal only a dialog none of these covers. A trust or setting
+change is granted only where the record names its configuration write and directory or parent
+directory (N17; LOG, 2026-10-26, unanswered dialogs; low). Earlier harness probes recorded Claude
+Code folder trust in `~/.claude.json` and Cursor workspace trust in
+`~/.cursor/projects/<project>/.workspace-trusted`; Codex records folder trust in
+`~/.codex/config.toml` (HN20). These writes are outside the workspace. On 2026-10-23 the
 acceptance-test leader escalated Codex's dialog and reported its earlier Claude Code answer under
-protocol 4.9. To check, start each harness in a new folder in a scratch server (`herdr --session test`)
-and compare the pane text, reported state and configuration changes; this needs authority for new
-sessions and those writes. (H01; LOG, 2026-10-23 04:49; low for the delegation lesson)
+protocol 4.9. To check, start each harness in a new folder in a scratch server
+(`herdr --session test`) and compare the pane text, reported state and configuration changes; this
+needs authority for new sessions and those writes. (H01; LOG, 2026-10-23 04:49; low for the
+delegation lesson)
 
 **HN03. Narrow panes wrap dialog text inside the harness's box.** Seen 2026-10-22, client 0.9.5,
 likely server 0.9.3; not rechecked on server 0.9.5.
@@ -54,17 +62,18 @@ text with line breaks, box borders and spaces removed. To check, open a dialog i
 wide and read it; this needs a new session. (H02)
 
 **HN04. `herdr agent start` drops the agent's name when its wait runs out.** Seen 2026-10-22, client
-0.9.5, likely server 0.9.3, with a short `--timeout`; not rechecked on server 0.9.5. keryx's own compatibility notes give the condition for herdr 0.9.5:
-the name goes when the timeout passes before the agent has been idle or blocked since it started.
-Stopping the client keeps the name. Use the default timeout and read the name afterwards in
-`herdr agent list`. `--timeout` takes milliseconds (default 30000, at most 300000, per `herdr agent
-start --help` in 0.9.5). To check, start an agent in a scratch server with `--timeout 1000` and list
-it; this needs a new session. (H08)
+0.9.5, likely server 0.9.3, with a short `--timeout`; not rechecked on server 0.9.5. keryx's own
+compatibility notes give the condition for herdr 0.9.5: the name goes when the timeout passes before
+the agent has been idle or blocked since it started. Stopping the client keeps the name. Use the
+default timeout and read the name afterwards in `herdr agent list`. `--timeout` takes milliseconds
+(default 30000, at most 300000, per `herdr agent start --help` in 0.9.5). To check, start an agent
+in a scratch server with `--timeout 1000` and list it; this needs a new session. (H08)
 
 **HN05. A new pane inherits the server's environment, not the caller's.** Seen 2026-10-22, client
-0.9.5, likely server 0.9.3; not rechecked on server 0.9.5. A test that sets KERYX_HOME in its shell and opens a pane finds the live value there. Start
-a separate server from the test's environment, or pass the variables in the command. To check, export
-a marker variable, open a pane in a scratch server, and print it there. (H08)
+0.9.5, likely server 0.9.3; not rechecked on server 0.9.5. A test that sets KERYX_HOME in its shell
+and opens a pane finds the live value there. Start a separate server from the test's environment, or
+pass the variables in the command. To check, export a marker variable, open a pane in a scratch
+server, and print it there. (H08)
 
 **HN06. A harness started from another harness's shell inherits its identity variables.** Seen
 2026-10-22. A Cursor or Codex agent started from a Claude Code session, or in a herdr server started
@@ -137,27 +146,28 @@ recorded. A script written that way failed with exit 126 inside a privileged bat
 authenticated. Run `chmod +x` and check the mode before any privileged run. To check, write a script
 with the tool in a Claude Code session and run `ls -l` on it. (M49, M53)
 
-**HN16. The Claude Code sessions in the recorded runs reported their own context figure.** Seen 2026-10-22 and
-23, versions 2.1.308 and 2.1.309. A writer handed over at the ceiling by its own count, while every
-Codex and Cursor session had to be told its figure (HN21, HN24). This records what was seen in three
-harnesses, not that no other harness can. The figure is tokens in use, and the window is another
-matter. The transcript does not hold the window, the model id does not tell a 200K window from a 1M
-one, and Claude Code hands the window only to a status line command the user configures; the 1M
-window in this example came from the session's configuration, as reported on 2026-10-23.
-Check the window configured for your session. Whoever spawns it states its ceiling in tokens, from
-the chosen model and setting, and nobody reads a percentage off the token count. The acceptance 3
-reading measures in `evidence.md` give the transcript inputs summed in that run. (LOG, acceptance 3,
-reading measures) To check, ask a fresh Claude Code session for its context use and compare it with
-the last usage in its transcript; this needs a new session. (LOG)
+**HN16. The Claude Code sessions in the recorded runs reported their own context figure.** Seen
+2026-10-22 and 23, versions 2.1.308 and 2.1.309. A writer handed over at the ceiling by its own
+count, while every Codex and Cursor session had to be told its figure (HN21, HN24). This records
+what was seen in three harnesses, not that no other harness can. The figure is tokens in use, and
+the window is another matter. The transcript does not hold the window, the model id does not tell a
+200K window from a 1M one, and Claude Code hands the window only to a status line command the user
+configures; the 1M window in this example came from the session's configuration, as reported on
+2026-10-23. Check the window configured for your session. Whoever spawns it states its ceiling in
+tokens, from the chosen model and setting, and nobody reads a percentage off the token count. The
+acceptance 3 reading measures in `evidence.md` give the transcript inputs summed in that run. (LOG,
+acceptance 3, reading measures) To check, ask a fresh Claude Code session for its context use and
+compare it with the last usage in its transcript; this needs a new session. (LOG)
 
 **HN33. Usage-limit notes change what the model does.** Seen in October 2026, version 2.1.289. As a
-usage limit approached, the harness added a note telling the model to finish
-the piece in hand and a few more and stop, and after the reset a note saying the earlier notes no
-longer applied, not to mention them, and not to repeat completed work. A background subagent running
-when the limit hit died. A session that read the reset note literally could skip rerunning it, and a
-report written under the first note could be shorter than the work without saying so; neither was
-seen, and the reviewer of that case reran its validator. After a reset on your account, check each
-background task and rerun what died. To check, read the turns around a usage limit in your session's transcript. (M49, P06)
+usage limit approached, the harness added a note telling the model to finish the piece in hand and a
+few more and stop, and after the reset a note saying the earlier notes no longer applied, not to
+mention them, and not to repeat completed work. A background subagent running when the limit hit
+died. A session that read the reset note literally could skip rerunning it, and a report written
+under the first note could be shorter than the work without saying so; neither was seen, and the
+reviewer of that case reran its validator. After a reset on your account, check each background task
+and rerun what died. To check, read the turns around a usage limit in your session's transcript.
+(M49, P06)
 
 **HN36. Repeated `--settings` arguments keep only the last one.** Reported on 2026-10-25 with
 Claude Code 2.1.310. An orchestrator passed two separate environment objects through `--settings`;
@@ -206,11 +216,12 @@ full PATH, broke the command typed into a pane's interactive shell. (H06)
 launcher. The orchestrator answers "Continue without trusting" under the principal's standing word
 (down, down, check the selection, Enter), never "Trust all", at once and without waiting for the
 principal (protocol 9.1). Hook trust is granted only where the record names that hook (N17; LOG,
-2026-10-26, unanswered dialogs; low). Codex runs a new hook only after the
-user trusts it in `/hooks`, so keryx installs none for Codex. Codex records folder trust in `~/.codex/config.toml`; back it up before a test that adds
-folders only when the record grants that configuration change for those directories (HN02). To check,
-start Codex in a folder with a hooks file; this needs a new session and authority for the dialog's
-configuration effects. (H01, LOG, 2026-10-23 04:49; low for the delegation lesson)
+2026-10-26, unanswered dialogs; low). Codex runs a new hook only after the user trusts it in
+`/hooks`, so keryx installs none for Codex. Codex records folder trust in `~/.codex/config.toml`;
+back it up before a test that adds folders only when the record grants that configuration change for
+those directories (HN02). To check, start Codex in a folder with a hooks file; this needs a new
+session and authority for the dialog's configuration effects. (H01, LOG, 2026-10-23 04:49; low for
+the delegation lesson)
 
 On 2026-10-23, `codex --help` in 0.163.0 lists `--sandbox` (`read-only`, `workspace-write`,
 `danger-full-access`), `--ask-for-approval` (`on-request`, `never`) and `--add-dir DIR` for additional
@@ -247,8 +258,8 @@ rollout file and find the type and field names again. (LOG)
 0.163. Nothing in the session showed it. `codex login status` in 0.163.0 reports the CLI's current
 login, which is not proof of the account a session started earlier draws from. Record which of your
 accounts funds the session in the spawn command and the run log. To check on a new version, look for
-an account indicator in the TUI and in `codex --help`, and compare `codex login status` before and after a change of login while a
-session runs. (P06)
+an account indicator in the TUI and in `codex --help`, and compare `codex login status` before and
+after a change of login while a session runs. (P06)
 
 **HN34. A message to a busy session can wait minutes.** Seen 2026-10-22, codex-cli 0.163.0. A stop
 message typed into a working reviewer's pane at 22:59 UTC-3 and queued there reached the session
@@ -258,13 +269,14 @@ this needs a new session. (LOG)
 
 **HN35. Pause before submitting text typed into Codex.** Seen 2026-10-23, codex-cli 0.163.0 with
 herdr 0.9.5. In Field PR 25 at 10:19 UTC, Enter sent immediately after `herdr pane send-text` was
-ignored and the text stayed in the composer. A pause of about one second worked at 10:21 UTC;
-the field also proposes clearing the composer with `ctrl+c` first. After a writer's leave, the
-protocol director used a one-second pause before Enter with `/quit` at 09:00 UTC-3 and checked
-that its process exited before closing the pane. For `/quit` or `/exit`, send the text, pause about
-one second, then send Enter and check process exit. To recheck, use a disposable Codex session and
-compare immediate and delayed Enter, recording composer and process state. The writer recorded
-these field reports without rerunning them. (LOG, field PR 25, harness operation; LOG, 2026-10-23 09:00, Codex close; low)
+ignored and the text stayed in the composer. A pause of about one second worked at 10:21 UTC; the
+field also proposes clearing the composer with `ctrl+c` first. After a writer's leave, the protocol
+director used a one-second pause before Enter with `/quit` at 09:00 UTC-3 and checked that its
+process exited before closing the pane. For `/quit` or `/exit`, type the text with the multiplexer's
+literal-text command (HN38), pause about one second, then send Enter and check process exit. To
+recheck, use a disposable Codex session and compare immediate and delayed Enter, recording composer
+and process state. The writer recorded these field reports without rerunning them. (LOG, field PR
+25, harness operation; LOG, 2026-10-23 09:00, Codex close; low)
 
 ## Cursor
 
@@ -277,10 +289,10 @@ read the line; this needs new sessions. (LOG)
 
 **HN24. The session cannot see its own context figure.** Seen 2026-10-22, cursor-agent
 2026.10.22-27dcf5f. The percentage is only on the status line at the bottom of the pane, such as
-"300K Extra High · 81.2%" after the model's name, which the orchestrator reads with `herdr pane read`; no file
-of the CLI holds it, per R09 in `evidence.md`. Tell a Cursor seat its ceiling in tokens and
-watch it for the seat. To check on a new version, ask a running Cursor session for its context figure
-and compare its answer with the status line. (LOG)
+"300K Extra High · 81.2%" after the model's name, which the orchestrator reads with
+`herdr pane read`; no file of the CLI holds it, per R09 in `evidence.md`. Tell a Cursor seat its
+ceiling in tokens and watch it for the seat. To check on a new version, ask a running Cursor session
+for its context figure and compare its answer with the status line. (LOG)
 
 **HN25. A message that arrives during a running turn is queued behind it.** Seen 2026-10-22,
 cursor-agent 2026.10.22-27dcf5f. Neither Enter nor selecting the queued item steered it into the turn,
@@ -294,6 +306,16 @@ record covers the configuration write for that directory (HN02). `/rename` takes
 the name as an argument. Cursor reads hooks only from its `hooks.json`, so keryx installs none for
 Cursor; `keryx hook --help` gives the entry to add. To check the dialog and the rename, start a session
 in a new folder and run `/rename test`; this needs a new session. (H05, LOG)
+
+The transport's team reported on 2026-10-26 that Cursor has no once-only answer to that dialog, so
+every answer persists, and that `--trust` writes the same trust file; neither was observed here.
+`cursor-agent --help` in 2026.10.22-27dcf5f, read on 2026-10-27, describes `--trust` as "Trust the
+current workspace without prompting". Whether a subfolder inherits the trust was not observed
+either. A persisting answer is a setting change under protocol 9.1, so start the session in a folder
+already trusted when you can, and record each entry the run adds for the playbook's Cleanup. To
+check, run `cursor-agent --trust` in a scratch folder and look for the new trust file, then start a
+session in a subfolder; this needs a new session and authority for the trust write. (LOG,
+2026-10-26, folder trust; low)
 
 On 2026-10-23, `cursor-agent --help` in 2026.10.22-27dcf5f lists `--sandbox enabled|disabled`,
 `--auto-review` and `--force` (also `--yolo`); `--mode plan|ask` selects read-only execution modes.
@@ -344,6 +366,23 @@ first prompt and a dialog pending, answer it at once under protocol 9.1 and HN02
 prompt acted on; read
 `/proc/PID/cmdline` to see what others see. (H07, M34)
 
+**HN38. The close order is the same in herdr and tmux, with each one's commands.** Seen in herdr
+0.9.5 on 2026-10-26, six closes in one order, each harness gone within about four seconds of Enter;
+the tmux 3.7c commands were read in its manual page on 2026-10-27 and not run on a team session.
+Read the screen (`herdr pane read PANE`, `tmux capture-pane -p -t PANE`), type `/exit` as literal
+text (`herdr pane send-text PANE /exit`, `tmux send-keys -t PANE -l /exit`; without `-l` tmux looks
+each argument up as a key name first), read the composer again, submit Enter
+(`herdr pane send-keys PANE Enter`, `tmux send-keys -t PANE Enter`), wait until `ps -p PID` shows
+the harness gone, and close the pane (`herdr pane close PANE`, `tmux kill-pane -t PANE`). tmux's
+`#{pane_pid}` names the pane's first process, which is the harness only when the pane was started
+with it. When the harness was the pane's command, tmux removes the pane as the process ends, so
+`tmux kill-pane` and `tmux list-panes` may report no pane or no server; after the pid check, read
+that as the pane being gone. A probe on a scratch tmux 3.7c server on 2026-10-27 printed "no server
+running" with exit 1 for both once the pane's only command had ended. The playbook's Cleanup has the
+table. To check tmux, close a disposable session in a scratch tmux server (`tmux -L test`) and
+record the screen, the composer and the process at each step; this needs a new session. (LOG,
+2026-10-26, closing sequence; LOG, 2026-10-26, multiplexer-neutral closing; low)
+
 **HN28. A launcher that times out can still start the session.** Seen in OpenRig 0.5.14, where the
 client gave up after five seconds and printed UNKNOWN while the seat came up, and in keryx spawn
 (2026-10-22), which timed out on a trust dialog while the session joined once the dialog was answered.
@@ -360,8 +399,8 @@ it, and read the model the seat reports; this needs OpenRig and a relaunch. (M22
 **HN30. A systemd user service does not see a version manager's shims.** Seen 2026-10-22. The keryx
 courier in this example ran as a user unit and needed to reach herdr, the harness CLIs and keryx.
 Check that your unit sets PATH for those commands (see `bootstrap.md`). To check, run
-`systemctl --user show keryx-courier -p Environment` and `systemctl --user status keryx-courier`, from a shell that has the user's session bus; one without it
-fails before it reaches the unit. (H09)
+`systemctl --user show keryx-courier -p Environment` and `systemctl --user status keryx-courier`,
+from a shell that has the user's session bus; one without it fails before it reaches the unit. (H09)
 
 **HN31. An output-compressing shell hook can truncate without saying so.** Seen 2026-09-17 and
 2026-10-22. An install script piped through `curl | bash` arrived truncated, and listings hid files.
