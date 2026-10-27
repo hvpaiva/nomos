@@ -15,10 +15,11 @@ and versioned harness notes. Each rule carries the incident that produced it, it
 confidence. The project is maintained and versioned, and a rule enters only with its case, reason
 and confidence.
 
-nomos is transport-agnostic, with keryx as the reference binding. It is a set of documents with tools, not
-a framework or runtime. Messages are the exception to following the protocol by text alone. Under
-the principal's decision (N18), keryx runs `nomos check` before it writes any message and refuses one
-that breaks a MUST it can judge from the envelope, every time; the other tools stay optional.
+nomos is transport-agnostic, with keryx as the reference binding. It is a set of documents with
+tools, not a framework or runtime. Messages are the exception to following the protocol by text
+alone. Under the principal's decision (N18), keryx runs `nomos check` before it writes any message
+and refuses one that breaks a MUST it can judge from the envelope, every time; the other tools stay
+optional.
 
 The protocol is [version 0](protocol.md). The cards and templates identify themselves as nomos v0.
 [CHANGELOG.md](CHANGELOG.md) records changes to the package.
