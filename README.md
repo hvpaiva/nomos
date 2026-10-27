@@ -80,7 +80,7 @@ carry these rules.
 | File | Use |
 |---|---|
 | [bin/nomos](bin/nomos) | `nomos check`, the message check keryx runs before it writes a message, and `nomos compose`, with their library in [lib/nomos](lib/nomos) |
-| [hooks/pre-send.rb](hooks/pre-send.rb) | Optional message checks before keryx sends, with Claude Code, Codex and Cursor adapters |
+| [hooks/pre-send.rb](hooks/pre-send.rb) | Optional message checks before keryx sends, with Claude Code, Codex and Cursor adapters; the entry loads its classes from [hooks/pre_send](hooks/pre_send) and the rules it shares with `nomos check` from [lib/nomos](lib/nomos) |
 | [bin/compare-readback.rb](bin/compare-readback.rb) | Optional readback comparator for identity, task, authority and next action, English built in, with a local vocabulary through `--words` |
 | [protocol.md](protocol.md) | Rules every team member can rely on, including delegation, messages, reports and session life cycles |
 | [playbook.md](playbook.md) | Recipes for implementation, review, audits, research and document work |

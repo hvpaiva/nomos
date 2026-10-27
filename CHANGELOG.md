@@ -7,6 +7,7 @@ The format follows Keep a Changelog. Before the first release, all entries are u
 
 ### Added
 
+- The pre-send hook split into its entry and nine files in `hooks/pre_send/`.
 - `nomos check`, the one message validator keryx runs before it writes any message, refusing only
   the MUSTs a message alone decides, and `nomos compose`, which builds a body without sending it,
   with a words file for the human's language and the pre-send hook moved onto the same rules. A

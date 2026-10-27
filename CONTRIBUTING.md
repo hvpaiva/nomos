@@ -55,7 +55,9 @@ The checks run `test/pre_send_test.rb` against the optional `hooks/pre-send.rb` 
 `test/compare_readback_test.rb` against `bin/compare-readback.rb`, using fixtures in `test/fixtures/`
 and isolated temporary files, then shellcheck on every shell script and `ruby -wc` on every Ruby file,
 which fails on any warning. They send no mail and change no harness
-settings. Keep its runtime dependencies in Ruby's standard library and its tests in minitest.
+settings. Keep its runtime dependencies in Ruby's standard library and its tests in minitest. The
+hook is the entry `hooks/pre-send.rb`, which loads its own classes from `hooks/pre_send/` and the
+rules it shares with `nomos check` from `lib/nomos/`, all by `require_relative`.
 
 The checks also read the package and fail on a style violation, an unresolved evidence citation, a card
 or digest over its word limit, a broken internal link, a source command that fails to read its

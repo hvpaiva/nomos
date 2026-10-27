@@ -81,6 +81,7 @@ to it. Harness startup is separate from reading cost but remains inside the sess
 | Writer | At start | `cards/member.md` + `cards/writer.md` | 761 | 2,740 to 3,130 |
 | Orchestrator | At start | `cards/orchestrator.md` (598), `orchestrator.md` (2,500), bootstrap sections 7 and 8 (2,414), harness notes for all three harnesses (1,565); omit notes for harnesses not being spawned | 7,077 | 25,480 to 29,020 |
 | Harness start, outside nomos | Record the context stamped on the first readback | On 2026-10-23, third-run Claude Code 50.2K at its first turn and 60.9K after join and skill; first-run Claude Code 50.9K and 61.8K after join, skill and inbox; first-run Codex about 23K on its readback | Not a word count | Observed context, not a text estimate |
+| Hook reader | Only to read or change the pre-send hook | `hooks/pre-send.rb`, then the one file in `hooks/pre_send/` for the class, and `lib/nomos/` for the shared rules | Not a word count | Code, not a text estimate |
 | Whoever fills this form | Only when filling it | `templates/audit-brief.md` | 781 | 2,820 to 3,210 |
 | Whoever fills this form | Only when filling it | `templates/brief.md` | 1,257 | 4,530 to 5,160 |
 | Whoever fills this form | Only when filling it | `templates/escalation.md` | 495 | 1,790 to 2,030 |
@@ -252,7 +253,8 @@ Checks that can be mechanical go in hooks, which every session runs whatever it 
   Ruby interpreter, for example `/usr/bin/ruby "/absolute/nomos/hooks/pre-send.rb" --harness claude`.
   The Ruby 3.0 and 3.1 warning branch is simulated in tests, untested on those real interpreters;
   it is intended to pass with a warning and make `--check` exit 2. CI tests Ruby 3.3 and 4.0.
-  Ruby older than 3.0 cannot parse the script, so it fails without that warning.
+  The entry tests the version before it loads its parts in `hooks/pre_send/`, so a Ruby older than
+  3.0 reaches that warning too; that is read from the code, not run on such a Ruby.
   The [binding's check
   table](keryx.md#checks-and-packaging) says which checks belong to nomos and which to keryx.
   Wire it as shown below only when the principal's delegation permits the settings change.

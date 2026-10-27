@@ -94,7 +94,9 @@ def verify(root, reports)
     cards/reviewer.md cards/qa.md cards/auditor.md cards/writer.md templates/first-prompt.md
     templates/brief.md templates/report.md templates/handover.md templates/review-brief.md
     templates/review-findings.md templates/plan-review.md templates/audit-brief.md templates/escalation.md
-    hooks/pre-send.rb test/pre_send_test.rb
+    hooks/pre-send.rb hooks/pre_send/support.rb hooks/pre_send/checker.rb hooks/pre_send/recipients.rb
+    hooks/pre_send/command.rb hooks/pre_send/shell_scan.rb hooks/pre_send/reader.rb hooks/pre_send/accounting.rb
+    hooks/pre_send/tool_input.rb hooks/pre_send/runner.rb test/pre_send_test.rb
     test/fixtures/pre-send/claude.json test/fixtures/pre-send/codex.json test/fixtures/pre-send/cursor.json
     test/fixtures/pre-send/flagged.txt test/fixtures/pre-send/excluded.txt test/fixtures/pre-send/backtick.txt
     test/fixtures/pre-send/vocabulary.txt
