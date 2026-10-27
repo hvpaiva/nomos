@@ -28,7 +28,7 @@ module Nomos
       'decision' => %w[options select recommended text blocks meanwhile if_silent],
       'choice' => %w[options select recommended text blocks meanwhile if_silent default],
       'question' => %w[options select recommended text blocks meanwhile if_silent],
-      'action' => %w[blocks meanwhile if_silent],
+      'action' => %w[blocks meanwhile if_silent terminal],
       'suggestion' => [], 'notice' => [], 'result' => %w[outcome], 'answer' => %w[answer]
     }.freeze
     KNOWN = (COMMON + FIELDS.values.flatten).uniq.freeze
@@ -47,6 +47,15 @@ module Nomos
     DENIED = /secret|credential|password|token|kubeconfig|\.env|id_rsa|id_ed25519|\.pem|\.key/i
     MAX_FILE = 1024 * 1024
     DECISION_HEADINGS = %w[Situation Background Assessment Recommendation].freeze
+    TERMINAL_MAX = 300
+    # A line break, tab or other control character, or a format character such as U+202E, which shows the person
+    # one text while the terminal gets another.
+    TERMINAL_CONTROL = /[\p{Cc}\p{Cf}\u2028\u2029]/
+    # A character that draws nothing, so the person sees a blank or shorter text than the terminal gets.
+    TERMINAL_BLANK = /[\p{Default_Ignorable_Code_Point}\u2800]/
+    # An HTML comment, closed or running to the end, which a renderer hides from the person.
+    HTML_COMMENT = /<!--.*?(?:-->|\z)/m
+    ECHO_MAX = 60
     OPEN_HINT = 'the block opens on line 2 with a ```nomos fence'
 
     def self.bare?(line, after = nil)
@@ -200,12 +209,13 @@ module Nomos
           must(line_of(key), 'block field', "#{kind} takes no #{key}", '10.7')
         end
       end
-      strings(data).each { |text| must(2, 'block html', "a string holds HTML: #{text}", '10.7') if text.match?(HTML) }
+      strings(data).each { |text| must(2, 'block html', "a string holds HTML: #{echo(text)}", '10.7') if text.match?(HTML) }
       @ids = options(data, kind)
       choices(data, @ids)
       facts(data, kind, @ids)
       identifiers(data, kind)
       entries(data)
+      terminal(data['terminal']) if kind == 'action' && data.key?('terminal')
     end
 
     def strings(value)
@@ -356,6 +366,39 @@ module Nomos
       nil
     rescue SystemCallError, ArgumentError
       'no such readable file'
+    end
+
+    # The text the page prefills in the sender's own terminal and never submits (10.7). Neither the submit nor the
+    # target is the sender's call, so text is the only key.
+    def terminal(value)
+      line = line_of('terminal')
+      return must(line, 'block terminal', 'terminal is an object whose only key is text', '10.7') unless value.is_a?(Hash) && value.key?('text')
+
+      extra = value.keys - ['text']
+      must(line, 'block terminal', "terminal takes no #{extra.map { |key| "\"#{echo(key)}\"" }.join(', ')}; text is its only key", '10.7') if extra.any?
+      text = value['text']
+      return must(line, 'block terminal', 'terminal text is not a string', '10.7') unless text.is_a?(String)
+
+      unless (1..TERMINAL_MAX).cover?(text.length)
+        must(line, 'block terminal', "terminal text has #{text.length} characters, not 1 to #{TERMINAL_MAX}", '10.7')
+      end
+      must(line, 'block terminal', 'terminal text holds a line break, tab, control or format character', '10.7') if text.match?(TERMINAL_CONTROL)
+      must(line, 'block terminal', 'terminal text starts or ends with a space', '10.7') if text.match?(/\A[[:space:]]|[[:space:]]\z/)
+      must(line, 'block terminal', "terminal text starts with #{text[0]}; it may not start with /, ! or #", '10.7') if text.start_with?('/', '!', '#')
+      if text.gsub(TERMINAL_CONTROL, '').match?(TERMINAL_BLANK)
+        must(line, 'block terminal', 'terminal text holds a character that draws nothing, such as U+3164 or U+2800', '10.7')
+      end
+      if text.include?('`')
+        must(line, 'block terminal', 'terminal text holds a backtick, so no code span can show it', '10.7')
+      elsif !text.empty? && !@after.sub(Text::FOOTER, "\n").gsub(HTML_COMMENT, "").match?(/(?<!`)`#{Regexp.escape(text)}`(?!`)/)
+        must(line, 'block terminal', 'terminal text is not the whole content of a code span after the block', '10.7')
+      end
+    end
+
+    # At most ECHO_MAX characters of a sender's VALUE, with control and format characters escaped, for a reason line.
+    def echo(value)
+      shown = value.to_s[0, ECHO_MAX].gsub(TERMINAL_CONTROL) { |char| format('\u{%X}', char.ord) }
+      value.to_s.length > ECHO_MAX ? "#{shown}..." : shown
     end
 
     def asks(kind)

@@ -309,7 +309,13 @@ listed rather than the first. `block time` for a time or date in a free-text fie
 `deadline` key; it also flags a zoneless `8:00`, `08:00` or `08h00`, and a bare hour such as `8h`
 only after `at` or a clock prefix from the words file, which the page still draws, so a duration such
 as "I continue for 2h" passes. `block kind` for a block of kind `answer`, which only the page writes and draws nothing for in
-an agent's message. `block html` for `<` before a letter or `/` in any string. `label not in text` for an option
+an agent's message. `block html` for `<` before a letter or `/` in any string. `block terminal` for an
+action's `terminal` that is not an object whose only key is `text`, or whose text is not 1 to 300
+characters, holds a line break, tab, control or format character, a character that draws nothing
+(Unicode's default-ignorable code points and U+2800) or a backtick, starts or ends with a space,
+starts with `/`, `!` or `#`, or is not, after the block and outside the footer, the whole content of
+an inline code span with one backtick on each side; on any other kind the field is a `block field`.
+`label not in text` for an option
 label missing from the text after the block. `block file` for a `files` path that is not absolute or
 `~/`, has a folder or name starting with a dot or matching the page's secret pattern in any part
 after `~/`, lacks one of the page's text extensions (md, markdown, txt, rb, erb, yml, yaml, json,
@@ -656,10 +662,12 @@ request, message or reply carries a plain title on line 1 that opens with no bra
 person's title is not a tag line, a valid block on line 2 of one of the seven kinds (an `answer` block
 is the person's reply, never an agent's), and the footer `nomos v0 human message` as its last line,
 matched as the inbox page matches it (10.5, 10.7); the block keeps the field rules of 10.7
-and 10.8 that the inbox page applies, and JSON with no comment or repeated key; a block of an ask kind
+and 10.8 that the inbox page applies, the limits of an action's `terminal` field (10.7), and JSON
+with no comment or repeated key; a block of an ask kind
 goes in a request with a deadline, and a request's block is an ask (10.5, 10.6); an ask's text names
 each option's label and id and states the request's deadline within five minutes (10.7). A
-withdrawal to a person gets advice only. Between agents nothing is refused in this version; a reply
+withdrawal to a person gets advice only. Toward a recipient known to be an agent the block rules,
+those of the `terminal` field included, are not read at all. Between agents nothing is refused in this version; a reply
 opening with `[progress]` gets advice (5.3), since a brief may ask for that reply. Everything else the hook flags, from relative dates to a missing file or a zoneless
 clock in a block, is advice that `nomos check` never refuses.
 
@@ -680,11 +688,12 @@ Toward an agent the body is the text. Toward a person it takes `--title TEXT` an
 `--block FILE` with one JSON object of the fields or `--kind KIND` with `--option ID=LABEL` (split at
 the first `=`), `--select one|many`, `--recommended ID`, `--default ID`, `--answer-text
 optional|required`, `--blocks TEXT` or `--blocks-none`, `--meanwhile TEXT`, `--if-silent TEXT`,
-`--outcome done|partial|failed`, `--follows ID`, `--replaces ID`, `--attach PATH=LABEL` and `--link
-URL=LABEL` (both split at the last `=`). It writes the title, the block one key per line, the text,
-a numbered list of the options (`N. LABEL (`ID`)`) when the text lacks a label or an id, the words
-file's deadline sentence when the text states no time with its zone equal to the deadline, and the
-footer.
+`--terminal TEXT`, `--outcome done|partial|failed`, `--follows ID`, `--replaces ID`, `--attach
+PATH=LABEL` and `--link URL=LABEL` (both split at the last `=`). It writes the title, the block one
+key per line, the text, a numbered list of the options (`N. LABEL (`ID`)`) when the text lacks a
+label or an id, the words file's deadline sentence when the text states no time with its zone equal
+to the deadline, and the footer. `--terminal TEXT` writes only the block's field; the sentence around
+the text, and the text as a code span, are the sender's to write, and without them check refuses.
 
 ```sh
 bin/nomos compose ask --to ana.local@box --within 1h --title 'Where process decisions live' \

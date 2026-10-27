@@ -7,6 +7,9 @@ The format follows Keep a Changelog. Before the first release, all entries are u
 
 ### Added
 
+- An optional `terminal` field on an action block, an object whose only key is `text`, which the page
+  prefills in the sender's terminal and never submits, shown in the text as the whole content of a
+  code span, refused by `nomos check` past its limits and written by `nomos compose --terminal TEXT`.
 - The pre-send hook split into its entry and nine files in `hooks/pre_send/`.
 - `nomos check`, the one message validator keryx runs before it writes any message, refusing only
   the MUSTs a message alone decides, and `nomos compose`, which builds a body without sending it,

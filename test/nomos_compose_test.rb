@@ -139,6 +139,40 @@ class NomosComposeTest < Minitest::Test
     assert_match(/^10\.5 /, error)
   end
 
+  def test_the_terminal_flag_writes_the_field_and_leaves_the_text_to_the_sender
+    action = ['--title', 'Approve the push', '--kind', 'action', '--blocks', 'The push', '--meanwhile', 'I wait',
+              '--if-silent', 'I do not push', '--terminal', 'approve the push']
+    status, body, advice = compose('ask', '--to', 'ana.local@box', '--within', '1h', *action,
+                                   text: "Type this in my terminal and press Enter.\n\n`approve the push`\n")
+    assert_equal 0, status, advice
+    assert_includes body, %("if_silent": "I do not push",\n "terminal": {"text":"approve the push"}}\n```\n)
+    assert_equal [0, ''], check(body)
+    ["Type this in my terminal and press Enter.\n", "Type approve the push and press Enter.\n"].each do |text|
+      status, body, error = compose('ask', '--to', 'ana.local@box', '--within', '1h', *action, text: text)
+      assert_equal [1, ''], [status, body]
+      assert_includes error, "10.7 terminal text is not the whole content of a code span after the block (line 7)\n"
+    end
+    status, = compose('send', '--to', 'ana.local@box', '--title', 'T', '--kind', 'notice', '--terminal', 'x', text: "x\n")
+    assert_equal 1, status
+    Dir.mktmpdir('nomos-compose-') do |dir|
+      path = File.join(dir, 'block.json')
+      File.write(path, '{"kind": "notice"}')
+      status, body, error = compose('send', '--to', 'ana.local@box', '--title', 'T', '--block', path, '--terminal', 'x')
+      assert_equal [2, '', "nomos compose: --block FILE and block flags are given together\n"], [status, body, error]
+    end
+  end
+
+  def test_the_terminal_key_comes_before_files_and_links
+    status, body, advice = compose('ask', '--to', 'ana.local@box', '--within', '1h', '--title', 'Approve the push',
+                                   '--kind', 'action', '--blocks', 'The push', '--meanwhile', 'I wait', '--if-silent',
+                                   'I do not push', '--link', 'https://example.com/push=Push', '--attach',
+                                   '/srv/notes/a.md=Notes', '--terminal', 'approve the push',
+                                   text: "Type `approve the push` and press Enter.\n")
+    assert_equal 0, status, advice
+    keys = body.lines[2..].take_while { |line| !line.start_with?('```') }.map { |line| line[/"(\w+)":/, 1] }
+    assert_equal %w[kind blocks meanwhile if_silent terminal files links], keys
+  end
+
   def test_an_empty_text_is_a_usage_error
     ["", "\n \n"].each do |text|
       status, body, error = compose('send', '--to', 'rev-1.alpha@box', text: text)

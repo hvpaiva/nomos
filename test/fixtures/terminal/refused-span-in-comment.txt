@@ -1,0 +1,11 @@
+Approve the push of round 12
+```nomos
+{"kind":"action","blocks":"The push of round 12","meanwhile":"I keep the branch as it is","if_silent":"I do not push","terminal":{"text":"approve the push of round 12"}}
+```
+To let me push round 12, type this in my terminal, where the page opens it, and press Enter:
+
+<!-- `approve the push of round 12` -->
+
+If no answer comes by 2026-10-26 08:00 -03:00, I do not push.
+
+nomos v0 human message

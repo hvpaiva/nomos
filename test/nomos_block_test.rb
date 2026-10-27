@@ -193,6 +193,78 @@ class NomosBlockTest < Minitest::Test
     assert_includes heading.map(&:text), 'missing heading: Assessment'
   end
 
+  TERMINAL = File.expand_path('fixtures/terminal', __dir__)
+  SPAN = 'not the whole content of a code span after the block'
+  CONTROL = 'line break, tab, control or format character'
+  SPACE = 'starts or ends with a space'
+  BLANK = 'draws nothing'
+  # What each refused fixture's one reason says, so the page's lockstep test and this one read the same verdicts.
+  TERMINAL_REASONS = {
+    'refused-other-kind' => 'question takes no terminal', 'refused-not-object' => 'only key is text',
+    'refused-null' => 'only key is text', 'refused-extra-key' => 'terminal takes no "enter"',
+    'refused-no-text' => 'only key is text', 'refused-text-number' => 'text is not a string',
+    'refused-length-0' => 'has 0 characters', 'refused-length-301' => 'has 301 characters',
+    'refused-length-301-multibyte' => 'has 301 characters', 'refused-line-break' => CONTROL,
+    'refused-line-separator' => CONTROL, 'refused-next-line' => CONTROL, 'refused-tab' => CONTROL,
+    'refused-control' => CONTROL, 'refused-format' => CONTROL, 'refused-soft-hyphen' => CONTROL,
+    'refused-zero-width-space' => CONTROL, 'refused-leading-space' => SPACE, 'refused-trailing-space' => SPACE,
+    'refused-trailing-no-break-space' => SPACE, 'refused-trailing-ideographic-space' => SPACE,
+    'refused-hangul-filler' => BLANK, 'refused-braille-blank' => BLANK, 'refused-slash' => 'starts with /;',
+    'refused-bang' => 'starts with !;', 'refused-hash' => 'starts with #;', 'refused-html' => 'holds HTML',
+    'refused-backtick' => 'holds a backtick', 'refused-not-in-text' => SPAN, 'refused-fragment' => SPAN,
+    'refused-footer-only' => SPAN, 'refused-no-code-span' => SPAN, 'refused-span-in-comment' => SPAN
+  }.freeze
+
+  def terminal_fixture(name) = File.read(File.join(TERMINAL, "#{name}.txt"), encoding: 'UTF-8')
+
+  def test_each_terminal_fixture_holds_its_verdict
+    names = Dir.glob('*.txt', base: TERMINAL).map { |name| name.delete_suffix('.txt') }.sort
+    assert_equal TERMINAL_REASONS.keys.sort, names.grep(/\Arefused-/)
+    assert_operator names.grep(/\Aaccepted-/).size, :>=, 8
+    assert_empty names.grep_v(/\A(?:accepted|refused)-/)
+    names.each do |name|
+      reasons = refused(terminal_fixture(name))
+      if name.start_with?('accepted-')
+        assert_empty reasons, name
+      else
+        assert_equal 1, reasons.size, "#{name}: #{reasons.map(&:reason)}"
+        assert_equal '10.7', reasons.first.section, name
+        assert_includes reasons.first.text, TERMINAL_REASONS.fetch(name), name
+      end
+    end
+  end
+
+  def test_the_terminal_field_is_an_actions_alone
+    action = terminal_fixture('accepted-action')
+    %w[decision choice question suggestion notice result answer].each do |kind|
+      body = action.sub('"kind":"action"', "\"kind\":\"#{kind}\"")
+      assert_includes refused(body).map(&:text), "#{kind} takes no terminal", kind
+    end
+    two = action.sub('"text":"approve the push of round 12"', '"text":"/x","address":"ana.local@box","enter":true')
+    texts = refused(two).select { |flag| flag.kind == 'block terminal' }.map(&:text)
+    assert_includes texts, 'terminal takes no "address", "enter"; text is its only key'
+    assert_includes texts, 'terminal text starts with /; it may not start with /, ! or #'
+    assert_includes texts, "terminal text is #{SPAN}"
+  end
+
+  def test_a_reason_echoes_sixty_characters_with_controls_escaped
+    action = terminal_fixture('accepted-action')
+    key = ->(name) { action.sub('"enter"', JSON.generate(name)).sub('"text":"approve', "#{JSON.generate(name)}:true,\"text\":\"approve") }
+    assert_includes refused(key.call("x\n‮y")).map(&:text), 'terminal takes no "x\u{A}\u{202E}y"; text is its only key'
+    long = refused(key.call('k' * 600)).map(&:text).grep(/takes no/).first
+    assert_equal %(terminal takes no "#{'k' * 60}..."; text is its only key), long
+    html = refused(action.sub('"I do not push"', JSON.generate("<b>#{'h' * 100}‮"))).map(&:text).grep(/HTML/).first
+    assert_equal "a string holds HTML: <b>#{'h' * 57}...", html
+  end
+
+  def test_the_terminal_field_is_advice_in_a_withdrawal_and_not_read_toward_an_agent
+    format = terminal_fixture('refused-format')
+    assert_empty refused(format, kind: 'withdrawal', due: nil, command: 'withdraw')
+    assert_includes all_kinds(format, kind: 'withdrawal', due: nil, command: 'withdraw'), 'block terminal'
+    assert_empty refused(format, to: 'rev-1.alpha@box')
+    refute_includes all_kinds(format, to: 'rev-1.alpha@box'), 'block terminal'
+  end
+
   def test_json_depth_counts_containers_only
     nested = ->(depth) { "#{'[' * depth}1#{']' * depth}" }
     assert_equal JSON.parse(nested.call(100)), Nomos.strict_json(nested.call(100))

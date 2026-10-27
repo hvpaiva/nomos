@@ -30,8 +30,9 @@ module Nomos
       rules of nomos check refuse it. It never sends. Toward a person (the team segment local, or no team segment)
       it takes --title and the block: --kind KIND with --option ID=LABEL (repeat), --select one|many,
       --recommended ID (repeat), --default ID, --answer-text optional|required, --blocks TEXT or --blocks-none,
-      --meanwhile TEXT, --if-silent TEXT, --outcome done|partial|failed, --follows ID, --replaces ID,
-      --attach PATH=LABEL (repeat) and --link URL=LABEL (repeat); or --block FILE, one JSON object of the fields.
+      --meanwhile TEXT, --if-silent TEXT, --terminal TEXT (an action only, with TEXT as a code span in the text),
+      --outcome done|partial|failed, --follows ID, --replaces ID, --attach PATH=LABEL (repeat) and
+      --link URL=LABEL (repeat); or --block FILE, one JSON object of the fields.
     TEXT
 
     module_function
@@ -126,6 +127,7 @@ module Nomos
       options.on('--blocks-none') { block['blocks'] = nil }
       options.on('--meanwhile TEXT') { |value| block['meanwhile'] = value }
       options.on('--if-silent TEXT') { |value| block['if_silent'] = value }
+      options.on('--terminal TEXT') { |value| block['terminal'] = { 'text' => value } }
       options.on('--outcome OUTCOME') { |value| block['outcome'] = value }
       options.on('--follows ID') { |value| block['follows'] = value }
       options.on('--replaces ID') { |value| block['replaces'] = value }

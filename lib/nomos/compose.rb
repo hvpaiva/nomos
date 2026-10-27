@@ -19,8 +19,8 @@ module Nomos
 
     TRANSPORTS = { 'send' => 'message', 'ask' => 'request', 'reply' => 'reply' }.freeze
     KINDS = %w[decision choice question action suggestion notice result].freeze
-    ORDER = %w[kind options select recommended default text blocks meanwhile if_silent outcome follows replaces files
-               links].freeze
+    ORDER = %w[kind options select recommended default text blocks meanwhile if_silent terminal outcome follows replaces
+               files links].freeze
     TEMPLATES = File.expand_path('../../templates', __dir__)
 
     # WITHIN is the ask's deadline in seconds from NOW; BLOCK the block's fields as a Hash, kind included.
