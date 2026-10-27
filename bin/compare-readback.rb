@@ -9,116 +9,165 @@ module Nomos
     MAX_BYTES = 65_536
     ADDRESS = /[A-Za-z0-9_-]+\.[A-Za-z0-9_.-]+@[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_-]+)?/
     TRANSPORT = /(?<![A-Za-z0-9_.@-])[A-Za-z0-9_.-]+@[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_-]+)?/
-    ROLES = {
-      'orchestrator' => 'orchestrator', 'orquestrador' => 'orchestrator',
-      'implementer' => 'implementer', 'implementador' => 'implementer',
-      'reviewer' => 'reviewer', 'revisor' => 'reviewer', 'writer' => 'writer', 'redator' => 'writer',
-      'qa' => 'qa', 'auditor' => 'auditor'
-    }.freeze
-    ROLE = /(?:#{ROLES.keys.join('|')})(?![\p{L}\p{N}_-])/i
+    ROLES = %w[orchestrator implementer reviewer writer qa auditor].to_h { |role| [role, role] }.freeze
     LABELS = {
-      address: { en: ['address'], pt: ['endereço'] },
-      role: { en: ['role'], pt: ['papel'] },
-      identity: { en: ['address and role', 'delegate'], pt: ['endereço e papel'] },
-      task: { en: ['task', 'my task'], pt: ['tarefa', 'minha tarefa'] },
-      authority: { en: ['authority', 'my authority'], pt: ['autoridade', 'minha autoridade'] },
-      next_action: { en: ['next action', 'my next action'], pt: ['próxima ação', 'minha próxima ação'] },
-      other: { en: ['principal', 'delegator', 'duration', 'change authority'], pt: [] },
-      grant: { en: ['actions and resources granted'], pt: [] },
-      reserved: { en: ['decisions reserved to the principal'], pt: [] },
-      redelegation: { en: ['redelegation'], pt: ['redelegação'] }
+      address: ['address'], role: ['role'], identity: ['address and role', 'delegate'], task: ['task', 'my task'],
+      authority: ['authority', 'my authority'], next_action: ['next action', 'my next action'],
+      other: ['principal', 'delegator', 'duration', 'change authority'], grant: ['actions and resources granted'],
+      reserved: ['decisions reserved to the principal'], redelegation: ['redelegation']
     }.freeze
-    LABEL_NAMES = LABELS.flat_map { |label, forms| forms.values.flatten.map { |name| [name, label] } }.to_h.freeze
-    LABEL = /(?:#{LABEL_NAMES.keys.sort_by { |name| -name.length }.map { |name| Regexp.escape(name) }.join('|')})(?![\p{L}\p{N}_])/i
-    VOCABULARY = {
-      'read' => { en: %w[read reading], pt: %w[ler leitura] },
-      'edit' => { en: %w[edit editing], pt: %w[editar edição] },
-      'create' => { en: %w[create creating], pt: %w[criar criação] },
-      'remove' => { en: %w[remove removing], pt: %w[remover remoção] },
-      'write' => { en: %w[write writing], pt: %w[escrever escrita] },
-      'run' => { en: %w[run running], pt: %w[executar execução] },
-      'message' => { en: %w[message messaging], pt: ['enviar mensagem', 'enviar mensagens'] },
-      'commit' => { en: %w[commit commits committing], pt: %w[commitar] },
-      'push' => { en: %w[push pushes pushing], pt: %w[push] },
-      'publish' => { en: %w[publish publishing publication], pt: %w[publicar publicação] },
-      'merge' => { en: %w[merge merging], pt: %w[mesclar] },
-      'delete' => { en: %w[delete deleting], pt: %w[excluir exclusão] },
-      'deploy' => { en: %w[deploy deploying], pt: %w[implantar] },
-      'install' => { en: %w[install installs installing], pt: %w[instalar instalação instalações] },
-      'configure' => { en: %w[configure configuring], pt: %w[configurar] },
-      'settings' => { en: %w[settings], pt: %w[configurações] },
-      'off this machine' => { en: ['off this machine', 'leaves this machine'], pt: ['fora desta máquina', 'fora da máquina', 'para fora da máquina'] },
-      'redelegate' => { en: %w[redelegate redelegating grant], pt: %w[redelegar redelegação conceder] },
-      'open' => { en: %w[open], pt: %w[abrir] }, 'update' => { en: %w[update], pt: %w[atualizar] },
-      'tag' => { en: %w[tag tags], pt: %w[etiquetar etiquetas] }, 'change' => { en: %w[change], pt: %w[alterar] }
+    ACTS = {
+      'read' => %w[read reading], 'edit' => %w[edit editing], 'create' => %w[create creating],
+      'remove' => %w[remove removing], 'write' => %w[write writing], 'run' => %w[run running],
+      'message' => %w[message messaging], 'commit' => %w[commit commits committing], 'push' => %w[push pushes pushing],
+      'publish' => %w[publish publishing publication], 'merge' => %w[merge merging], 'delete' => %w[delete deleting],
+      'deploy' => %w[deploy deploying], 'install' => %w[install installs installing],
+      'configure' => %w[configure configuring], 'settings' => %w[settings],
+      'off this machine' => ['off this machine', 'leaves this machine'], 'redelegate' => %w[redelegate redelegating grant],
+      'open' => %w[open], 'update' => %w[update], 'tag' => %w[tag tags], 'change' => %w[change],
+      'delegate' => %w[delegate delegating], 'spawn' => %w[spawn spawning], 'send' => %w[send sending],
+      'email' => %w[email emailing], 'post' => %w[post posting], 'approve' => %w[approve approving], 'share' => %w[share sharing]
     }.freeze
-    PT_VERBS = {
-      'read' => %w[ler leio lê leem leia leiam], 'edit' => %w[editar edito edita editam edite editem],
-      'create' => %w[criar crio cria criam crie criem], 'remove' => %w[remover removo remove removem remova removam],
-      'write' => %w[escrever escrevo escreve escrevem escreva escrevam],
-      'run' => %w[executar executo executa executam execute executem],
-      'message' => ['enviar mensagem', 'enviar mensagens', 'envio mensagem', 'envia mensagem', 'envie mensagem'],
-      'commit' => %w[commitar commito commita commitam commite commitem],
-      'publish' => %w[publicar publico publica publicam publique publiquem],
-      'merge' => %w[mesclar mesclo mescla mesclam mescle mesclem],
-      'delete' => %w[excluir excluo exclui excluem exclua excluam],
-      'deploy' => %w[implantar implanto implanta implantam implante implantem],
-      'install' => %w[instalar instalo instala instalam instale instalem],
-      'configure' => %w[configurar configuro configura configuram configure configurem],
-      'redelegate' => %w[redelegar redelego redelega redelegam redelegue redeleguem conceder concedo concede concedem conceda concedam],
-      'open' => %w[abrir abro abre abrem abra abram], 'update' => %w[atualizar atualizo atualiza atualizam atualize atualizem],
-      'tag' => %w[etiquetar etiqueto etiqueta etiquetam etiquete etiquetem],
-      'change' => %w[alterar altero altera alteram altere alterem]
-    }.freeze
-    EXTRA_VERBS = {
-      'delegate' => { en: %w[delegate delegating], pt: %w[delegar delego delega delegam delegue deleguem] },
-      'spawn' => { en: %w[spawn spawning], pt: %w[iniciar inicio inicia iniciam inicie iniciem] },
-      'send' => { en: %w[send sending], pt: %w[enviar envio envia enviam envie enviem transmitir transmito transmite transmitem transmita transmitam] },
-      'email' => { en: %w[email emailing], pt: ['enviar email', 'enviar e-mail', 'envio email', 'envia email', 'envie email'] },
-      'post' => { en: %w[post posting], pt: %w[postar posto posta postam poste postem] },
-      'approve' => { en: %w[approve approving], pt: %w[aprovar aprovo aprova aprovam aprove aprovem] },
-      'share' => { en: %w[share sharing], pt: %w[compartilhar compartilho compartilha compartilham compartilhe compartilhem] }
-    }.freeze
-    WORDS = VOCABULARY.merge(EXTRA_VERBS).flat_map do |name, forms|
-      (forms.values.flatten + PT_VERBS.fetch(name, [])).uniq.map { |word| [word, name] }
-    end.to_h.freeze
-    ACT = /(?<![\p{L}\p{N}_])(?:#{WORDS.keys.sort_by { |word| -word.length }.map { |word| Regexp.escape(word) }.join('|')})(?![\p{L}\p{N}_])/i
+    WORDS = ACTS.flat_map { |name, words| words.map { |word| [word, name] } }.to_h.freeze
+    SCOPES = %w[any all anywhere everything everywhere].to_h { |word| [word, word] }.freeze
     PATH = /(?<![\p{L}\p{N}_@.:\/$])(?:(?:\$\{[A-Za-z_][A-Za-z0-9_]*\}|\$[A-Za-z_][A-Za-z0-9_]*|~)(?:\/[^\s,;"'`<>\[\]{}()]*)?|(?:\/|\.\.?\/|[\p{L}\p{N}_.-]+\/)[^\s,;"'`<>\[\]{}()]*|[\p{L}\p{N}_-][\p{L}\p{N}_.-]*\.[\p{L}\p{N}_-]+)/
-    MODAL_ANYWHERE = /(?<![\p{L}\p{N}_])(?:(?:As the [\w-]+ )?(?:you|I)\s+(?:may|can|cannot)\b|(?:não\s+)?posso\b)/i
-    MODAL_START = /\A#{MODAL_ANYWHERE}/i
-    WAIT = /\b(?:wait for (?:(?:(?:its|your)|(?:[\p{L}\p{N}_.@-]+\s+){0,4}[\p{L}\p{N}_.@-]+['’]s) )?confirmation|wait for your \[accept\]|after confirmation|(?:aguardo|aguardar|aguarda) (?:(?:a|sua|a sua) )?confirmação|após (?:(?:a|sua|a sua) )?confirmação|depois da confirmação)(?!\p{L})/i
-    NEGATED_WAIT = /\b(?:(?:not|never|without|não|sem)\s+(?:(?:will|be|vou|vai|irei|iria|vamos)\s+){0,3}(?:wait(?:ing)?|aguard\p{L}*)|(?:do not|não)\s+#{WAIT})/i
     AUTHORITY_LABELS = %i[authority grant reserved redelegation].freeze
     LINE_PREFIX = /^[ \t]*(?:(?:\#{1,6}|[-*]|\d+[.)])[ \t]+)?/
-    LABEL_START = /\A(?:\*\*)?(#{LABEL})(?:\*\*)?/i
-    LABEL_DELIMITER = /:|\.(?=\s|\z)|(?<!\p{L})(?:is|é)(?!\p{L})/i
-    LABEL_BOUNDARY = /(?<=[.!?])\s+(?=(?:\*\*)?#{LABEL})/i
-    NEXT_LABEL_PREFIX = /\A(?:\*\*)?(?:next action|my next action|minha próxima ação|próxima ação)\b[\s:*]*/i
     FENCE_START = /^ {0,3}(`{3,}|~{3,})/
     HEADING = /^\s*\#{1,6}\s+/
     QUOTED_LINE = /^\s*>/
     VERSION_LINE = /\A\s*nomos v\d+\b/i
     UNKNOWN_LABEL = /\A[\p{L}][\p{L} ]{0,60}:/
-    SENTENCE_BOUNDARY = /(?<=[.!?;])\s+(?=[\p{L}*#\[\d-]|\z)|(?<=;)\s*|\r?\n(?=[ \t]*(?:(?:[-*]|\d+[.)])\s+|#{MODAL_ANYWHERE}|Reserved\b|Reservad[oa]s?\b))/i
-    SHORT_MODAL_BOUNDARY = /\s+(?:but|and|mas|e)\s+(?=(?:may\b|can\b|cannot\b|not\b|não\b))/i
-    CLAUSE_CONNECTOR = /(?:\A(?:and|but|mas|e)\s+|[,;]\s*\z)/i
     EN_CLAUSE = /\A(?:(?:As the [\w-]+ )?(?:you|I)\s+)?(may|can|cannot)\s+(.*)\z/i
-    PT_CLAUSE = /\A(não\s+)?posso\s+(.*)\z/i
-    RESERVATION = /\A(?:Reserved to (?:[\p{L}\p{N}_.@-]+\s+){1,8}are|Reservad[oa]s? (?:ao?|à|para) (?:[\p{L}\p{N}_.@-]+\s+){0,7}[\p{L}\p{N}_.@-]+(?:\s+(?:estão|são))?\s*:?)\s+(.*)\z/i
-    FIRST_PERSON = /\b(?:I|me|eu|mim|comigo|posso|podemos)\b|\b(?:mine|my|meu|minha|meus|minhas)(?=\s*(?:[,;.!?]|\z))/i
-    REDELEGATION_NO = /\A(?:none|no|not allowed|(?:I )?may not(?: redelegate)?|not redelegate|nenhuma|não|não posso(?: redelegar)?|não permitida|não (?:pode )?redelegar)\z/i
-    REDELEGATION_YES = /\A(?:I may redelegate|Posso redelegar)\b/i
-    CONTRAST = /\b(?:but|only|except|mas|só|somente|exceto)\b/i
     QUOTED_INLINE = /([`"])[^`"\r\n]*\1/
-    PERMISSION = /\b(?:(?:I|you) (?:may|can|am allowed|have permission)|(?:não )?posso|tenho permissão|pode(?:m)?|not\s+(?:publish|merge)|I am authorized)\b/i
-    SCOPE = /\b(?:any|all|anywhere|everything|everywhere|qualquer|todo|toda|todos|todas|tudo)\b/i
-    LIMITS = 'Lexical atoms and fixed English or Portuguese labels and phrases only. A match is not an authority decision. ' \
-             'Other languages, paraphrases outside the vocabulary, conditions, resource-to-action bindings, expiry, external records and the validity of grants need human review.'
+    PERSON = { 'you' => 'i', 'your' => 'my', 'yourself' => 'myself', 'yours' => 'mine' }.freeze
+    LIMITS = 'Lexical atoms and fixed labels and phrases only, English built in plus any vocabulary given with --words. ' \
+             'A match is not an authority decision. Languages without a vocabulary, paraphrases outside the vocabulary, conditions, ' \
+             'resource-to-action bindings, expiry, external records and the validity of grants need human review.'
     Segment = Data.define(:label, :body, :span)
     Clause = Data.define(:category, :body, :span, :negative)
     Atom = Data.define(:category, :name, :negative, :resource) do
       def key = %i[reserved prohibited].include?(category) ? [:restricted, name] : [category, name, negative]
       def text = "#{negative ? 'not ' : category == :reserved ? 'reserved ' : ''}#{name}"
+    end
+
+    # The words the comparator reads, English built in plus the sections of --words files.
+    class Vocabulary
+      LABEL_SECTIONS = {
+        'label-address' => :address, 'label-role' => :role, 'label-identity' => :identity, 'label-task' => :task,
+        'label-authority' => :authority, 'label-next-action' => :next_action, 'label-redelegation' => :redelegation
+      }.freeze
+      MAPPED = { 'roles' => ROLES, 'acts' => WORDS, 'scope' => SCOPES }.freeze
+      SECTIONS = [*LABEL_SECTIONS.keys, *MAPPED.keys, 'grant', 'reserved', 'negation', 'wait-negation', 'auxiliary',
+                  'wait', 'wait-verb', 'first-person', 'possessive', 'contrast', 'conjunction', 'copula', 'identity',
+                  'article', 'permission', 'redelegation-no', 'redelegation-yes'].freeze
+      PARTY = '(?:[\p{L}\p{N}_.@-]+\s+){0,7}[\p{L}\p{N}_.@-]+'
+
+      attr_reader :roles, :words, :scopes, :label_names, :role, :label, :label_start, :label_delimiter, :label_boundary,
+                  :next_label_prefix, :act, :modal_anywhere, :modal_start, :wait, :negated_wait, :sentence_boundary,
+                  :short_modal_boundary, :clause_connector, :trailing_connector, :clause_negation, :grant_clause,
+                  :reservation, :first_person, :redelegation_no, :redelegation_yes, :contrast, :permission, :scope,
+                  :opening, :role_after_address, :role_after_opening, :role_head
+
+      def self.empty = SECTIONS.to_h { |name| [name, MAPPED.key?(name) ? {} : []] }
+
+      # Adds the sections of one --words file's lines to sections; a phrase before any header is an error.
+      def self.parse(lines, sections = empty)
+        current = nil
+        lines.each do |line|
+          text = line.strip
+          next if text.empty? || text.start_with?('#')
+
+          if (header = text[/\A\[([a-z-]+)\]\z/, 1])
+            raise ArgumentError, "unknown --words section [#{header}]" unless sections.key?(header)
+
+            current = header
+          elsif current.nil?
+            raise ArgumentError, "--words phrase before any [section]: #{text}"
+          elsif MAPPED.key?(current)
+            phrase, canonical = text.split(/\s+=\s+/, 2)
+            raise ArgumentError, "[#{current}] needs 'phrase = canonical': #{text}" unless canonical && !phrase.empty?
+            raise ArgumentError, "unknown canonical name in [#{current}]: #{canonical}" unless MAPPED[current].value?(canonical)
+
+            sections[current][key(phrase)] = canonical
+          else
+            raise ArgumentError, "[reserved] needs one {party}: #{text}" if current == 'reserved' && text.scan('{party}').length != 1
+
+            sections[current] << text
+          end
+        end
+        sections
+      end
+
+      def self.load(paths) = new(paths.each_with_object(empty) { |path, sections| parse(CompareReadback.read_text(path).lines, sections) })
+      def self.key(phrase) = phrase.downcase.gsub(/\s+/, ' ')
+      def self.alternation(phrases) = phrases.uniq.sort_by { |phrase| -phrase.length }.map { |phrase| Regexp.escape(phrase).gsub('\\ ', '\\s+') }.join('|')
+
+      def initialize(sections = {})
+        list = ->(name) { Array(sections[name]) }
+        any = ->(english, name) { Vocabulary.alternation(english + list[name]) }
+        @roles = ROLES.merge(sections.fetch('roles', {}))
+        @words = WORDS.merge(sections.fetch('acts', {}))
+        @scopes = SCOPES.merge(sections.fetch('scope', {}))
+        @label_names = LABELS.flat_map { |label, names| names.map { |name| [name, label] } }.to_h
+        LABEL_SECTIONS.each { |name, label| list[name].each { |phrase| @label_names[Vocabulary.key(phrase)] = label } }
+        @label_names.freeze
+        negation = any[['not'], 'negation']
+        conjunction = any[%w[and but], 'conjunction']
+        grants = list['grant']
+        identity = any[['I am'], 'identity']
+        @role = /(?:#{Vocabulary.alternation(@roles.keys)})(?![\p{L}\p{N}_-])/i
+        @label = /(?:#{Vocabulary.alternation(@label_names.keys)})(?![\p{L}\p{N}_])/i
+        @label_start = /\A(?:\*\*)?(#{@label})(?:\*\*)?/i
+        @label_delimiter = /:|\.(?=\s|\z)|(?<!\p{L})(?:#{any[['is'], 'copula']})(?!\p{L})/i
+        @label_boundary = /(?<=[.!?])\s+(?=(?:\*\*)?#{@label})/i
+        next_labels = @label_names.select { |_, label| label == :next_action }.keys
+        @next_label_prefix = /\A(?:\*\*)?(?:#{Vocabulary.alternation(next_labels)})\b[\s:*]*/i
+        @act = /(?<![\p{L}\p{N}_])(?:#{Vocabulary.alternation(@words.keys)})(?![\p{L}\p{N}_])/i
+        modals = ['(?:As the [\w-]+ )?(?:you|I)\s+(?:may|can|cannot)\b']
+        modals << "(?:(?:#{negation})\\s+)?(?:#{Vocabulary.alternation(grants)})\\b" unless grants.empty?
+        @modal_anywhere = /(?<![\p{L}\p{N}_])(?:#{modals.join('|')})/i
+        @modal_start = /\A#{@modal_anywhere}/i
+        waits = ["wait for (?:(?:(?:its|your)|#{PARTY}['’]s) )?confirmation", 'wait for your \[accept\]', 'after confirmation',
+                 "wait for #{PARTY} to confirm"]
+        waits << Vocabulary.alternation(list['wait']) unless list['wait'].empty?
+        @wait = /\b(?:#{waits.join('|')})(?!\p{L})/i
+        wait_negation = Vocabulary.alternation(%w[not never without] + list['negation'] + list['wait-negation'])
+        @negated_wait = /\b(?:(?:#{wait_negation})\s+(?:(?:#{any[%w[will be], 'auxiliary']})\s+){0,3}(?:#{any[%w[wait waiting], 'wait-verb']})|(?:#{any[['do not'], 'negation']})\s+#{@wait})/i
+        templates = list['reserved'].map { |template| template.split('{party}', 2).map(&:strip) }
+        heads = templates.filter_map { |prefix, _| prefix.split.first }
+        @sentence_boundary = /(?<=[.!?;])\s+(?=[\p{L}*#\[\d-]|\z)|(?<=;)\s*|\r?\n(?=[ \t]*(?:(?:[-*]|\d+[.)])\s+|#{@modal_anywhere}|(?:#{Vocabulary.alternation(['Reserved'] + heads)})\b))/i
+        @short_modal_boundary = /\s+(?:#{conjunction})\s+(?=(?:#{Vocabulary.alternation(%w[may can cannot])}|#{negation})\b)/i
+        @clause_connector = /(?:\A(?:#{conjunction})\s+|[,;]\s*\z)/i
+        @trailing_connector = /(?:[,;]\s*)?\b(?:#{conjunction})\s*\z/i
+        @clause_negation = /\A(?:#{negation})\s+/i
+        @grant_clause = (/\A((?:#{negation})\s+)?(?:#{Vocabulary.alternation(grants)})\s+(.*)\z/i unless grants.empty?)
+        reservations = ["Reserved to (?:[\\p{L}\\p{N}_.@-]+\\s+){1,8}are"] + templates.map do |prefix, suffix|
+          [prefix.empty? ? nil : "#{Vocabulary.alternation([prefix])}\\s+", PARTY,
+           suffix.empty? ? nil : "\\s+#{Vocabulary.alternation([suffix])}", '\s*:?'].join
+        end
+        @reservation = /\A(?:#{reservations.join('|')})\s+(.*)\z/i
+        @first_person = /\b(?:#{any[%w[I me], 'first-person']})\b|\b(?:#{any[%w[mine my], 'possessive']})(?=\s*(?:[,;.!?]|\z))/i
+        @redelegation_no = /\A(?:none|no|not allowed|(?:I )?may not(?: redelegate)?|not redelegate#{list['redelegation-no'].empty? ? '' : "|#{Vocabulary.alternation(list['redelegation-no'])}"})\z/i
+        @redelegation_yes = /\A(?:#{any[['I may redelegate'], 'redelegation-yes']})\b/i
+        @contrast = /\b(?:#{any[%w[but only except], 'contrast']})\b/i
+        permissions = ['(?:I|you) (?:may|can|am allowed|have permission)', 'not\s+(?:publish|merge)', 'I am authorized']
+        permissions << Vocabulary.alternation(list['permission']) unless list['permission'].empty?
+        @permission = /\b(?:#{permissions.join('|')})\b/i
+        @scope = /\b(?:#{Vocabulary.alternation(@scopes.keys)})\b/i
+        @opening = /\A(?:You are|#{identity}) /i
+        @role_after_address = /#{ADDRESS},?\s+(?:(?:#{any[%w[the role], 'article']})\s+)?(#{@role})/i
+        @role_after_opening = /\A(?:#{identity})\s+(?:(?:#{any[['the'], 'article']})\s+)?(#{@role})/i
+        @role_head = /\A(?:(?:#{any[['the'], 'article']})\s+)?(#{@role})/i
+        freeze
+      end
+
+      def role_name(text) = roles.fetch(Vocabulary.key(text))
+      def act_name(text) = words.fetch(Vocabulary.key(text))
+      def label_name(text) = label_names.fetch(Vocabulary.key(text))
+      def scope_name(text) = scopes.fetch(Vocabulary.key(text))
+
+      ENGLISH = new
     end
 
     def self.normalize(text)
@@ -144,9 +193,10 @@ module Nomos
     class Document
       attr_reader :text, :segments
 
-      def initialize(text, readback: false)
+      def initialize(text, readback: false, vocabulary: Vocabulary::ENGLISH)
         @text = text
         @readback = readback
+        @vocabulary = vocabulary
         @segments = split_segments
       end
 
@@ -157,7 +207,7 @@ module Nomos
       def identities
         found = values(:identity) + segments.select { |segment| segment.label.nil? }.flat_map do |segment|
           sentence_spans(segment.body).filter_map do |sentence|
-            Segment.new(nil, sentence, sentence) if clean(sentence).match?(/\A(?:You are|I am|Sou|Eu sou) /i)
+            Segment.new(nil, sentence, sentence) if clean(sentence).match?(@vocabulary.opening)
           end
         end
         if @readback && (opening = segments.first) && opening.label.nil?
@@ -171,7 +221,7 @@ module Nomos
         pairs = values(field).filter_map do |segment|
           value = CompareReadback.normalize(clean(segment.body))
           value = address(value) if field == :address
-          value = ROLES.fetch(value.downcase, value) if field == :role
+          value = role_value(value) if field == :role
           [value, segment.span] if value
         end
         identities.each do |segment|
@@ -179,9 +229,8 @@ module Nomos
           if field == :address
             value = address(body)
           else
-            role = body[/#{ADDRESS},?\s+(?:(?:the|role|o|a)\s+)?(#{ROLE})/i, 1]
-            role ||= body[/\A(?:Sou|Eu sou|I am)\s+(?:(?:the|o|a)\s+)?(#{ROLE})/i, 1]
-            value = ROLES.fetch(role.downcase) if role
+            role = body[@vocabulary.role_after_address, 1] || body[@vocabulary.role_after_opening, 1]
+            value = @vocabulary.role_name(role) if role
           end
           pairs << [value, segment.span] if value
         end
@@ -206,7 +255,7 @@ module Nomos
         pairs = labeled(:next_action)
         if pairs.empty?
           segments.select { |segment| !@readback || segment.label.nil? }.each do |segment|
-            match = segment.body.match(WAIT)
+            match = segment.body.match(@vocabulary.wait)
             next unless match
 
             pairs << if @readback && waiting
@@ -220,9 +269,9 @@ module Nomos
           if !@readback || waiting
             candidate = values(:next_action).find { |segment| segment.span == span }
             examined = candidate ? candidate.span : value
-            match = examined.match(WAIT)
-            before = match ? examined[...match.begin(0)].sub(NEXT_LABEL_PREFIX, '') : ''
-            valid = match && !examined.match?(NEGATED_WAIT) && !CompareReadback.act_names(before).any?
+            match = examined.match(@vocabulary.wait)
+            before = match ? examined[...match.begin(0)].sub(@vocabulary.next_label_prefix, '') : ''
+            valid = match && !examined.match?(@vocabulary.negated_wait) && !CompareReadback.act_names(before, @vocabulary).any?
             value = 'wait for confirmation' if valid
           end
           [value, span]
@@ -241,25 +290,25 @@ module Nomos
           sentence_spans(segment.body).each do |sentence|
             body = CompareReadback.normalize(clean(sentence))
             next if body.empty?
-            next if !@readback && body.match?(/\ABefore you (?:act|start)\b/i) && body.match?(WAIT)
+            next if !@readback && body.match?(/\ABefore you (?:act|start)\b/i) && body.match?(@vocabulary.wait)
 
             explicit_field = AUTHORITY_LABELS.include?(segment.label)
             recognized = explicit_field || segment.label.nil?
-            if recognized && body.match?(RESERVATION) && body.match?(FIRST_PERSON)
+            if recognized && body.match?(@vocabulary.reservation) && body.match?(@vocabulary.first_person)
               unknown << sentence
               next
             end
             parts = clause_spans(sentence)
             parts.each do |part|
-              clause_body = CompareReadback.normalize(clean(part)).sub(CLAUSE_CONNECTOR, '').sub(/(?:[,;]\s*)?\b(?:and|but|mas|e)\s*\z/i, '')
+              clause_body = CompareReadback.normalize(clean(part)).sub(@vocabulary.clause_connector, '').sub(@vocabulary.trailing_connector, '')
               clause = authority_clause(clause_body, part, recognized ? segment.label : nil)
               if clause && (recognized || clause.negative || clause.category == :reserved)
-                if clause.negative && clause.body.match?(CONTRAST) && CompareReadback.act_names(clause.body).any?
+                if clause.negative && clause.body.match?(@vocabulary.contrast) && CompareReadback.act_names(clause.body, @vocabulary).any?
                   unknown << part
                 else
                   clauses << clause
                 end
-              elsif explicit_field || clause_body.gsub(QUOTED_INLINE, '').match?(PERMISSION)
+              elsif explicit_field || clause_body.gsub(QUOTED_INLINE, '').match?(@vocabulary.permission)
                 unknown << part
               end
               outside << part unless explicit_field || (clause && (recognized || clause.negative || clause.category == :reserved))
@@ -279,20 +328,28 @@ module Nomos
         body.gsub(LINE_PREFIX, '').gsub(/\*\*/, '').strip
       end
 
+      def role_value(value)
+        head = value[/\A[^,;(]*/]
+        match = head.match(@vocabulary.role_head)
+        return @vocabulary.roles.fetch(Vocabulary.key(value), value) unless match && head.scan(/(?<![\p{L}\p{N}_-])#{@vocabulary.role}/).length == 1
+
+        @vocabulary.role_name(match[1])
+      end
+
       def label_parts(body)
-        match = body.match(LABEL_START)
+        match = body.match(@vocabulary.label_start)
         return unless match
 
         tail_start = match.end(0)
         tail = body[tail_start..]
-        return [LABEL_NAMES.fetch(match[1].downcase), body.length] if tail.strip.empty?
+        return [@vocabulary.label_name(match[1]), body.length] if tail.strip.empty?
 
-        delimiter = tail.match(LABEL_DELIMITER)
+        delimiter = tail.match(@vocabulary.label_delimiter)
         return unless delimiter && tail[...delimiter.begin(0)].split.length <= 8
 
         value_start = tail_start + delimiter.end(0)
         value_start += body[value_start..][/\A(?:\*\*)?\s*/].length
-        [LABEL_NAMES.fetch(match[1].downcase), value_start]
+        [@vocabulary.label_name(match[1]), value_start]
       end
 
       def split_segments
@@ -334,7 +391,7 @@ module Nomos
             next
           end
           if (label == :redelegation && !line.match?(/\A[ \t]+/)) ||
-             (label && !AUTHORITY_LABELS.include?(label) && line.lstrip.match?(MODAL_START))
+             (label && !AUTHORITY_LABELS.include?(label) && line.lstrip.match?(@vocabulary.modal_start))
             flush.call
             label = nil
           end
@@ -342,7 +399,7 @@ module Nomos
           content_start = line_start + prefix
           content = text[content_start...offset]
           boundaries = [0]
-          content.to_enum(:scan, LABEL_BOUNDARY).each { boundaries << Regexp.last_match.end(0) }
+          content.to_enum(:scan, @vocabulary.label_boundary).each { boundaries << Regexp.last_match.end(0) }
           boundaries << content.length
           boundaries.each_cons(2) do |left, right|
             chunk_start = content_start + left
@@ -377,7 +434,7 @@ module Nomos
       def sentence_spans(body)
         ranges = [0]
         markers = body.to_enum(:scan, /^[ \t]*\d+\.[ \t]+/).map { Regexp.last_match.end(0) }.to_set
-        body.to_enum(:scan, SENTENCE_BOUNDARY).each do
+        body.to_enum(:scan, @vocabulary.sentence_boundary).each do
           position = Regexp.last_match.end(0)
           ranges << position unless markers.include?(position)
         end
@@ -391,11 +448,11 @@ module Nomos
       def clause_spans(sentence)
         boundaries = [0]
         masked = sentence.gsub(QUOTED_INLINE) { |part| ' ' * part.length }
-        masked.to_enum(:scan, MODAL_ANYWHERE).each do
+        masked.to_enum(:scan, @vocabulary.modal_anywhere).each do
           position = Regexp.last_match.begin(0)
           boundaries << position unless position.zero?
         end
-        sentence.to_enum(:scan, SHORT_MODAL_BOUNDARY).each { boundaries << Regexp.last_match.end(0) }
+        sentence.to_enum(:scan, @vocabulary.short_modal_boundary).each { boundaries << Regexp.last_match.end(0) }
         boundaries << sentence.length
         boundaries.uniq.sort.each_cons(2).filter_map do |left, right|
           span = sentence[left...right].strip
@@ -404,21 +461,22 @@ module Nomos
       end
 
       def authority_clause(body, span, label)
-        return Clause.new(:prohibited, body.sub(/\A(?:not|não)\s+/i, ''), span, true) if body.match?(/\A(?:not|não)\s+/i) && label != :redelegation
+        negation = @vocabulary.clause_negation
+        return Clause.new(:prohibited, body.sub(negation, ''), span, true) if body.match?(negation) && label != :redelegation
         if label == :redelegation
-          return Clause.new(:redelegation, 'redelegate', span, true) if body.match?(REDELEGATION_NO)
-          return nil unless body.match?(REDELEGATION_YES)
+          return Clause.new(:redelegation, 'redelegate', span, true) if body.match?(@vocabulary.redelegation_no)
+          return nil unless body.match?(@vocabulary.redelegation_yes)
         end
         if (match = body.match(EN_CLAUSE))
           negative = match[1].downcase == 'cannot' || match[2].match?(/\Anot\b/i)
           value = match[2].sub(/\Anot\s+/i, '')
           return Clause.new(negative ? :prohibited : :grant, value, span, negative)
         end
-        if (match = body.match(PT_CLAUSE))
+        if @vocabulary.grant_clause && (match = body.match(@vocabulary.grant_clause))
           negative = !match[1].nil?
           return Clause.new(negative ? :prohibited : :grant, match[2], span, negative)
         end
-        if (match = body.match(RESERVATION))
+        if (match = body.match(@vocabulary.reservation))
           return Clause.new(:reserved, match[1], span, false)
         end
         return Clause.new(label, body, span, false) if %i[grant reserved].include?(label)
@@ -468,13 +526,13 @@ module Nomos
       [text, names]
     end
 
-    def self.act_names(body)
-      resources(body).first.scan(ACT).map { |value| WORDS.fetch(value.downcase) }
+    def self.act_names(body, vocabulary = Vocabulary::ENGLISH)
+      resources(body).first.scan(vocabulary.act).map { |value| vocabulary.act_name(value) }
     end
 
-    def self.atoms(clause)
+    def self.atoms(clause, vocabulary = Vocabulary::ENGLISH)
       text, paths = resources(clause.body)
-      names = paths.map { |name| [name, true] } + text.scan(ACT).map { |value| [WORDS.fetch(value.downcase), false] }
+      names = paths.map { |name| [name, true] } + text.scan(vocabulary.act).map { |value| [vocabulary.act_name(value), false] }
       names << ['redelegate', false] if clause.category == :redelegation && names.none? { |name, _| name == 'redelegate' }
       names.map do |name, resource|
         category = if !resource && name == 'redelegate'
@@ -489,19 +547,22 @@ module Nomos
     end
 
     def self.sentence_key(span)
-      normalize(span).downcase.gsub(/\b(?:you|your)\b/) { |word| word == 'you' ? 'i' : 'my' }
+      normalize(span).downcase.gsub(/\b(?:you|your|yourself|yours)\b/, PERSON)
                      .gsub(/[,;:!?]/, ' ').gsub(/[\s\u00a0]+/, ' ').sub(/\.\z/, '').strip
     end
 
-    def self.scope_words(clause)
-      resources(clause.body).first.gsub(ACT, '').scan(SCOPE).map do |word|
-        case word.downcase
-        when 'all', 'todo', 'toda', 'todos', 'todas' then 'all'
-        when 'any', 'qualquer' then 'any'
-        when 'everything', 'tudo' then 'everything'
-        else word.downcase
-        end
-      end.to_set
+    def self.scope_words(clause, vocabulary = Vocabulary::ENGLISH)
+      resources(clause.body).first.gsub(vocabulary.act, '').scan(vocabulary.scope).map { |word| vocabulary.scope_name(word) }.to_set
+    end
+
+    def self.task_remainder(span, sources)
+      text = normalize(span.gsub(/\*\*/, ''))
+      sources.each do |source|
+        next if source.empty?
+        return text[source.length..] if text.start_with?(source)
+        return '' if source.start_with?(text)
+      end
+      span
     end
 
     def self.field(record, readback, fold: false, contains: false)
@@ -524,18 +585,20 @@ module Nomos
       path == root || path.start_with?(root == '/' ? root : "#{root}/")
     end
 
-    def self.authority(record, readback)
+    def self.authority(record, readback, vocabulary = Vocabulary::ENGLISH, task_sources: [])
+      atoms_of = ->(clause) { atoms(clause, vocabulary) }
+      scopes_of = ->(clause) { scope_words(clause, vocabulary) }
       sources = [record, readback].map(&:authority)
       expected_clauses, expected_unknown, = sources[0]
       actual_clauses, actual_unknown, outside = sources[1]
       record_sentences = record.sentences.map { |span| sentence_key(span) }.to_set
       readback_sentences = readback.sentences.map { |span| sentence_key(span) }.to_set
-      actual_unknown = (actual_unknown + actual_clauses.select { |clause| atoms(clause).empty? }.map(&:span))
+      actual_unknown = (actual_unknown + actual_clauses.select { |clause| atoms_of[clause].empty? }.map(&:span))
                        .reject { |span| record_sentences.include?(sentence_key(span)) }
-      expected_unknown = (expected_unknown + expected_clauses.select { |clause| atoms(clause).empty? }.map(&:span))
+      expected_unknown = (expected_unknown + expected_clauses.select { |clause| atoms_of[clause].empty? }.map(&:span))
                          .reject { |span| readback_sentences.include?(sentence_key(span)) }
-      expected = expected_clauses.flat_map { |clause| atoms(clause) }.uniq(&:key)
-      actual = actual_clauses.flat_map { |clause| atoms(clause) }.uniq(&:key)
+      expected = expected_clauses.flat_map { |clause| atoms_of[clause] }.uniq(&:key)
+      actual = actual_clauses.flat_map { |clause| atoms_of[clause] }.uniq(&:key)
       expected_keys = expected.map(&:key).to_set
       actual_keys = actual.map(&:key).to_set
       missing = expected.reject { |atom| actual_keys.include?(atom.key) }
@@ -550,37 +613,40 @@ module Nomos
       actual_clauses.each do |clause|
         next if clause.negative || clause.category == :reserved
 
-        scopes = scope_words(clause)
+        scopes = scopes_of[clause]
         next if scopes.empty?
 
-        keys = atoms(clause).map(&:key).to_set
-        related = grants.select { |candidate| atoms(candidate).any? { |atom| keys.include?(atom.key) } }
-        actual_unknown << clause.span unless related.any? { |candidate| scopes.subset?(scope_words(candidate)) }
+        keys = atoms_of[clause].map(&:key).to_set
+        related = grants.select { |candidate| atoms_of[candidate].any? { |atom| keys.include?(atom.key) } }
+        actual_unknown << clause.span unless related.any? { |candidate| scopes.subset?(scopes_of[candidate]) }
       end
       granted_acts = expected.select { |atom| atom.category == :grant && !atom.resource }.map(&:name).to_set
       granted_acts << 'send' if granted_acts.include?('message')
       restricted = expected.select { |atom| atom.negative || atom.category == :reserved }.reject(&:resource).map(&:name).to_set - granted_acts
       grant_paths = Hash.new { |hash, key| hash[key] = [] }
       grants.each do |clause|
-        clause_atoms = atoms(clause)
+        clause_atoms = atoms_of[clause]
         paths = clause_atoms.select(&:resource).map(&:name).select { |name| absolute_resource?(name) }
         clause_atoms.reject(&:resource).each { |atom| grant_paths[atom.name].concat(paths) }
       end
+      grant_paths['send'].concat(grant_paths['message'])
       message_addresses = grants.flat_map do |clause|
-        items = atoms(clause)
+        items = atoms_of[clause]
         items.any? { |atom| %w[message send].include?(atom.name) && !atom.resource } ? items.select(&:resource).map(&:name).select { |name| name.match?(TRANSPORT) } : []
       end.to_set
+      task_bodies = readback.values(:task).map(&:body)
       outside.each do |span|
         next if record_sentences.include?(sentence_key(span))
 
-        names = act_names(span)
+        scanned = task_bodies.any? { |body| body.include?(span) } ? task_remainder(span, task_sources) : span
+        names = act_names(scanned, vocabulary)
         acts = names.select { |name| restricted.include?(name) }
-        paths = resources(span).last.select { |name| absolute_resource?(name) }
+        paths = resources(scanned).last.select { |name| absolute_resource?(name) }
         widened = names.select { |name| granted_acts.include?(name) }.flat_map do |name|
           paths.reject { |path| grant_paths[name].any? { |root| within_path?(path, root) } }
         end
         if (names & %w[message send]).any?
-          widened.concat(span.scan(TRANSPORT).map { |name| path_name(name) }.reject { |name| message_addresses.include?(name) })
+          widened.concat(scanned.scan(TRANSPORT).map { |name| path_name(name) }.reject { |name| message_addresses.include?(name) })
         end
         next if acts.empty? && widened.empty?
 
@@ -600,16 +666,17 @@ module Nomos
       [{ 'status' => status, 'record' => spans[0], 'readback' => spans[1] }, added.uniq, missing.map(&:text).uniq]
     end
 
-    def self.compare(record:, readback:, brief: nil)
-      expected = Document.new(record)
-      actual = Document.new(readback, readback: true)
-      authority_field, added, missing = authority(expected, actual)
+    def self.compare(record:, readback:, brief: nil, vocabulary: Vocabulary::ENGLISH)
+      expected = Document.new(record, vocabulary: vocabulary)
+      actual = Document.new(readback, readback: true, vocabulary: vocabulary)
+      task = brief ? Document.new(brief, vocabulary: vocabulary).task(brief: true) : expected.task
+      authority_field, added, missing = authority(expected, actual, vocabulary, task_sources: task.map(&:first))
       next_action = expected.next_action
       waiting = next_action.map(&:first).uniq == ['wait for confirmation']
       fields = {
         'address' => field(expected.identity(:address), actual.identity(:address)),
         'role' => field(expected.identity(:role), actual.identity(:role), fold: true),
-        'task' => field(brief ? Document.new(brief).task(brief: true) : expected.task, actual.task, contains: !brief.nil?),
+        'task' => field(task, actual.task, contains: !brief.nil?),
         'authority' => authority_field,
         'next_action' => field(next_action, actual.next_action(waiting: waiting))
       }
@@ -626,20 +693,24 @@ module Nomos
 
       def run(argv)
         values = {}
+        words = []
         parser = OptionParser.new do |options|
-          options.banner = 'Usage: compare-readback.rb --record FILE --readback FILE [--brief FILE] [--json]'
+          options.banner = 'Usage: compare-readback.rb --record FILE --readback FILE [--brief FILE] [--words FILE]... [--json]'
           %w[record readback brief].each do |name|
             options.on("--#{name} FILE") { |value| assign(values, name, value) }
           end
+          options.on('--words FILE') { |value| words << value }
           options.on('--json') { assign(values, 'json', true) }
           options.on('-h', '--help') { @output.puts options; return 0 }
         end
         parser.parse!(argv)
         raise ArgumentError, parser.banner unless argv.empty? && values['record'] && values['readback']
 
+        vocabulary = words.empty? ? Vocabulary::ENGLISH : Vocabulary.load(words)
         result = CompareReadback.compare(record: CompareReadback.read_text(values['record']),
                                         readback: CompareReadback.read_text(values['readback']),
-                                        brief: values['brief'] && CompareReadback.read_text(values['brief']))
+                                        brief: values['brief'] && CompareReadback.read_text(values['brief']),
+                                        vocabulary: vocabulary)
         if values['json']
           @output.puts JSON.generate(result)
         else

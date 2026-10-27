@@ -1,0 +1,112 @@
+# Placeholder vocabulary for the tests; not a real language.
+[label-address]
+zadrez
+[label-role]
+rolka
+[label-identity]
+zadrez ek rolka
+[label-task]
+qatko
+mu qatko
+[label-authority]
+xauto
+mu xauto
+[label-next-action]
+neqo axo
+mu neqo axo
+[label-redelegation]
+redzo
+[roles]
+orqo = orchestrator
+impqo = implementer
+revqo = reviewer
+wriqo = writer
+[acts]
+lexo = read
+edqo = edit
+krexo = create
+remqo = remove
+wrixo = write
+runqo = run
+sendqo mesqo = message
+komqo = commit
+pusqo = push
+pubqo = publish
+merqo = merge
+delqo = delete
+depqo = deploy
+insqo = install
+konqo = configure
+konqoj = settings
+foz diz masq = off this machine
+foz masq = off this machine
+por foz masq = off this machine
+redqo = redelegate
+donqo = redelegate
+opqo = open
+upqo = update
+tagqo = tag
+alqo = change
+alqa = change
+alqem = change
+alqi = change
+alqu = change
+sendqo = send
+[scope]
+qany = any
+qall = all
+[grant]
+zmay
+[reserved]
+Rezq zu {party} esq
+Rezq zu {party}
+[negation]
+naq
+[wait-negation]
+senq
+[auxiliary]
+volq
+[wait]
+awaq konfirq
+awaq zu konfirq
+awaqi konfirq
+posq konfirq
+posq zu konfirq
+dopq konfirq
+[wait-verb]
+awaq
+[first-person]
+miq
+zmay
+[possessive]
+miqa
+[contrast]
+buq
+onlq
+solq
+exq
+[conjunction]
+ek
+buq
+[copula]
+esq
+[identity]
+Soq
+Miq esq
+[article]
+zu
+[permission]
+zmay
+naq zmay
+havq permq
+povq
+[redelegation-no]
+noneq
+naq
+naq zmay
+naq zmay redqo
+naq permitq
+naq redqo
+naq povq redqo
+[redelegation-yes]
+Zmay redqo

@@ -8,6 +8,8 @@ require_relative '../bin/compare-readback'
 class CompareReadbackTest < Minitest::Test
   Comparator = Nomos::CompareReadback
   SCRIPT = File.expand_path('../bin/compare-readback.rb', __dir__)
+  WORDS_FILE = File.expand_path('fixtures/compare-readback/vocabulary.txt', __dir__)
+  VOCABULARY = Comparator::Vocabulary.load([WORDS_FILE])
   RECORD = <<~TEXT
     You are impl-1.alpha@box1, the implementer of team alpha, started by orq.alpha@box1.
     Before you act on your first request, send orq.alpha@box1 a readback with your address, role,
@@ -35,9 +37,11 @@ class CompareReadbackTest < Minitest::Test
     Next action: Wait for confirmation.
   TEXT
 
-  def compare(record = RECORD, readback = READBACK, brief: nil)
-    Comparator.compare(record: record, readback: readback, brief: brief)
+  def compare(record = RECORD, readback = READBACK, brief: nil, vocabulary: Comparator::Vocabulary::ENGLISH)
+    Comparator.compare(record: record, readback: readback, brief: brief, vocabulary: vocabulary)
   end
+
+  def placeholder(record = RECORD, readback = READBACK, brief: nil) = compare(record, readback, brief: brief, vocabulary: VOCABULARY)
 
   def field(result, name) = result.fetch('fields').fetch(name)
   def status(result, name) = field(result, name).fetch('status')
@@ -93,23 +97,25 @@ class CompareReadbackTest < Minitest::Test
     assert_match_all compare(record, readback)
   end
 
-  def test_opening_identity_with_tag_and_portuguese_sentence_forms
-    ['[readback] impl-1.alpha@box1, implementer, aguarda confirmação.',
-     'Sou impl-1.alpha@box1, implementer da equipe alpha.',
-     'Eu sou impl-1.alpha@box1, implementador do time alpha.',
-     "[accept] Readback de impl-1.alpha@box1.\nSou impl-1.alpha@box1, implementer da equipe alpha."].each do |opening|
+  def test_opening_identity_with_tag_and_vocabulary_sentence_forms
+    ['[readback] impl-1.alpha@box1, implementer, awaq konfirq.',
+     'Soq impl-1.alpha@box1, implementer of team alpha.',
+     'Miq esq impl-1.alpha@box1, impqo of team alpha.',
+     "[accept] Readback of impl-1.alpha@box1.\nSoq impl-1.alpha@box1, implementer of team alpha."].each do |opening|
       readback = READBACK.sub("Address: impl-1.alpha@box1\nRole: implementer", opening)
-      assert_match_all compare(RECORD, readback)
-      result = compare(RECORD, readback.sub('impl-1.alpha@box1', 'impl-2.alpha@box1'))
+      assert_match_all placeholder(RECORD, readback)
+      result = placeholder(RECORD, readback.sub('impl-1.alpha@box1', 'impl-2.alpha@box1'))
       assert_equal 'differs', status(result, 'address')
     end
   end
 
   def test_opening_role_comes_from_the_fixed_list_next_to_the_address
-    %w[orchestrator implementer reviewer writer qa auditor].zip(%w[orquestrador implementador revisor redator qa auditor]).each do |english, portuguese|
+    roles = %w[orchestrator implementer reviewer writer qa auditor]
+    roles.zip(roles, %w[orqo impqo revqo wriqo qa auditor]).each do |english, opening, translated|
       record = RECORD.sub('the implementer of team', "the #{english} of team")
-      readback = READBACK.sub("Address: impl-1.alpha@box1\nRole: implementer", "[readback] impl-1.alpha@box1, #{portuguese} da equipe alpha.")
+      readback = READBACK.sub("Address: impl-1.alpha@box1\nRole: implementer", "[readback] impl-1.alpha@box1, #{opening} of team alpha.")
       assert_match_all compare(record, readback)
+      assert_match_all placeholder(record, readback.sub(", #{opening} of", ", #{translated} of"))
     end
     readback = READBACK.sub("Address: impl-1.alpha@box1\nRole: implementer", 'impl-1.alpha@box1, ready to consult the reviewer.')
     assert_equal 'missing', status(compare(RECORD, readback), 'role')
@@ -122,33 +128,35 @@ class CompareReadbackTest < Minitest::Test
     assert_match_all compare(RECORD, headings)
   end
 
-  def test_portuguese_labels_and_vocabulary
-    readback = <<~TEXT
-      Endereço: impl-1.alpha@box1
-      Papel: implementer
-      Tarefa: Build the readback comparator.
-      Autoridade: Posso ler e editar /work/alpha, executar verificações e enviar mensagem para orq.alpha@box1.
-      Não posso mesclar, publicar, instalar ou configurar configurações.
-      Reservado ao principal estão push, implantar e qualquer coisa fora desta máquina.
-      Não posso redelegar.
-      Próxima ação: Wait for confirmation.
-    TEXT
-    assert_match_all compare(RECORD, readback)
+  VOCABULARY_READBACK = <<~TEXT
+    Zadrez: impl-1.alpha@box1
+    Rolka: implementer
+    Qatko: Build the readback comparator.
+    Xauto: Zmay lexo ek edqo /work/alpha, runqo checks ek sendqo mesqo to orq.alpha@box1.
+    Naq zmay merqo, pubqo, insqo or konqo konqoj.
+    Rezq zu principal esq pusqo, depqo ek qany thing foz diz masq.
+    Naq zmay redqo.
+    Neqo axo: Wait for confirmation.
+  TEXT
+
+  def test_vocabulary_labels_and_clauses
+    assert_match_all placeholder(RECORD, VOCABULARY_READBACK)
+    assert_equal ['missing'] * 5, compare(RECORD, VOCABULARY_READBACK).fetch('fields').values.map { |entry| entry.fetch('status') }
   end
 
   def test_each_vocabulary_translation
     pairs = {
-      'read' => 'ler', 'edit' => 'editar', 'create' => 'criar', 'remove' => 'remover',
-      'write' => 'escrever', 'run' => 'executar', 'message' => 'enviar mensagem',
-      'commit' => 'commitar', 'push' => 'push', 'publish' => 'publicar', 'merge' => 'mesclar',
-      'delete' => 'excluir', 'deploy' => 'implantar', 'install' => 'instalar',
-      'configure' => 'configurar', 'settings' => 'configurações',
-      'off this machine' => 'fora desta máquina', 'redelegate' => 'redelegar',
-      'open' => 'abrir', 'update' => 'atualizar', 'tag' => 'etiquetar',
-      'change' => 'alterar', 'grant' => 'conceder'
+      'read' => 'lexo', 'edit' => 'edqo', 'create' => 'krexo', 'remove' => 'remqo',
+      'write' => 'wrixo', 'run' => 'runqo', 'message' => 'sendqo mesqo',
+      'commit' => 'komqo', 'push' => 'pusqo', 'publish' => 'pubqo', 'merge' => 'merqo',
+      'delete' => 'delqo', 'deploy' => 'depqo', 'install' => 'insqo',
+      'configure' => 'konqo', 'settings' => 'konqoj',
+      'off this machine' => 'foz diz masq', 'redelegate' => 'redqo',
+      'open' => 'opqo', 'update' => 'upqo', 'tag' => 'tagqo',
+      'change' => 'alqo', 'grant' => 'donqo'
     }
-    pairs.each do |english, portuguese|
-      result = compare("#{RECORD}\nYou may #{english}.", "#{READBACK}\nPosso #{portuguese}.")
+    pairs.each do |english, translated|
+      result = placeholder("#{RECORD}\nYou may #{english}.", "#{READBACK}\nZmay #{translated}.")
       assert_equal 'matched', status(result, 'authority'), "#{english}: #{result}"
     end
   end
@@ -159,16 +167,20 @@ class CompareReadbackTest < Minitest::Test
   end
 
   def test_labels_accept_short_connectors_and_sentence_starts
-    ['Task is', 'My task is', 'Minha tarefa é', 'Tarefa conforme o pedido é',
-     'Task as assigned:', 'Tarefa conforme o pedido.'].each do |label|
+    ['Task is', 'My task is', 'Task as assigned:'].each do |label|
       readback = READBACK.sub('Task:', label)
       assert_equal 'matched', status(compare(RECORD, readback), 'task'), label
     end
+    ['Mu qatko esq', 'Qatko zu zorq esq', 'Qatko zu zorq.'].each do |label|
+      readback = READBACK.sub('Task:', label)
+      assert_equal 'matched', status(placeholder(RECORD, readback), 'task'), label
+    end
     readback = READBACK.sub('Task:', "\nReady. My task is")
     assert_equal 'matched', status(compare(RECORD, readback), 'task')
-    ['Authority as my first prompt gives it.', 'My authority is', 'Minha autoridade é'].each do |label|
+    ['Authority as my first prompt gives it.', 'My authority is'].each do |label|
       assert_match_all compare(RECORD, READBACK.sub('Authority:', label))
     end
+    assert_match_all placeholder(RECORD, READBACK.sub('Authority:', 'Mu xauto esq'))
   end
 
   def test_label_connectors_are_bounded_and_do_not_match_inside_a_word
@@ -181,16 +193,18 @@ class CompareReadbackTest < Minitest::Test
   end
 
   def test_next_action_connectors_keep_the_source_span
-    line = 'Próxima ação após confirmação é ler os arquivos.'
-    result = compare(RECORD, READBACK.sub('Next action: Wait for confirmation.', line))
+    line = 'Neqo axo posq konfirq esq lexo the files.'
+    result = placeholder(RECORD, READBACK.sub('Next action: Wait for confirmation.', line))
     assert_includes field(result, 'next_action').fetch('readback'), line
   end
 
   def test_modal_grants_inside_task_need_review
-    readback = READBACK.sub("Task: Build the readback comparator.\nAuthority: ", "Minha tarefa é Build the readback comparator. ")
-    result = compare(RECORD, readback)
-    assert_equal 'differs', status(result, 'authority')
-    refute_empty result.fetch('authority_added')
+    ['My task is', 'Mu qatko esq'].each do |label|
+      readback = READBACK.sub("Task: Build the readback comparator.\nAuthority: ", "#{label} Build the readback comparator. ")
+      result = placeholder(RECORD, readback)
+      assert_equal 'differs', status(result, 'authority')
+      refute_empty result.fetch('authority_added')
+    end
   end
 
   def test_missing_on_either_side_never_matches
@@ -242,15 +256,15 @@ class CompareReadbackTest < Minitest::Test
   end
 
   def test_waiting_phrases_allow_the_next_step
-    ['Wait for your [accept], checking the inbox.', 'After confirmation, read the files.',
-     'Aguardo confirmação para ler os arquivos.', 'Aguardar sua confirmação e ler os arquivos.',
-     'Aguarda a confirmação e lê os arquivos.', 'Após confirmação, ler os arquivos.',
-     'Após a confirmação, ler os arquivos.', 'Depois da confirmação, ler os arquivos.'].each do |phrase|
+    ['Wait for your [accept], checking the inbox.', 'After confirmation, read the files.'].each do |phrase|
       assert_equal 'matched', status(compare(RECORD, READBACK.sub('Wait for confirmation.', phrase)), 'next_action'), phrase
     end
-    ['Próxima ação após confirmação é ler os arquivos.',
-     'Minha próxima ação, após a confirmação, é ler os arquivos.'].each do |line|
-      assert_equal 'matched', status(compare(RECORD, READBACK.sub('Next action: Wait for confirmation.', line)), 'next_action'), line
+    ['Awaq konfirq to lexo the files.', 'Awaq zu konfirq ek lexo the files.', 'Awaqi konfirq ek lexo the files.',
+     'Posq konfirq, lexo the files.', 'Posq zu konfirq, lexo the files.', 'Dopq konfirq, lexo the files.'].each do |phrase|
+      assert_equal 'matched', status(placeholder(RECORD, READBACK.sub('Wait for confirmation.', phrase)), 'next_action'), phrase
+    end
+    ['Neqo axo posq konfirq esq lexo the files.', 'Mu neqo axo, posq zu konfirq, esq lexo the files.'].each do |line|
+      assert_equal 'matched', status(placeholder(RECORD, READBACK.sub('Next action: Wait for confirmation.', line)), 'next_action'), line
     end
     result = compare(RECORD, READBACK.sub('Next action: Wait for confirmation.', 'I will not wait for confirmation.'))
     refute_equal 'matched', status(result, 'next_action')
@@ -296,10 +310,10 @@ class CompareReadbackTest < Minitest::Test
   end
 
   def test_redelegation_does_not_change_other_atoms_categories
-    ['I may not redelegate, install or configure settings.', 'Não posso redelegar, instalar ou configurar configurações.'].each do |clause|
+    ['I may not redelegate, install or configure settings.', 'Naq zmay redqo, insqo or konqo konqoj.'].each do |clause|
       readback = READBACK.sub("I may not configure settings, install, publish or merge.\n", "I may not publish or merge.\n")
       readback = readback.sub('I may not redelegate.', clause)
-      assert_match_all compare(RECORD, readback)
+      assert_match_all placeholder(RECORD, readback)
     end
     record = RECORD.sub('You may not redelegate.', 'You may redelegate.')
     readback = READBACK.sub('I may not redelegate.', 'I may redelegate, read /work/alpha and run checks.')
@@ -317,10 +331,11 @@ class CompareReadbackTest < Minitest::Test
 
   def test_publication_installs_and_off_machine_forms
     record = RECORD.sub('merge, publish, install or configure settings', 'merge, publication, installs or configure settings')
-    ['fora da máquina', 'para fora da máquina', 'fora desta máquina'].each do |phrase|
+    ['foz masq', 'por foz masq', 'foz diz masq'].each do |phrase|
       readback = READBACK.sub('anything off this machine', phrase)
-      assert_match_all compare(record, readback)
+      assert_match_all placeholder(record, readback)
     end
+    assert_match_all compare(record, READBACK.sub('anything off this machine', 'anything that leaves this machine'))
   end
 
   def test_template_example_act_words_are_in_the_vocabulary
@@ -434,13 +449,14 @@ class CompareReadbackTest < Minitest::Test
     assert_equal ['missing'] * 5, compare(RECORD, text).fetch('fields').values.map { |entry| entry.fetch('status') }
   end
 
-  def assert_cli_result(record, readback, expected_exit, brief: nil)
+  def assert_cli_result(record, readback, expected_exit, brief: nil, words: false)
     with_files(record, readback) do |directory, args|
       if brief
         path = File.join(directory, 'brief.txt')
         File.binwrite(path, brief)
         args += ['--brief', path]
       end
+      args += ['--words', WORDS_FILE] if words
       output, error, process = Open3.capture3(RbConfig.ruby, SCRIPT, *args, '--json')
       output.force_encoding(Encoding::UTF_8)
       error.force_encoding(Encoding::UTF_8)
@@ -457,10 +473,10 @@ class CompareReadbackTest < Minitest::Test
       READBACK + "Notes: I may push and publish.\n",
       READBACK + "Then I may push and publish.\n",
       READBACK.sub('Wait for confirmation.', 'Wait for confirmation. I can then push to origin and publish.'),
-      READBACK.sub('Next action: Wait for confirmation.', 'Próxima ação: aguardo confirmação e depois faço push, publico e implanto.')
+      READBACK.sub('Next action: Wait for confirmation.', 'Neqo axo: awaq konfirq ek then pusqo, pubqo ek depqo.')
     ]
     variants.each do |readback|
-      result = assert_cli_result(RECORD, readback, 1)
+      result = assert_cli_result(RECORD, readback, 1, words: true)
       assert_equal 'differs', status(result, 'authority')
       refute_empty result.fetch('authority_added')
     end
@@ -472,31 +488,31 @@ class CompareReadbackTest < Minitest::Test
   end
 
   def test_unknown_authority_before_and_after_known_clauses_is_reported
-    ['Full access to all repositories.', 'O implementador pode publicar e mesclar.',
-     'Tenho permissão para publicar e mesclar.', 'I have permission to publish.'].each do |unknown|
+    ['Full access to all repositories.', 'Zu impqo povq pubqo ek merqo.',
+     'Havq permq pubqo ek merqo.', 'I have permission to publish.'].each do |unknown|
       ["#{unknown}\n", "#{unknown} "].each do |prefix|
         readback = READBACK.sub('Authority: ', "Authority: #{prefix}")
-        result = assert_cli_result(RECORD, readback, 1)
+        result = assert_cli_result(RECORD, readback, 1, words: true)
         assert_includes result.fetch('authority_added'), unknown
       end
       ["\n#{unknown}", " #{unknown}"].each do |suffix|
         readback = READBACK.sub('I may not redelegate.', "I may not redelegate.#{suffix}")
-        result = assert_cli_result(RECORD, readback, 1)
+        result = assert_cli_result(RECORD, readback, 1, words: true)
         assert_includes result.fetch('authority_added'), unknown
       end
     end
   end
 
-  def test_explicit_modals_split_before_polarity_in_both_languages
+  def test_explicit_modals_split_before_polarity_in_both_vocabularies
     ['; ', ', ', ' and ', ' '].each do |separator|
-      ['I may not publish', 'Não posso publicar'].zip(['I may delete /secret.', 'posso excluir /secret.']).each do |negative, positive|
+      ['I may not publish', 'Naq zmay pubqo'].zip(['I may delete /secret.', 'zmay delqo /secret.']).each do |negative, positive|
         readback = READBACK.sub('I may not redelegate.', "I may not redelegate. #{negative}#{separator}#{positive}")
-        result = assert_cli_result(RECORD, readback, 1)
+        result = assert_cli_result(RECORD, readback, 1, words: true)
         assert_includes result.fetch('authority_added'), 'delete'
         assert_includes result.fetch('authority_added'), '/secret'
       end
     end
-    result = assert_cli_result(RECORD, READBACK.sub('I may not redelegate.', 'I may not redelegate. Não posso instalar, mas posso mesclar e publicar.'), 1)
+    result = assert_cli_result(RECORD, READBACK.sub('I may not redelegate.', 'I may not redelegate. Naq zmay insqo, buq zmay merqo ek pubqo.'), 1, words: true)
     assert_includes result.fetch('authority_added'), 'merge'
     assert_includes result.fetch('authority_added'), 'publish'
   end
@@ -507,30 +523,31 @@ class CompareReadbackTest < Minitest::Test
      'I may not only merge but also publish, install and configure settings.',
      'I may not install or configure settings, only merge and publish.',
      'I may do anything except install or configure settings.',
-     'Não posso instalar nem configurar configurações, só mesclar e publicar.',
-     'Não posso instalar nem configurar configurações; mesclar e publicar ficam comigo.',
-     'Não posso não só mesclar mas também publicar.',
-     'Não posso instalar, exceto mesclar.', 'Não posso instalar, somente mesclar.'].each do |clause|
-      result = assert_cli_result(RECORD, READBACK.sub('I may not configure settings, install, publish or merge.', clause), 1)
+     'Naq zmay insqo or konqo konqoj, solq merqo ek pubqo.',
+     'Naq zmay insqo or konqo konqoj; merqo ek pubqo stay with miq.',
+     'Naq zmay naq solq merqo buq also pubqo.',
+     'Naq zmay insqo, exq merqo.', 'Naq zmay insqo, onlq merqo.'].each do |clause|
+      result = assert_cli_result(RECORD, READBACK.sub('I may not configure settings, install, publish or merge.', clause), 1, words: true)
       refute_empty result.fetch('authority_added')
     end
   end
 
   def test_redelegation_short_values_have_explicit_polarity
-    ['none', 'no', 'not allowed', 'I may not', 'nenhuma', 'não', 'não posso', 'não permitida',
-     'não redelegar', 'não pode redelegar', 'may not redelegate'].each do |value|
+    ['none', 'no', 'not allowed', 'I may not', 'may not redelegate'].map { |value| ['Redelegation', value] }.concat(
+      ['noneq', 'naq', 'naq zmay', 'naq zmay redqo', 'naq permitq', 'naq redqo', 'naq povq redqo'].map { |value| ['Redzo', value] }
+    ).each do |label, value|
       record = RECORD.sub('You may not redelegate.', "6. Redelegation: #{value}.")
-      readback = READBACK.sub('I may not redelegate.', "Redelegação: #{value}.")
-      assert_cli_result(record, READBACK, 0)
-      assert_cli_result(RECORD, readback, 0)
-      result = assert_cli_result(record, READBACK.sub('I may not redelegate.', 'I may redelegate.'), 1)
+      readback = READBACK.sub('I may not redelegate.', "#{label}: #{value}.")
+      assert_cli_result(record, READBACK, 0, words: true)
+      assert_cli_result(RECORD, readback, 0, words: true)
+      result = assert_cli_result(record, READBACK.sub('I may not redelegate.', 'I may redelegate.'), 1, words: true)
       assert_includes result.fetch('authority_added'), 'redelegate'
       assert_includes result.fetch('authority_missing'), 'not redelegate'
     end
-    ['I may redelegate', 'Posso redelegar'].each do |value|
+    [['Redelegation', 'I may redelegate'], ['Redzo', 'Zmay redqo']].each do |label, value|
       record = RECORD.sub('You may not redelegate.', "6. Redelegation: #{value}.")
-      readback = READBACK.sub('I may not redelegate.', "Redelegação: #{value}.")
-      assert_cli_result(record, readback, 0)
+      readback = READBACK.sub('I may not redelegate.', "#{label}: #{value}.")
+      assert_cli_result(record, readback, 0, words: true)
     end
     result = compare(RECORD.sub('You may not redelegate.', 'You may redelegate.'), READBACK)
     assert_empty result.fetch('authority_added')
@@ -543,8 +560,8 @@ class CompareReadbackTest < Minitest::Test
     ['Reserved to the principal are push, deploy and anything off this machine, which I may also do.',
      'Reserved to the principal are push, deploy and anything off this machine, and I may do them.',
      'Reserved to the principal are push, deploy and anything off this machine, done by me on its behalf.',
-     'Reservado ao principal são push, implantar e qualquer coisa fora desta máquina, que eu também posso fazer.'].each do |clause|
-      result = assert_cli_result(RECORD, READBACK.sub('Reserved to the principal are anything off this machine, deploy and push.', clause), 1)
+     'Rezq zu principal esq pusqo, depqo ek qany thing foz diz masq, which miq also zmay do.'].each do |clause|
+      result = assert_cli_result(RECORD, READBACK.sub('Reserved to the principal are anything off this machine, deploy and push.', clause), 1, words: true)
       refute_empty result.fetch('authority_added')
     end
   end
@@ -554,20 +571,21 @@ class CompareReadbackTest < Minitest::Test
       result = assert_cli_result(RECORD, READBACK.sub('/work/alpha,', "/work/alpha and #{path},"), 1)
       assert_includes result.fetch('authority_added'), path
     end
-    ['anywhere else', 'all files', 'everything', 'em qualquer lugar', 'todos os arquivos'].each do |scope|
-      result = assert_cli_result(RECORD, READBACK.sub('/work/alpha,', "/work/alpha and #{scope},"), 1)
+    ['anywhere else', 'all files', 'everything', 'en qany lokq', 'qall filqoz'].each do |scope|
+      result = assert_cli_result(RECORD, READBACK.sub('/work/alpha,', "/work/alpha and #{scope},"), 1, words: true)
       assert result.fetch('authority_added').any? { |item| item.include?(scope) }
     end
+    assert_match_all placeholder(RECORD.sub('read and edit files', 'read and edit all files'), READBACK.sub('edit and read', 'edit and read qall filqoz'))
     assert_match_all compare(RECORD.sub('read and edit files', 'read and edit all files'), READBACK.sub('edit and read', 'edit and read all files'))
   end
 
   def test_wait_must_be_affirmative_and_before_actions
     ['Delete /secret and then wait for confirmation.', 'Read the diff and wait for confirmation.',
      'I will not wait for confirmation.', 'Without waiting for confirmation, read the files.',
-     'Não vou aguardar confirmação.', 'Sem aguardar confirmação, ler os arquivos.',
+     'Naq volq awaqi konfirq.', 'Senq awaqi konfirq, lexo the files.', 'Naq awaq konfirq.',
      'I will never wait for confirmation.'].each do |phrase|
-      result = assert_cli_result(RECORD, READBACK.sub('Wait for confirmation.', phrase), 1)
-      assert_equal 'differs', status(result, 'next_action')
+      result = assert_cli_result(RECORD, READBACK.sub('Wait for confirmation.', phrase), 1, words: true)
+      assert_equal 'differs', status(result, 'next_action'), phrase
     end
   end
 
@@ -583,16 +601,16 @@ class CompareReadbackTest < Minitest::Test
 
   def test_first_person_reservations_distinguish_claims_from_determiners
     ['Reserved to the principal are changes beyond my handover note',
-     'Reservado ao principal são alterações além da minha nota de handover'].each do |reservation|
+     'Rezq zu principal esq changes beyond miqa handover note'].each do |reservation|
       record = RECORD.sub('Reserved to the principal are push, deploy and anything off this machine.', "#{reservation}.")
       readback = READBACK.sub('Reserved to the principal are anything off this machine, deploy and push.', "#{reservation}.")
-      assert_match_all compare(record, readback)
+      assert_match_all placeholder(record, readback)
     end
     ['Reserved to the principal are push, which is mine.',
-     'Reservado ao principal são push, são minhas.',
-     'Reservado ao principal são push, por mim.',
+     'Rezq zu principal esq pusqo, esq miqa.',
+     'Rezq zu principal esq pusqo, by miq.',
      'Reserved to the principal are push, by me.'].each do |reservation|
-      result = compare(RECORD, READBACK.sub('Reserved to the principal are anything off this machine, deploy and push.', reservation))
+      result = placeholder(RECORD, READBACK.sub('Reserved to the principal are anything off this machine, deploy and push.', reservation))
       assert_includes result.fetch('authority_added'), reservation
     end
   end
@@ -611,10 +629,10 @@ class CompareReadbackTest < Minitest::Test
   end
 
   def test_message_family_outside_authority_preserves_the_recipient
-    ['send the reply', 'envio o plano técnico', 'send the report to orq.alpha@box1'].each do |step|
+    ['send the reply', 'sendqo zu plan', 'send the report to orq.alpha@box1'].each do |step|
       record = RECORD.sub('You may not merge,', 'You may not send anything off this machine, merge,')
       readback = READBACK.sub('I may not configure', 'I may not send anything off this machine or configure')
-      assert_cli_result(record, readback.sub('Wait for confirmation.', "Wait for confirmation, then #{step}."), 0)
+      assert_cli_result(record, readback.sub('Wait for confirmation.', "Wait for confirmation, then #{step}."), 0, words: true)
     end
     ['rev-1.alpha@box2', 'reader@box2'].each do |address|
       result = assert_cli_result(RECORD, READBACK.sub('Wait for confirmation.', "Wait for confirmation, then send the report to #{address}."), 1)
@@ -632,14 +650,14 @@ class CompareReadbackTest < Minitest::Test
     assert_includes result.fetch('authority_added'), 'I may frobnicate.'
   end
 
-  def test_portuguese_conjugations_and_five_labels
-    readback = READBACK.sub('Address:', 'Endereço:').sub('Role: implementer', 'Papel: implementador')
-                       .sub('Task:', 'Tarefa:').sub('Authority:', 'Autoridade:').sub('Next action:', 'Próxima ação:')
-    assert_match_all compare(RECORD, readback)
-    %w[alterar altere alterem altera alteram].each do |verb|
+  def test_vocabulary_conjugations_and_five_labels
+    readback = READBACK.sub('Address:', 'Zadrez:').sub('Role: implementer', 'Rolka: impqo')
+                       .sub('Task:', 'Qatko:').sub('Authority:', 'Xauto:').sub('Next action:', 'Neqo axo:')
+    assert_match_all placeholder(RECORD, readback)
+    %w[alqo alqa alqem alqi alqu].each do |verb|
       record = RECORD.sub('You may not merge,', 'You may not change, merge,')
-      translated = readback.sub('I may not configure', "Não posso #{verb} nem configurar")
-      assert_match_all compare(record, translated)
+      translated = readback.sub('I may not configure', "Naq zmay #{verb} or konqo")
+      assert_match_all placeholder(record, translated)
     end
   end
 
@@ -868,6 +886,149 @@ class CompareReadbackTest < Minitest::Test
       ensure
         File.define_singleton_method(:open, original_open)
       end
+    end
+  end
+
+  def test_send_outside_authority_takes_the_message_grant_paths
+    record = RECORD.sub('files under /work/alpha', 'files under /work/alpha/')
+    result = compare(record, READBACK.sub('Wait for confirmation.', 'Wait for confirmation, then send the plan for /work/alpha.'))
+    assert_match_all result
+    result = compare(record, READBACK.sub('Wait for confirmation.', 'Wait for confirmation, then send the plan for /etc/passwd.'))
+    assert_includes result.fetch('authority_added'), '/etc/passwd'
+  end
+
+  def test_reflexive_restatement_after_the_reservation_semicolon_matches_the_record
+    record = RECORD.sub('anything off this machine.', 'anything off this machine; orq.alpha@box1 brings them to the principal, and you do not ask the principal yourself.')
+    readback = READBACK.sub('deploy and push.', 'deploy and push; orq.alpha@box1 brings them to the principal, and I do not ask the principal myself.')
+    assert_match_all compare(record, readback)
+    result = compare(record, readback.sub('principal myself.', 'principal myself, and I may publish.'))
+    assert_includes result.fetch('authority_added'), 'publish'
+  end
+
+  def test_first_person_prohibition_restating_the_record_is_not_added
+    record = RECORD.sub('anything off this machine.', 'anything off this machine; orq.alpha@box1 brings them to the principal; you do not ask the principal yourself.')
+    readback = READBACK.sub('deploy and push.', 'deploy and push; orq.alpha@box1 brings them to the principal; I do not ask the principal myself.')
+    assert_match_all compare(record, readback)
+    assert_includes compare(RECORD, readback).fetch('authority_added'), 'I do not ask the principal myself.'
+    result = compare(record, readback.sub('principal myself.', 'principal myself, and I may deploy.'))
+    assert_includes result.fetch('authority_added'), 'deploy'
+  end
+
+  def test_task_restating_the_brief_is_not_readback_authority
+    brief = "Write the merge report.\n"
+    readback = READBACK.sub('Task: Build the readback comparator.', 'Task: Write the merge report.')
+    assert_match_all compare(RECORD, readback, brief: brief)
+    assert_match_all compare(RECORD.sub('Task: Build the readback comparator.', 'Task: Write the merge report.'), readback)
+    result = compare(RECORD, readback.sub('Write the merge report.', 'Write the merge report, then merge it.'), brief: brief)
+    assert_equal 'matched', status(result, 'task')
+    assert_includes result.fetch('authority_added'), 'merge'
+  end
+
+  def test_install_in_the_task_text_is_not_an_added_act
+    brief = "Draft the install guide for alpha.\n"
+    readback = READBACK.sub('Task: Build the readback comparator.', 'Task: Draft the install guide for alpha (request on /work/alpha, no commits).')
+    assert_match_all compare(RECORD, readback, brief: brief)
+    result = compare(RECORD, readback.sub('no commits', 'then install it'), brief: brief)
+    assert_includes result.fetch('authority_added'), 'install'
+  end
+
+  def test_role_value_starting_with_the_role_name_matches
+    ['Role: implementer of team alpha, started by orq.alpha@box1; the principal is Ana.',
+     'Role: the implementer (team alpha).', 'Rolka: impqo of team alpha.'].each do |role|
+      assert_match_all placeholder(RECORD, READBACK.sub('Role: implementer', role))
+    end
+    ['Role: reviewer of team alpha.', 'Role: implementer and reviewer of team alpha.', 'Role: not the implementer.'].each do |role|
+      assert_equal 'differs', status(compare(RECORD, READBACK.sub('Role: implementer', role)), 'role'), role
+    end
+  end
+
+  def test_waiting_for_a_named_party_to_confirm
+    ['I wait for orq.alpha@box1 to confirm this readback; then I read the files.',
+     'Wait for the orchestrator to confirm, then read the files.'].each do |phrase|
+      assert_equal 'matched', status(compare(RECORD, READBACK.sub('Wait for confirmation.', phrase)), 'next_action'), phrase
+    end
+    ['I will not wait for orq.alpha@box1 to confirm.', 'Delete /secret and then wait for orq.alpha@box1 to confirm.'].each do |phrase|
+      assert_equal 'differs', status(compare(RECORD, READBACK.sub('Wait for confirmation.', phrase)), 'next_action'), phrase
+    end
+  end
+
+  def test_words_file_parser
+    sections = Comparator::Vocabulary.parse(["# comment\n", "\n", "[label-task]\n", "  qatko  \n", "[acts]\n", "Lexo   Qa = read\n"])
+    assert_equal ['qatko'], sections.fetch('label-task')
+    assert_equal({ 'lexo qa' => 'read' }, sections.fetch('acts'))
+    {
+      ["[nope]\n"] => /unknown --words section \[nope\]/, ["qatko\n"] => /before any \[section\]/,
+      ["[acts]\n", "lexo\n"] => /phrase = canonical/, ["[roles]\n", "orqo = boss\n"] => /unknown canonical name/,
+      ["[reserved]\n", "Rezq zu principal\n"] => /one \{party\}/, ["[reserved]\n", "{party} zu {party}\n"] => /one \{party\}/
+    }.each do |lines, message|
+      error = assert_raises(ArgumentError, lines.inspect) { Comparator::Vocabulary.parse(lines) }
+      assert_match message, error.message
+    end
+    assert_equal Comparator::Vocabulary::SECTIONS.sort, Comparator::Vocabulary.parse(File.readlines(WORDS_FILE)).reject { |_, words| words.empty? }.keys.sort
+  end
+
+  def test_words_option_merges_files_and_refuses_bad_ones
+    with_files(RECORD, VOCABULARY_READBACK) do |directory, args|
+      assert_equal 1, run_cli(args).last
+      assert_equal 0, run_cli(args + ['--words', WORDS_FILE]).last
+      lines = File.readlines(WORDS_FILE)
+      split = lines.index("[roles]\n")
+      first = File.join(directory, 'first.txt')
+      second = File.join(directory, 'second.txt')
+      File.write(first, lines[...split].join)
+      File.write(second, lines[split..].join)
+      assert_equal 0, run_cli(args + ['--words', first, '--words', second]).last
+      bad = File.join(directory, 'bad.txt')
+      { "[nope]\nqatko\n" => 'unknown --words section [nope]', "\xff".b => 'invalid UTF-8', "[acts]\nlexo = read\0\n" => 'NUL',
+        "qatko\n" => 'before any [section]' }.each do |content, message|
+        File.binwrite(bad, content)
+        output, error, code = run_cli(args + ['--words', bad])
+        assert_equal 2, code, message
+        assert_empty output
+        assert_includes error, message
+      end
+      _output, error, code = run_cli(args + ['--words', File.join(directory, 'absent.txt')])
+      assert_equal 2, code
+      refute_empty error
+    end
+    assert_includes run_cli(['--help']).first, '--words FILE'
+  end
+
+  SECTION_PROBES = {
+    'label-address' => READBACK.sub('Address:', 'Zadrez:'), 'label-role' => READBACK.sub('Role:', 'Rolka:'),
+    'label-identity' => READBACK.sub("Address: impl-1.alpha@box1\nRole: implementer", 'Zadrez ek rolka: impl-1.alpha@box1, implementer'),
+    'label-task' => READBACK.sub('Task:', 'Qatko:'), 'label-authority' => READBACK.sub('Authority:', 'Xauto:'),
+    'label-next-action' => READBACK.sub('Next action:', 'Neqo axo:'), 'label-redelegation' => READBACK.sub('I may not redelegate.', 'Redzo: noneq.'),
+    'roles' => READBACK.sub('Role: implementer', 'Role: impqo'), 'acts' => READBACK.sub('edit and read', 'edqo and lexo'),
+    'scope' => READBACK.sub('/work/alpha,', '/work/alpha and qall filqoz,'),
+    'grant' => READBACK.sub('I may edit and read', 'Zmay edit and read'),
+    'reserved' => READBACK.sub('Reserved to the principal are anything off this machine, deploy and push.', 'Rezq zu principal esq foz diz masq, depqo and pusqo.'),
+    'negation' => READBACK.sub('I may not redelegate.', 'Naq zmay redqo.'),
+    'wait-negation' => READBACK.sub('Wait for confirmation.', 'Senq awaq konfirq, lexo the files.'),
+    'auxiliary' => READBACK.sub('Wait for confirmation.', 'Naq volq awaq konfirq.'),
+    'wait' => READBACK.sub('Wait for confirmation.', 'Awaq konfirq.'),
+    'wait-verb' => READBACK.sub('Wait for confirmation.', 'Awaq konfirq, then naq awaqi.'),
+    'first-person' => READBACK.sub('deploy and push.', 'deploy and push, by miq.'),
+    'possessive' => READBACK.sub('deploy and push.', 'deploy and push, which is miqa.'),
+    'contrast' => READBACK.sub('I may not configure settings, install, publish or merge.', 'I may not configure settings, install or publish, onlq merge.'),
+    'conjunction' => READBACK.sub('I may not redelegate.', 'I may not redelegate. Zmay lexo /work/alpha ek naq pubqo.'),
+    'copula' => READBACK.sub('Task:', 'My task esq'),
+    'identity' => READBACK.sub("Role: implementer\n", "\nSoq zu impqo of team alpha.\n\n"),
+    'article' => READBACK.sub("Role: implementer\n", "\nSoq zu impqo of team alpha.\n\n"),
+    'permission' => READBACK.sub('Wait for confirmation.', 'Wait for confirmation. Povq lexo /work/alpha.'),
+    'redelegation-no' => READBACK.sub('I may not redelegate.', 'Redelegation: noneq.'),
+    'redelegation-yes' => READBACK.sub('I may not redelegate.', 'Redelegation: Zmay redqo.')
+  }.freeze
+
+  def test_every_fixture_section_changes_a_result
+    assert_equal Comparator::Vocabulary::SECTIONS.sort, SECTION_PROBES.keys.sort
+    lines = File.readlines(WORDS_FILE)
+    SECTION_PROBES.each do |section, readback|
+      record = section == 'redelegation-yes' ? RECORD.sub('You may not redelegate.', 'You may redelegate.') : RECORD
+      sections = Comparator::Vocabulary.parse(lines)
+      sections[section] = sections[section].class.new
+      without = compare(record, readback, vocabulary: Comparator::Vocabulary.new(sections))
+      refute_equal without, placeholder(record, readback), section
     end
   end
 end
