@@ -7,6 +7,9 @@ The format follows Keep a Changelog. Before the first release, all entries are u
 
 ### Added
 
+- Protocol 10.10, the doing line a page shows a person, and 9.1's rule that a dialog answer which
+  persists, such as trusting a folder, is a setting change; the close order in multiplexer terms,
+  with herdr and tmux commands side by side in the playbook and the harness notes.
 - An optional `terminal` field on an action block, an object whose only key is `text`, which the page
   prefills in the sender's terminal and never submits, shown in the text as the whole content of a
   code span, refused by `nomos check` past its limits and written by `nomos compose --terminal TEXT`.
