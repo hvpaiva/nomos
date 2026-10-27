@@ -224,11 +224,11 @@ class PreSendTest < Minitest::Test
     Dir.mktmpdir('nomos-presend-') do |dir|
       template = File.join(dir, 'custom.md')
       File.write(template, "# A form\n\n## Required field\n## What {the task} does\nnomos v0 custom\n")
-      assert_equal ['Required field'], flags("Done.\nnomos v0 custom\n", templates: dir).map(&:text)
+      assert_equal ['missing heading: Required field'], flags("Done.\nnomos v0 custom\n", templates: dir).map(&:text)
       assert_empty flags("## Required field\nDone.\nnomos v0 custom\n", templates: dir)
       File.write(template, "# A form\n## New field\nnomos v0 custom\n")
       result = flags("## Required field\nDone.\nnomos v0 custom\n", templates: dir)
-      assert_equal ['New field'], result.map(&:text)
+      assert_equal ['missing heading: New field'], result.map(&:text)
       assert_equal [3], result.map(&:line)
     end
   end
@@ -249,7 +249,7 @@ class PreSendTest < Minitest::Test
       File.write(File.join(dir, 'two.md'), "# Two\n## Second field\nnomos v0 shared\n")
       assert_empty flags("Done.\nnomos v0 shared\n", templates: dir)
       File.delete(File.join(dir, 'two.md'))
-      assert_equal ['First field'], flags("Done.\nnomos v0 shared\n", templates: dir).map(&:text)
+      assert_equal ['missing heading: First field'], flags("Done.\nnomos v0 shared\n", templates: dir).map(&:text)
     end
   end
 
@@ -1395,7 +1395,7 @@ class PreSendTest < Minitest::Test
 
   # A body to a human gets the footer it lacks, so each test sees only the rule it is about; footer: false keeps it out.
   def human(body, action: 'ask', within: 3600, human: true, now: BLOCK_NOW, vocabulary: {}, footer: true)
-    body += "\n#{Nomos::Text::HUMAN_FOOTER}\n" if footer && human == true && !Nomos::Text.footer?(body.lines)
+    body += "\n#{Nomos::Text::HUMAN_FOOTER}\n" if footer && human == true && !Nomos::Text.footer?(body)
     Hook::Checker.new(now: now, vocabulary: vocabulary).check(body, Hook::Context.new(action: action, recipient: 'ana.local', within: within, human: human))
   end
 
@@ -1452,7 +1452,7 @@ class PreSendTest < Minitest::Test
     assert_equal ['id not in text', 'label not in text'], kinds(CHOICE.sub("2. Move to the Project (`move`).\n", ''))
     assert_equal ['id not in text'], kinds(CHOICE.sub("(`move`)", ''))
     decision = CHOICE.sub('"choice"', '"decision"').sub(",\n \"default\": \"keep\"", '')
-    assert_equal ['Background'], human(decision + "## Situation\n## Assessment\n## Recommendation\n").map(&:text)
+    assert_equal ['missing heading: Background'], human(decision + "## Situation\n## Assessment\n## Recommendation\n").map(&:text)
     assert_empty human("Done\n```nomos\n{\"kind\": \"notice\"}\n```\nReady.\n\nnomos v0 human message\n", action: 'send', within: nil)
   end
 
@@ -1678,9 +1678,9 @@ class PreSendTest < Minitest::Test
     assert_equal ['block time'], kinds(CHOICE.sub('I keep it as it is"', 'I keep it at 8h"'))
     assert_empty kinds(CHOICE.sub('I continue with the file"', 'I continue for 2h"'))
     decision = CHOICE.sub('"choice"', '"decision"').sub(",\n \"default\": \"keep\"", '')
-    assert_equal ['Recommendation'], human(decision + "## Situation\n## Background\n## Assessment\n").map(&:text)
+    assert_equal ['missing heading: Recommendation'], human(decision + "## Situation\n## Background\n## Assessment\n").map(&:text)
     translated = decision.sub("\nnomos v0 human message\n", '') + "## Lorem\n## ipsum\n## Dolor\n## Assessment\n## AMET\n\nnomos v0 human message\n"
-    assert_equal %w[Background Recommendation Situation], human(translated).map(&:text)
+    assert_equal ["missing heading: Background", "missing heading: Recommendation", "missing heading: Situation"], human(translated).map(&:text)
     vocabulary = Hook.vocabulary(fixture('vocabulary.txt').lines)
     context = Hook::Context.new(action: 'ask', recipient: 'ana.local', within: 3600, human: true)
     assert_empty Hook::Checker.new(now: BLOCK_NOW, vocabulary: vocabulary).check(translated, context)

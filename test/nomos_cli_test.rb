@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'open3'
+require 'stringio'
 require 'rbconfig'
 require 'tmpdir'
 require_relative 'nomos_support'
@@ -60,10 +61,13 @@ class NomosCliTest < Minitest::Test
     Dir.mktmpdir('nomos-cli-') do |dir|
       path = File.join(dir, 'words')
       File.write(path, WORDS)
-      local = ASK.sub('2026-10-26 08:00 -03:00', '26/10 klo 08h00')
-      assert_equal 1, run_check(input(local)).first
+      local = ASK.sub('2026-10-26 08:00 -03:00', '26/10 klo 08h00 (-03:00)')
+      assert_equal 0, run_check(input(local)).first
       assert_equal 0, run_check(input(local), args: ['--words', path]).first
       assert_equal 0, run_check(input(local, event: 'receive'), args: ['--words', path]).first
+      zoneless = ASK.sub('2026-10-26 08:00 -03:00', '26/10 klo 08h00')
+      assert_equal 1, run_check(input(zoneless)).first
+      assert_equal 1, run_check(input(zoneless), args: ['--words', path]).first
       File.write(path, "[zone]\nnope\n")
       assert_equal 2, run_check(input(ASK), args: ['--words', path]).first
     end
@@ -76,5 +80,51 @@ class NomosCliTest < Minitest::Test
     assert_equal ["nomos v0\n", 0], Open3.capture3(RbConfig.ruby, ENTRY, 'version').values_at(0, 2).then { |out, st| [out, st.exitstatus] }
     assert_equal 2, Open3.capture3(RbConfig.ruby, ENTRY, 'send')[2].exitstatus
     assert_equal 2, Open3.capture3(RbConfig.ruby, ENTRY, 'check', 'extra', stdin_data: input(ASK))[2].exitstatus
+  end
+
+  def test_empty_input_and_long_input_give_one_short_line
+    status, stderr, = run_check('')
+    assert_equal [2, "nomos check: the envelope is empty\n"], [status, stderr]
+    status, stderr, = run_check('1' * 100_000)
+    assert_equal 2, status
+    assert_equal 1, stderr.lines.size
+    assert_operator stderr.bytesize, :<=, 4096
+  end
+
+  def test_the_verdict_does_not_depend_on_which_words_file_loads
+    Dir.mktmpdir('nomos-cli-') do |dir|
+      minus = File.join(dir, 'minus')
+      File.write(minus, WORDS)
+      plus = File.join(dir, 'plus')
+      File.write(plus, "[deadline]\nglimby\n[clock]\n%H:%M %z on %d/%m\n[zone]\n+05:30\n")
+      stdout = StringIO.new
+      Nomos::CLI.main(['compose', 'ask', '--to', 'ana.local@box', '--within', '3h', '--words', minus, '--now', '2026-10-26T08:00:00Z',
+                       '--title', 'Where process decisions live', '--kind', 'action', '--blocks-none', '--meanwhile', 'I wait',
+                       '--if-silent', 'I wait'], stdin: StringIO.new("Run the migration.\n"), stdout: stdout, stderr: StringIO.new)
+      composed = stdout.string
+      refute_empty composed
+      due = Time.utc(2026, 10, 26, 11, 0, 0)
+      zoneless = ASK.sub('2026-10-26 08:00 -03:00', '26/10 klo 08h00')
+      [[composed, 0], [ASK, 0], [zoneless, 1]].each do |body, expected|
+        [[], ['--words', minus], ['--words', plus]].each do |args|
+          assert_equal expected, run_check(input(body, due: due), args: args).first, "#{args.inspect} #{body.lines.first}"
+          assert_equal expected, run_check(input(body, due: due, event: 'receive'), args: args).first
+        end
+      end
+    end
+  end
+
+  def test_with_no_argument_check_reads_the_installed_words_file
+    read = []
+    installed = Nomos::Vocabulary.method(:installed)
+    Nomos::Vocabulary.define_singleton_method(:installed) do |path = Nomos::Vocabulary::PATH|
+      read << path
+      installed.call(File.join(Dir.tmpdir, 'nomos-no-such-words'))
+    end
+    assert_equal 0, Nomos::CLI.main(['check'], stdin: StringIO.new(input(ASK)), stderr: StringIO.new)
+    assert_equal ['/etc/nomos/words'], read
+  ensure
+    Nomos::Vocabulary.singleton_class.send(:remove_method, :installed)
+    Nomos::Vocabulary.define_singleton_method(:installed, installed)
   end
 end

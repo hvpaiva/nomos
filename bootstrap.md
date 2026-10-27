@@ -97,7 +97,7 @@ to it. Harness startup is separate from reading cost but remains inside the sess
 | Claude Code member | Only the note needed for its own harness | `harness-notes.md`, Claude Code | 50 to 204 per note | 180 to 840 per note |
 | Codex member | Only the note needed for its own harness | `harness-notes.md`, Codex | 34 to 256 per note | 130 to 1,050 per note |
 | Cursor member | Only the note needed for its own harness | `harness-notes.md`, Cursor | 77 to 356 per note | 280 to 1,460 per note |
-| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 34,603 in catalog | 124,580 to 141,880 in catalog |
+| Rule auditor | Only to audit a rule | `evidence.md`, only the cited entry; full catalog size shown | 34,618 in catalog | 124,630 to 141,940 in catalog |
 
 The largest initial member load is 792 words, `cards/member.md` plus `cards/auditor.md`, below the 800-word
 limit. The common card has 500 words; role cards have implementer 273, reviewer 280, qa 255, auditor 292, writer 261; the orchestrator card has 600.
@@ -323,13 +323,14 @@ block agree, whether an answer's ids match the original ask, or whether a `defau
 
 The hook runs the rules of `lib/nomos`, the same code as `nomos check` below, so every rule exists
 once. Toward a person it also flags `block missing` for any message without a block on line 2,
-`block footer` for one that does not end with `nomos v0 human message`, `title tag` for a bracketed
-tag opening line 1, `request without ask` for a request whose block is no ask, `id not in text` for an
+`block footer` for one that does not end with `nomos v0 human message` as its last line, `title tag`
+for any bracketed text opening line 1, `request without ask` for a request whose block is no ask, `id not in text` for an
 option id missing as a whole word from the text, and `deadline not in text` for an ask whose text
 states no time within five minutes of the send time plus `--within`, read as described for
-`nomos check`. A reply opening with `[progress]` is flagged `progress reply` whatever its recipient.
-A toward-a-person flag of a rule the protocol states as a MUST, and `progress reply`, refuses every
-attempt. The other flags, and every flag on a reply to an unknown recipient, are advice.
+`nomos check`. A reply opening with `[progress]` is flagged `progress reply` whatever its recipient,
+as advice, since a brief may ask for that reply. A toward-a-person flag of a rule the protocol states
+as a MUST refuses every attempt. The other flags, and every flag on a reply to an unknown recipient,
+are advice.
 
 A flag refuses that attempt and tells the sending agent its line and text. The sender corrects the
 body, or for advice resends the same command prefixed with `NOMOS_PRESEND_CONFIRMED=1` to confirm the
@@ -419,8 +420,9 @@ time words, `[deadline]` and `[stamp]` for the future-time rule below, `[clock-p
 before a bare hour such as `8h` in a block's free text, and `[headings]` for four lines translating
 Situation, Background, Assessment and Recommendation, in that order. Three one-line sections serve
 the deadline: `[deadline-sentence]` with `%{time}` once (English `Answer by %{time}.`), `[clock]` a
-`strftime` format (English `%Y-%m-%d %H:%M %:z`) that must read back as a time, and `[zone]` a fixed
-offset such as `-03:00` (English `+00:00`). Blank lines and lines starting
+`strftime` format (English `%Y-%m-%d %H:%M %:z`) that writes the offset with `%z` or `%:z` and must
+read back as the same time in the morning and the afternoon, and `[zone]` a fixed offset such as
+`-03:00` (English `+00:00`), the zone the composer writes in. Blank lines and lines starting
 with `#` are skipped; an unknown section, a `[headings]` section without four lines or an invalid
 one-line section is a usage error. Explicit vocabulary lists in a body are still ignored. An example file follows.
 
@@ -635,34 +637,42 @@ check. [`bin/nomos`](bin/nomos) and everything it loads live in [`lib/nomos`](li
 standard library only, loaded by `require_relative`. `nomos check` reads one envelope on stdin, as
 keryx passes it: `check` (1), `event` (`send` or `receive`), `host`, `command` (null on receive) and
 `message`, the message as keryx would store it. It exits 0 to accept, 1 to refuse with one reason per
-line on stderr, each starting with the protocol section, such as `10.7 title over 80 characters (81)
-(line 1)`, within 4 KiB, and 2 on an invalid envelope, an invalid words file or an internal error,
+line on stderr, each starting with the protocol section and saying what is wrong, such as `10.7 title
+over 80 characters (81); line 1 is a plain title of at most 80 characters, not a heading, list, quote
+or fence (line 1)`, within 4 KiB, and 2 on an invalid envelope, an invalid words file or an internal error,
 which keryx refuses too. It reads no environment variable, starts no process, opens no mailbox or
 network, and runs under `env -i PATH=/usr/bin:/bin LANG=C.UTF-8` from `/` on `/usr/bin/ruby` with
 `--disable-gems`, Ruby 3.3 and 4.0 tested.
 
 It refuses only rules the protocol states as MUST or MUST NOT and that the message alone decides,
-never reading the clock, the event, the host or the id, so a message accepted where it is sent is
-accepted where it arrives. A sender whose team segment is `local`, or that has no team segment, is a
+never reading the clock, the event, the host, the id or a setting of the words file. The words file
+reaches a verdict only by failing to load, which is exit 2, so with the same nomos version on both
+machines and a words file that loads on each, a message accepted where it is sent is accepted where it
+arrives; every machine that checks the principal's mail installs the same file. A sender whose team segment is `local`, or that has no team segment, is a
 person and gets no rule. Toward a person (the same address form), every agent message of kind
-request, message or reply carries a plain title on line 1 with no bracketed tag, a valid block on
-line 2 and the footer `nomos v0 human message` (10.5, 10.7); the block keeps the field rules of 10.7
+request, message or reply carries a plain title on line 1 that opens with no bracketed text, since a
+person's title is not a tag line, a valid block on line 2 of one of the seven kinds (an `answer` block
+is the person's reply, never an agent's), and the footer `nomos v0 human message` as its last line,
+matched as the inbox page matches it (10.5, 10.7); the block keeps the field rules of 10.7
 and 10.8 that the inbox page applies, and JSON with no comment or repeated key; a block of an ask kind
 goes in a request with a deadline, and a request's block is an ask (10.5, 10.6); an ask's text names
 each option's label and id and states the request's deadline within five minutes (10.7). A
-withdrawal to a person gets advice only. Between agents, a reply opening with `[progress]` is
-refused (5.3). Everything else the hook flags, from relative dates to a missing file or a zoneless
+withdrawal to a person gets advice only. Between agents nothing is refused in this version; a reply
+opening with `[progress]` gets advice (5.3), since a brief may ask for that reply. Everything else the hook flags, from relative dates to a missing file or a zoneless
 clock in a block, is advice that `nomos check` never refuses.
 
 The deadline is read in the text after the block, as a date (`YYYY-MM-DD`, or `DD/MM` with an
 optional `/YYYY`), an optional word between, and a clock (`HH:MM`, `HHhMM` or `HHh`), with an optional
-zone (`Z`, `UTC`, `GMT`, or an offset, in parentheses or not). A time without a zone is read in the
-words file's `[zone]`, and one without a date on the deadline's date in that zone. `[zone]` is a
-fixed offset, so a zone with daylight saving needs the file rewritten at each change.
+zone (`Z`, `UTC`, `GMT`, `UTC-3`, or an offset, in parentheses or not) and an optional `AM` or `PM`.
+Only a time written with its zone states the deadline, as 5.3 asks for an absolute time and zone; a
+time without one never counts, whatever the words file says. A time without a date is read on the
+deadline's date in its own zone or the day before or after, whichever is nearest. `[zone]` is a fixed
+offset that only the composer and advice use, so a zone with daylight saving needs the file rewritten
+at each change.
 
 `nomos compose send|ask|reply --to ADDRESS` builds a body and prints it on stdout, with its advice on
-stderr as `advice SECTION reason`, and exits 1 without a body when the rules of `nomos check` refuse
-it, or 2 on a usage error. It never sends. The text comes from `--text FILE` or stdin; `ask` takes
+stderr as `advice SECTION reason`, and exits 1 without a body and without advice when the rules of
+`nomos check` refuse it, printing only their reasons, or 2 on a usage error or an empty text. It never sends. The text comes from `--text FILE` or stdin; `ask` takes
 `--within DURATION` in keryx's form; `--from ADDRESS`, `--words FILE` and `--now TIME` are optional.
 Toward an agent the body is the text. Toward a person it takes `--title TEXT` and the block, either
 `--block FILE` with one JSON object of the fields or `--kind KIND` with `--option ID=LABEL` (split at
@@ -670,8 +680,9 @@ the first `=`), `--select one|many`, `--recommended ID`, `--default ID`, `--answ
 optional|required`, `--blocks TEXT` or `--blocks-none`, `--meanwhile TEXT`, `--if-silent TEXT`,
 `--outcome done|partial|failed`, `--follows ID`, `--replaces ID`, `--attach PATH=LABEL` and `--link
 URL=LABEL` (both split at the last `=`). It writes the title, the block one key per line, the text,
-a numbered list of the options when the text lacks a label or an id, the words file's deadline
-sentence when the text states no time equal to the deadline, and the footer.
+a numbered list of the options (`N. LABEL (`ID`)`) when the text lacks a label or an id, the words
+file's deadline sentence when the text states no time with its zone equal to the deadline, and the
+footer.
 
 ```sh
 bin/nomos compose ask --to ana.local@box --within 1h --title 'Where process decisions live' \
@@ -684,12 +695,17 @@ The human's words come from one file at `/etc/nomos/words`, in the `--words` for
 both commands; without it they use English, the only language built in. `nomos compose --words FILE`
 and `nomos check --words FILE` read another file for tests. A sender that composes with
 `nomos compose`, checks with `nomos check` and sends with `keryx send`, `ask` or `reply` installs the
-check for keryx: a root-owned copy of `lib/nomos` under `/usr/local/lib/nomos`, a root-owned wrapper
-in a regular file there whose first line is `#!/usr/bin/ruby --disable-gems`, the words file, and
-last `/etc/keryx/check` with only `command` naming the wrapper and `timeout = 5`, each directory above
-them root's and not group or other writable, with no link on the path. That is the principal's step
-on each machine. A broken words file makes every check exit 2, so the installer runs the installed
-wrapper on an accepted and a refused message before it writes `/etc/keryx/check`.
+check for keryx: a root-owned copy of `lib/nomos` under `/usr/local/lib/nomos`, holding only regular
+files and directories, in a directory named by the digest of its files, a root-owned wrapper in a
+regular file there whose first line is `#!/usr/bin/ruby --disable-gems` and that loads that one
+copy, the words file with `/etc/nomos` root's, and last `/etc/keryx/check` with only `command` naming
+the wrapper and `timeout = 5`, each directory above them root's and not group or other writable,
+with no link on the path. That is the principal's step on each machine. A broken words file makes
+every check exit 2, so the installer stages the new copy and wrapper beside the live ones, runs the
+staged wrapper unprivileged on an accepted and a refused message with the words file it will install,
+and only then replaces the live wrapper, last, by a rename; a refused upgrade leaves the live copy and
+wrapper as they were. It prints the digest so the principal can compare it with the reviewed
+revision.
 
 `nomos check` cannot judge whether the text and the block agree beyond labels, ids and the deadline,
 whether a `default` is reversible, whether `if_silent` waits, whether a file in the block opens on the

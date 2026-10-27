@@ -35,7 +35,11 @@ module Nomos
     OPTION_ID = /\A[a-z][a-z0-9-]{0,23}\z/
     MESSAGE_ID = /\A[0-9A-HJKMNP-TV-Z]{26}\z/
     HTML = %r{<[\p{L}/]}
-    FIELD_TIME = /(?<![\w:])(?:\d{4}-\d{2}-\d{2}[T ])?\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?\s*(?:#{Clock::ZONE})(?![\w:+-])/
+    # The page's zone and time patterns for a free field (inbox lib/inbox/nomos/fields.rb ZONE, ZONED and TIME at
+    # eec0d1c), byte for byte: an offset after optional spaces, alone or in parentheses.
+    FIELD_ZONE = /(?:Z|UTC|GMT)(?:[+-]\d{2}(?::?\d{2})?)?|[+-]\d{2}(?::?\d{2})?/
+    FIELD_ZONED = /(?:#{FIELD_ZONE})(?![\w:+-])|\((?:#{FIELD_ZONE})\)/
+    FIELD_TIME = /(?<![\w:])(?:\d{4}-\d{2}-\d{2}[T ])?\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?\s*(?:#{FIELD_ZONED})/
     DATE = %r{(?<![\d/-])(?:\d{4}-\d{2}-\d{2}|\d{2}/\d{2})(?![\d/])}
     CLOCK = /(?<![\w:])\d{1,2}(?::\d{2}|h\d{2})(?![\w:])/
     EXTENSIONS = %w[md markdown txt rb erb yml yaml json toml sh bash py go rs tf hcl js ts css html sql csv log conf
@@ -52,7 +56,7 @@ module Nomos
     # Whether BODY says it follows the form: a nomos fence on lines 1 to 3, the footer, or a bare object of a kind.
     def self.claimed?(body)
       lines = body.lines.map(&:chomp)
-      lines.first(3).any? { |line| line.match?(CLAIM) } || Text.footer?(lines) || bare?(lines[1], lines[2]) ||
+      lines.first(3).any? { |line| line.match?(CLAIM) } || Text.footer?(body) || bare?(lines[1], lines[2]) ||
         bare?(lines[2], lines[3])
     end
 
@@ -84,7 +88,7 @@ module Nomos
     def run
       chomped = @lines.map(&:chomp)
       if @human == true && chomped[0].to_s.match?(Text::TAG)
-        must(1, 'title tag', 'a message to a human opens with no bracketed tag', '10.5')
+        must(1, 'title tag', "a person's title opens with no bracketed text; a tag line is for agents (5.2)", '10.5')
       end
       footer if @human == true
       fence = chomped[1].to_s[OPENING, 1]
@@ -98,12 +102,9 @@ module Nomos
       data = parse(fence) or return
       kind = data['kind']
       if kind == 'answer'
-        advise(line_of('kind'), 'block kind', 'an agent message carries no answer block; the page draws nothing for it', '10.9')
-        return
-      end
-      unless FIELDS.key?(kind)
+        must(line_of('kind'), 'block kind', "answer is the person's reply, not one of the seven kinds an agent sends; the page draws nothing for it", '10.5')
+      elsif !FIELDS.key?(kind)
         must(line_of('kind'), 'block field', "kind #{kind.inspect} is not one of the seven kinds or answer", '10.7')
-        return
       end
       fields(data, kind)
       asks(kind)
@@ -112,7 +113,7 @@ module Nomos
     end
 
     def footer
-      return if Text.footer?(@lines)
+      return if Text.footer?(@body)
 
       must(@lines.length, 'block footer', "an agent message to a human ends with the line #{Text::HUMAN_FOOTER}", '10.5')
     end
@@ -136,7 +137,7 @@ module Nomos
           [2, "line 2 opens a fence with #{info}; #{OPEN_HINT}"]
         elsif found
           [found[1] + 1, "the nomos fence is on line #{found[1] + 1}; #{OPEN_HINT}"]
-        elsif Text.footer?(chomped)
+        elsif Text.footer?(@body)
           [2, "the body ends with the human message footer and line 2 opens no nomos block; #{OPEN_HINT}"]
         end
       must(reason.first, 'block placement', reason.last, '10.7') if reason
@@ -190,7 +191,7 @@ module Nomos
         must(line_of(key), 'block time', "the block has #{key}; the deadline goes in the request and once in the text", '10.7') if data.key?(key)
       end
       must(line_of('title'), 'block field', 'the block has title; the title is line 1', '10.7') if data.key?('title')
-      ((data.keys & KNOWN) - COMMON - FIELDS.fetch(kind)).each do |key|
+      ((data.keys & KNOWN) - COMMON - FIELDS.fetch(kind, KNOWN)).each do |key|
         if key == 'default' && kind == 'decision'
           must(line_of(key), 'block default', 'a decision has no default; silence never decides it', '10.8')
         elsif key == 'options'
@@ -289,6 +290,12 @@ module Nomos
         must(line_of('outcome'), 'block field', 'a result says its outcome: done, partial or failed', '10.7') unless %w[done partial failed].include?(data['outcome'])
         must(2, 'block id', 'a result says the request it follows', '10.7') unless data.key?('follows')
       end
+      if data.key?('answer')
+        list = data['answer'].is_a?(Array) ? data['answer'] : [data['answer']]
+        unless list.any? && list.uniq.size == list.size && list.all? { |id| id.is_a?(String) && id.match?(OPTION_ID) }
+          must(line_of('answer'), 'block id', 'answer is not an option id or a list of ids', '10.9')
+        end
+      end
       %w[replaces follows].each do |key|
         next unless data.key?(key)
 
@@ -353,19 +360,19 @@ module Nomos
 
     def asks(kind)
       @labels.each do |label|
-        must(line_of('options'), 'label not in text', label, '10.7') unless @after.include?(label)
+        must(line_of('options'), 'label not in text', "option label not in the text after the block: #{label}", '10.7') unless @after.include?(label)
       end
       @ids.each do |id|
         next unless id.is_a?(String) && id.match?(OPTION_ID)
         next if @after.match?(/(?<![A-Za-z0-9_-])#{Regexp.escape(id)}(?![A-Za-z0-9_-])/)
 
-        must(line_of('options'), 'id not in text', id, '10.7')
+        must(line_of('options'), 'id not in text', "option id not in the text as a whole word: #{id}", '10.7')
       end
       if ASKS.include?(kind)
         must(2, 'ask not a request', "a #{kind} goes as keryx ask with --within", '10.5') unless @kind == 'request'
         must(2, 'ask without deadline', "a #{kind} goes with --within", '10.5') unless @kind == 'request' && @due
       elsif @kind == 'request'
-        must(2, 'request without ask', "a request to a human carries one ask, and a #{kind} is none", '10.6')
+        must(2, 'request without ask', "a request to a human carries one ask, and #{kind.to_s.match?(/\A[aeiou]/) ? "an" : "a"} #{kind} block is none", '10.6')
       end
     end
 
@@ -374,13 +381,13 @@ module Nomos
       return unless ASKS.include?(kind) && @kind == 'request' && @due
 
       zone = Vocabulary.setting(@vocabulary, 'zone')
-      text = @after.sub(/\n*^#{Regexp.escape(Text::HUMAN_FOOTER)}\s*\z/, "\n")
+      text = @after.sub(Text::FOOTER, "\n")
+      equal = Clock.written(text, zone: nil, reference: @due).count { |time, _| (time - @due).abs <= TOLERANCE }
       found = Clock.written(text, zone: zone, reference: @due)
-      equal = found.count { |time, _| (time - @due).abs <= TOLERANCE }
       line = @lines.length
       if equal.zero?
         stated = Clock.write(@due, clock: Vocabulary.setting(@vocabulary, 'clock'), zone: zone)
-        must(line, 'deadline not in text', "the text after the block states the request's deadline, #{stated}", '10.7')
+        must(line, 'deadline not in text', "the text after the block states the request's deadline with its offset, #{stated}", '10.7')
       elsif equal > 1
         advise(line, 'deadline repeated', 'the text states the deadline more than once', '10.7')
       end
@@ -400,7 +407,7 @@ module Nomos
       line = @lines.rindex { |text| !text.strip.empty? }.to_i + 1
       DECISION_HEADINGS.each_with_index do |heading, index|
         names = [heading, @translations[index]].compact.map(&:downcase)
-        advise(line, 'missing heading', heading, '10.4') if (names & present).empty?
+        advise(line, 'missing heading', "missing heading: #{heading}", '10.4') if (names & present).empty?
       end
     end
   end

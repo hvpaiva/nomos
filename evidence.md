@@ -2060,12 +2060,13 @@ new member launch testing that form. Protocol 9.2 carries the lesson.
 
 On 2026-10-26 every rule of protocol 10.5 to 10.7 existed in text from the afternoon, with the
 human-message template and an optional pre-send hook that refused once and passed a confirmation.
-Agents of six teams still sent the principal 458 messages that day. A trial of the new message check
-over the stored mail found 295 without a block on line 2, 43 of them written after the form was
-decided at 15:28 UTC-3, 33 asks sent as requests with no block, 228 first lines that were no title,
-17 asks whose text shortened an option's label, 5 that left an option's id out, and 3 whose text
-stated no deadline or one that differed from the request's. At 16:21 UTC-3 the principal decided
-that messages never go raw on the bus, whoever they are for, and that a MUST is refused every time.
+Agents of seven teams, `test` among them, still sent the principal 460 messages that day by 21:56
+UTC-3. A trial of the new message check over the stored mail found 295 without a block on line 2, 43
+of them written after the form was decided at 15:28 UTC-3, 33 asks sent as requests with no block,
+228 first lines that were no title, 18 asks whose text shortened an option's label, 6 that left an
+option's id out, and 13 whose text stated the deadline with no zone beside its clock, stated none, or
+stated one that differed from the request's. At 16:21 UTC-3 the principal decided that messages never
+go raw on the bus, whoever they are for, and that a MUST is refused every time.
 
 It taught that neither a text rule nor a check a sender may confirm past holds across sessions. The
 remedy is one validator the transport runs before it writes any message, fail closed, with the

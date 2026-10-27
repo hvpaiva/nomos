@@ -20,7 +20,8 @@ module Nomos
 
     def self.read(io)
       io.binmode
-      text = io.read(MAX_BYTES + 1).to_s
+      text = String.new(io.read(MAX_BYTES + 1).to_s)
+      raise Invalid, 'the envelope is empty' if text.strip.empty?
       raise Invalid, "the envelope exceeds #{MAX_BYTES} bytes" if text.bytesize > MAX_BYTES
 
       text.force_encoding(Encoding::UTF_8)
@@ -36,10 +37,10 @@ module Nomos
 
     def initialize(data)
       raise Invalid, 'the envelope is not a JSON object' unless data.is_a?(Hash)
-      raise Invalid, "unknown envelope version #{data['check'].inspect}" unless data['check'] == VERSION
+      raise Invalid, "unknown envelope version #{echo(data['check'])}" unless data['check'] == VERSION
 
       @event = data['event']
-      raise Invalid, "unknown event #{@event.inspect}" unless EVENTS.include?(@event)
+      raise Invalid, "unknown event #{echo(@event)}" unless EVENTS.include?(@event)
 
       @host = data['host']
       @command = data['command']
@@ -59,8 +60,10 @@ module Nomos
 
     private
 
+    def echo(value) = value.inspect[0, 60]
+
     def validate_message
-      raise Invalid, "unknown message kind #{@message['kind'].inspect}" unless KINDS.include?(@message['kind'])
+      raise Invalid, "unknown message kind #{echo(@message['kind'])}" unless KINDS.include?(@message['kind'])
 
       %w[from to body].each do |key|
         raise Invalid, "message #{key} is not a string" unless @message[key].is_a?(String)

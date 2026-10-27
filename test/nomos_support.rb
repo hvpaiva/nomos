@@ -41,7 +41,7 @@ module NomosSupport
     [deadline-sentence]
     Answer zuntil %{time}.
     [clock]
-    %d/%m klo %Hh%M
+    %d/%m klo %Hh%M (%:z)
     [zone]
     -03:00
   TEXT

@@ -54,7 +54,9 @@ module Nomos
 
       zone = setting(sections, 'zone')
       raise Invalid, "[zone] is an offset such as +00:00, not #{zone}" unless zone.match?(Clock::OFFSET)
-      raise Invalid, "[clock] #{setting(sections, 'clock')} does not read back as a time" unless Clock.readable?(setting(sections, 'clock'), zone)
+      clock = setting(sections, 'clock')
+      raise Invalid, "[clock] #{clock} writes no offset; add %z or %:z" unless clock.match?(/%:?z/)
+      raise Invalid, "[clock] #{clock} does not read back as a time" unless Clock.readable?(clock, zone)
 
       sections
     end

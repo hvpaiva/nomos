@@ -8,6 +8,8 @@ module Nomos
     # A bracketed kind such as [accept] that opens line 1; a Markdown link opening the line is not one.
     TAG = /\A\s*\[[^\]\n]+\](?!\()/
     HUMAN_FOOTER = 'nomos v0 human message'
+    # The page's pattern (inbox lib/inbox/nomos.rb FOOTER), so a footer check accepts is one the page strips.
+    FOOTER = /\n*^#{HUMAN_FOOTER}[ \t]*\n?\z/
 
     module_function
 
@@ -15,7 +17,7 @@ module Nomos
       raise IOError, "not a regular file: #{path}" unless File.file?(path)
       raise IOError, "#{path} exceeds #{max_bytes} bytes" if max_bytes && File.size(path) > max_bytes
 
-      text = File.open(path, 'rb') { |file| max_bytes ? file.read(max_bytes + 1) : file.read }.to_s
+      text = String.new(File.open(path, 'rb') { |file| max_bytes ? file.read(max_bytes + 1) : file.read }.to_s)
       text.force_encoding(Encoding::UTF_8)
       raise IOError, "#{path} exceeds #{max_bytes} bytes" if max_bytes && text.bytesize > max_bytes
       raise IOError, "invalid UTF-8: #{path}" unless text.valid_encoding?
@@ -32,7 +34,7 @@ module Nomos
       nil
     end
 
-    def footer?(lines) = lines.map { |line| line.to_s.strip }.reject(&:empty?).last == HUMAN_FOOTER
+    def footer?(body) = body.match?(FOOTER)
 
     # BODY with fenced code, quoted lines and inline code blanked out, keeping every line break and offset.
     def prose(body)

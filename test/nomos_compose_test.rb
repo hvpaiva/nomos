@@ -41,8 +41,8 @@ class NomosComposeTest < Minitest::Test
 
       Nothing waits on this; I continue with the file.
 
-      1. Keep as it is (`keep`).
-      2. Move to the Project (`move`).
+      1. Keep as it is (`keep`)
+      2. Move to the Project (`move`)
 
       Answer by 2026-10-26 11:00 +00:00.
 
@@ -65,7 +65,7 @@ class NomosComposeTest < Minitest::Test
       File.write(path, WORDS)
       status, body, = compose('ask', '--to', 'ana.local@box', '--within', '3h', '--words', path, *CHOICE)
       assert_equal 0, status
-      assert_includes body, "Answer zuntil 26/10 klo 10h00.\n"
+      assert_includes body, "Answer zuntil 26/10 klo 10h00 (-03:00).\n"
     end
   end
 
@@ -99,8 +99,8 @@ class NomosComposeTest < Minitest::Test
   def test_an_agent_recipient_gets_the_text
     assert_equal [0, "Review done.\n", ''], compose('send', '--to', 'rev-1.alpha@box', text: "Review done.\n\n\n")
     status, body, error = compose('reply', '--to', 'rev-1.alpha@box', text: "[progress] half done\n")
-    assert_equal [1, ''], [status, body]
-    assert_match(/\A5\.3 /, error)
+    assert_equal [0, "[progress] half done\n"], [status, body]
+    assert_match(/\Aadvice 5\.3 /, error)
   end
 
   def test_refusals_print_no_body
@@ -128,6 +128,33 @@ class NomosComposeTest < Minitest::Test
       status, body, error = compose(*argv)
       assert_equal [2, ''], [status, body], argv.inspect
       assert_match(/\Anomos compose: /, error, argv.inspect)
+    end
+  end
+
+  def test_a_refusal_prints_no_advice
+    status, body, error = compose('send', '--to', 'ana.local@box', '--title', 'Bad', '--kind', 'decision', '--option', 'a=A',
+                                  '--option', 'b=B', '--blocks-none', '--meanwhile', 'w', '--if-silent', 'w')
+    assert_equal [1, ''], [status, body]
+    refute_match(/^advice /, error)
+    assert_match(/^10\.5 /, error)
+  end
+
+  def test_an_empty_text_is_a_usage_error
+    ["", "\n \n"].each do |text|
+      status, body, error = compose('send', '--to', 'rev-1.alpha@box', text: text)
+      assert_equal [2, '', "nomos compose: the text is empty\n"], [status, body, error], text.inspect
+    end
+  end
+
+  def test_a_zoneless_deadline_in_the_text_gets_the_sentence
+    Dir.mktmpdir('nomos-compose-') do |dir|
+      path = File.join(dir, 'words')
+      File.write(path, WORDS)
+      status, body, = compose('ask', '--to', 'ana.local@box', '--within', '3h', '--words', path, *CHOICE,
+                              text: "Nothing waits on this; answer by 26/10 klo 10h00.\n")
+      assert_equal 0, status
+      assert_includes body, "Answer zuntil 26/10 klo 10h00 (-03:00).\n"
+      assert_equal [0, ''], check(body, due: Time.iso8601(NOW) + 10_800)
     end
   end
 end

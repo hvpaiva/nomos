@@ -145,7 +145,7 @@ module Nomos
       headings.each do |heading|
         next if present.include?(normalize(heading))
 
-        flags << Flag.new(footer_index + 1, 'missing heading', heading, '6.4', :advice)
+        flags << Flag.new(footer_index + 1, 'missing heading', "missing heading: #{heading}", '6.4', :advice)
       end
       check_findings(clean, flags) if File.basename(path) == 'review-findings.md'
     end

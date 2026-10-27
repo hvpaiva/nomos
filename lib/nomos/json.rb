@@ -13,10 +13,10 @@ module Nomos
   def self.strict_json(text)
     scanner = StringScanner.new(text)
     value = lambda do |depth|
-      raise JSON::ParserError, 'nesting over 100' if depth > 100
-
       scanner.skip(JSON_SPACE)
-      if scanner.skip(/\{/)
+      if scanner.check(/[{\[]/) && depth >= 100
+        raise JSON::ParserError, 'nesting over 100'
+      elsif scanner.skip(/\{/)
         keys = {}
         scanner.skip(JSON_SPACE)
         unless scanner.skip(/\}/)
@@ -53,7 +53,7 @@ module Nomos
         raise JSON::ParserError, 'unexpected token'
       end
     end
-    value.call(1)
+    value.call(0)
     scanner.skip(JSON_SPACE)
     raise JSON::ParserError, 'text after the value' unless scanner.eos?
 

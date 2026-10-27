@@ -8,9 +8,12 @@ require_relative 'text'
 
 module Nomos
   # The one place every rule is run from. A rule of level :must reads the message alone, never the clock, the
-  # command, the event, the host or the id, so a message accepted where it is sent is accepted where it arrives.
+  # command, the event, the host, the id or a setting of the words file, which reaches a verdict only by failing to
+  # load (exit 2); so with the same nomos version and a words file that loads on both machines, a message accepted
+  # where it is sent is accepted where it arrives.
   module Rules
-    # A reply whose first line is a progress note closes the request without what it asked for (5.3).
+    # A reply whose first line is a progress note may close the request without what it asked for (5.3). Advice
+    # only, since a brief may ask for that reply, such as what is done at a ceiling notice.
     PROGRESS = /\A\s*\[progress\]/i
 
     module_function
@@ -26,7 +29,7 @@ module Nomos
         flags.concat(Advice.new(templates: templates, words: words, now: now, vocabulary: vocabulary).check(message.body, deadline: deadline))
       end
       if message.kind == 'reply' && message.body.lines.first.to_s.match?(PROGRESS)
-        flags << Flag.new(1, 'progress reply', 'a progress note does not replace the result a request asked for; send it with keryx send --re', '5.3', :must)
+        flags << Flag.new(1, 'progress reply', 'a progress note does not replace the result a request asked for; send progress with keryx send --re', '5.3', :advice)
       end
       unless message.human == false
         flags.concat(Block.new(message.body, kind: message.kind, due: message.due, human: message.human,

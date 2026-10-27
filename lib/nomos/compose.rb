@@ -30,6 +30,7 @@ module Nomos
       raise Usage, 'an ask takes --within' if transport == 'ask' && within.nil?
       raise Usage, 'only an ask takes --within' if transport != 'ask' && within
       raise Usage, "--to #{to.inspect} is not MEMBER.TEAM or a full address" if Address.form(to) == :unknown
+      raise Usage, 'the text is empty' if text.strip.empty?
 
       @transport = transport
       @to = to
@@ -92,11 +93,11 @@ module Nomos
       end
     end
 
-    def option_list = options.each_with_index.map { |option, index| "#{index + 1}. #{option['label']} (`#{option['id']}`)." }.join("\n")
+    def option_list = options.each_with_index.map { |option, index| "#{index + 1}. #{option['label']} (`#{option['id']}`)" }.join("\n")
 
+    # Read as nomos check reads it: only a time written with its offset counts.
     def states_deadline?(text)
-      zone = Vocabulary.setting(@vocabulary, 'zone')
-      Clock.written(text, zone: zone, reference: @due).any? { |time, _| (time - @due).abs <= Block::TOLERANCE }
+      Clock.written(text, zone: nil, reference: @due).any? { |time, _| (time - @due).abs <= Block::TOLERANCE }
     end
 
     def deadline_sentence

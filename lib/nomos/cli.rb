@@ -48,13 +48,13 @@ module Nomos
         stdout.puts 'nomos v0'
         0
       else
-        stderr.puts "nomos: unknown command #{command.inspect}", USAGE
+        stderr.puts internal("nomos: unknown command #{command.inspect}"), USAGE
         2
       end
     rescue Exception => e
       raise if e.is_a?(SystemExit) || e.is_a?(SignalException)
 
-      stderr.puts "nomos #{command}: #{e.class}: #{e.message.lines.first.to_s.strip}"
+      stderr.puts internal("nomos #{command}: #{e.class}: #{e.message.lines.first.to_s.strip}")
       2
     end
 
@@ -71,7 +71,7 @@ module Nomos
       stderr.write(limited(refusals.map(&:reason)))
       1
     rescue Envelope::Invalid, Vocabulary::Invalid, OptionParser::ParseError, ArgumentError, IOError, SystemCallError => e
-      stderr.puts "nomos check: #{e.message}"
+      stderr.puts internal("nomos check: #{e.message}")
       2
     end
 
@@ -100,8 +100,8 @@ module Nomos
       result = Compose.new(transport: transport, to: settings[:to], from: settings[:from], within: settings[:within],
                            text: text, title: settings[:title], block: block(settings[:block], block_file),
                            vocabulary: vocabulary, now: settings[:now] || Time.now).call
-      result.advice.each { |flag| stderr.puts "advice #{flag.reason}" }
       if result.body
+        result.advice.each { |flag| stderr.puts "advice #{flag.reason}" }
         stdout.write(result.body)
         0
       else
@@ -110,7 +110,7 @@ module Nomos
       end
     rescue Compose::Usage, Vocabulary::Invalid, OptionParser::ParseError, ArgumentError, IOError, SystemCallError,
            JSON::ParserError => e
-      stderr.puts "nomos compose: #{e.message}"
+      stderr.puts internal("nomos compose: #{e.message}")
       2
     end
 
@@ -162,12 +162,15 @@ module Nomos
 
     def read_stdin(stdin)
       stdin.binmode
-      text = stdin.read(Envelope::MAX_BYTES + 1).to_s.force_encoding(Encoding::UTF_8)
+      text = String.new(stdin.read(Envelope::MAX_BYTES + 1).to_s).force_encoding(Encoding::UTF_8)
       raise IOError, "the text exceeds #{Envelope::MAX_BYTES} bytes" if text.bytesize > Envelope::MAX_BYTES
       raise IOError, 'the text is not UTF-8' unless text.valid_encoding?
 
       text
     end
+
+    # The one line of an exit 2, on one line and within 4 KiB, since it may echo input.
+    def internal(line) = line.gsub(/\s+/, ' ').byteslice(0, MAX_REASONS - 1).scrub('')
 
     # LINES joined, cut to fit 4 KiB with a closing count of what was left out.
     def limited(lines)

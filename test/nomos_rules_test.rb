@@ -5,10 +5,11 @@ require_relative 'nomos_support'
 class NomosRulesTest < Minitest::Test
   include NomosSupport
 
-  def test_a_progress_reply_is_refused_between_agents
+  def test_a_progress_reply_between_agents_is_advice
     reply = { to: 'rev-1.alpha@box', kind: 'reply', due: nil, command: 'reply' }
-    assert_equal ['progress reply'], refused_kinds("[progress] half of the tests run\n", **reply)
-    assert_equal ['5.3'], refused("[Progress] half done\n", **reply).map(&:section)
+    assert_empty refused("[progress] half of the tests run\n", **reply)
+    flags = Nomos::Rules.check(nomos_message("[Progress] half done\n", **reply), advice: false)
+    assert_equal [['progress reply', '5.3', :advice]], flags.map { |flag| [flag.kind, flag.section, flag.level] }
     assert_empty refused("[accept] readback confirmed; go ahead\n", **reply)
     assert_empty refused("[progress] half of the tests run\n", **reply, kind: 'message', command: 'send --re')
     assert_empty refused("Result: the tests pass\n[progress] was sent before\n", **reply)
