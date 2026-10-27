@@ -12,6 +12,18 @@ The format follows Keep a Changelog. Before the first release, all entries are u
   with a words file for the human's language and the pre-send hook moved onto the same rules. A
   request's deadline counts only when written with its zone, and a progress note sent as a reply is
   advice.
+- A checked closing order for members and outgoing orchestrators, the successor ending the outgoing
+  session, a temporary address for the outgoing orchestrator, and leaving only after the acceptance.
+- Mailbox purges only after the principal's confirmation and a verified full export.
+- The `nomos` block and the human-message footer together on every agent message to a human.
+- One state file with the six team forms as sections as an allowed equivalent of the six files.
+- The director's duty to answer every dialog of a session it directs at once, under protocol 9.1.
+- A ceiling change that keeps the director, through leave, expect and join.
+- `nomos check` run by keryx before every message under the principal's decision, in protocol 11.2.
+- Traces for ten rules, and an evidence check that requires a confidence on every protocol rule and
+  playbook practice paragraph.
+- shellcheck and `ruby -wc` in `tool/check`, Ruby 3.3 as the stated floor, the comparator in the
+  README, the team's commit flow in CONTRIBUTING, and weekly Dependabot updates for GitHub Actions.
 - Pre-send checks of the block in a message to a human, with its ask, deadline, title and files, by the
   recipient's directory role, with quoted mentions, deadline words and stricter wrapper reads.
 - Handover notices only when the change needs the principal, member dialogs handled under standing
@@ -34,18 +46,6 @@ The format follows Keep a Changelog. Before the first release, all entries are u
 - Harness notes and wiring checks for Cursor's non-authoritative hook allow and Claude Code's
   last-settings-only command-line behavior, each with its dated case.
 - nomos protocol v0 for team identity, delegation, requests, reports, review and handover.
-- A checked closing order for members and outgoing orchestrators, the successor ending the outgoing
-  session, a temporary address for the outgoing orchestrator, and leaving only after the acceptance.
-- Mailbox purges only after the principal's confirmation and a verified full export.
-- The `nomos` block and the human-message footer together on every agent message to a human.
-- One state file with the six team forms as sections as an allowed equivalent of the six files.
-- The director's duty to answer every dialog of a session it directs at once, under protocol 9.1.
-- A ceiling change that keeps the director, through leave, expect and join.
-- `nomos check` run by keryx before every message under the principal's decision, in protocol 11.2.
-- Traces for ten rules, and an evidence check that requires a confidence on every protocol rule and
-  playbook practice paragraph.
-- shellcheck and `ruby -wc` in `tool/check`, Ruby 3.3 as the stated floor, the comparator in the
-  README, the team's commit flow in CONTRIBUTING, and weekly Dependabot updates for GitHub Actions.
 - A playbook of team recipes and versioned notes on Claude Code, Codex and Cursor.
 - A getting-started guide with a reading map and a first-team acceptance exercise.
 - Role cards, an orchestrator digest and templates for the team's work.

@@ -25,9 +25,5 @@ jobs:
       - uses: ruby/setup-ruby@7f797815d8adceb1c412e7abefdd1ab4abc47a5f # v1.335.0
         with:
           ruby-version: '3.3'
-      - name: Check the pre-send hook on Ruby 3.3
-        run: ruby test/pre_send_test.rb
-      - name: Check the readback comparator on Ruby 3.3
-        run: ruby test/compare_readback_test.rb
-      - name: Check nomos check and nomos compose on Ruby 3.3
-        run: ruby -e 'Dir.glob("test/nomos_*_test.rb").sort.each { |file| require File.expand_path(file) }'
+      - name: Check the package on Ruby 3.3
+        run: tool/check

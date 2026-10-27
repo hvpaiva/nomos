@@ -30,6 +30,15 @@ evidence came on 2026-10-26 (LOG, 2026-10-26, raw human messages), and R30 takes
 check: keryx runs the command named in a root-owned `/etc/keryx/check` before it writes any message,
 fail closed, and nomos supplies that command, `nomos check` (bootstrap section 4).
 `evidence.md`, keryx requirements, records that order and its limits.
+keryx states the check's own limits at 38daf36. The checker must start with `#!`, the ELF magic or a
+Mach-O magic and be readable as well as executable. The wait for the checker after its KILL has no
+bound, so a checker in uninterruptible sleep holds keryx, and on receive holds the batch past its 40 s
+budget. Signaling the process group after the reap leaves a theoretical window in which the group id
+is reused. An agent session that clears its harness and herdr variables can claim the exemption of a
+person's address, and a local receive of a message from a person or from keryx itself on another
+machine is exempt, the same class as a direct write into a mailbox. On a machine that allows
+unprivileged user namespaces, a session can mount its own `/etc/keryx/check` or checker. (keryx
+ARCHITECTURE.md at 38daf36; low)
 
 ## Identity and addresses
 
@@ -339,6 +348,6 @@ errors and request deadlines and sends the stall notice from its routine.
 | R11 | Delivered by d7b5502, merged in da068ef (#28), as narrowed to a last-activity column in `who` and `status`; `keryx help who` documents the column; the routine, built on `who -o json \| jq '.addresses[]'`, notices stalls | Playbook, The director's heartbeat |
 | R12 | Not requested of keryx as of 2026-10-23; the director keeps pool awareness in the routine | Playbook, The director's heartbeat |
 | R13 | `keryx send --re ID` (`keryx help send`), taken state in status after the recipient's threaded message, and no stop-hook reminder; delivered by 00849e5, merged in da068ef (#28). Only open received requests qualify; after reply use a message or new request naming the original id | 5.3, 5.5, 9.3 |
-| R30 | Interface confirmed on 2026-10-26, merge and install planned for 2026-10-27. Before it writes any message, keryx runs the command named in the root-owned `/etc/keryx/check`, `nomos check`, on send and on receive, fail closed | 5.3, 10.5 to 10.8, 11.2 |
+| R30 | Merged as 38daf36 and installed on the principal's two machines on 2026-10-26; until root writes `/etc/keryx/check` no message is checked. Before it writes any message, keryx runs the command named in that root-owned file, `nomos check`, on send and on receive, fail closed (`keryx --help`, FILES) | 5.3, 10.5 to 10.8, 11.2 |
 
 nomos v0 on keryx
