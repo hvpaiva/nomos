@@ -2776,8 +2776,12 @@ optional field on `action` asks only, holding the text alone within fixed limits
 refused, so the sender picks neither the target nor the submit. The target is the sender's own
 session as the transport recorded it, the page fills the text in and never submits it, and the text
 authorizes only the act the message describes, never a standing grant or a setting change. The check
-then ignored unknown keys, so the page held its button until the check knew the field. Confidence
-low, one instance. Protocol 10.7 carries it.
+then ignored unknown keys, so the page held its button until the check knew the field. On
+2026-10-27 a blind review of the check found the text-in-the-body rule met by a fragment of a word,
+by the footer alone or by prose a Markdown renderer draws otherwise, and filler characters that look
+blank, so the text must now stand as the whole content of a code span, with no backtick and no
+default-ignorable or blank-looking character. Confidence low, one instance and one review. Protocol
+10.7 carries it.
 
 ## Decisions, requirements and rulings
 

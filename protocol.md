@@ -720,7 +720,7 @@ the block and the text disagree, the text governs and the sender sends a correct
 | `follows` | transport request id | `result` required, others optional | The request this answers or continues |
 | `outcome` | `"done"`, `"partial"` or `"failed"` | `result`, required | The result's state |
 | `answer` | an option id, an array of ids for `"many"`, an action outcome, or `"take"` or `"skip"` for a suggestion | `answer`, optional for a reply in words only | The human's choice, checked against the original message under 10.9 |
-| `terminal` | `{"text"}` and no other key; `text` of 1 to 300 characters on one line, with no control or format character (Unicode categories Cc and Cf, and U+2028 and U+2029), no leading or trailing space, no HTML, not beginning with `/`, `!` or `#`, and word for word in the text below the block | `action` only, optional | Text the human may type in the sender's own session; no field names the target or the submit |
+| `terminal` | `{"text"}` and no other key; `text` of 1 to 300 characters on one line, with no control or format character (Unicode categories Cc and Cf, and U+2028 and U+2029), no leading or trailing space, no HTML, not beginning with `/`, `!` or `#`, no backtick, no default-ignorable character (Unicode property Default_Ignorable_Code_Point) and no U+2800, and shown below the block, outside the footer, as the whole content of an inline code span | `action` only, optional | Text the human may type in the sender's own session; no field names the target or the submit |
 
 An answer with an option and no words is complete unless `text` is `"required"`. Without options,
 a question needs words. An `action` has no options and uses the fixed answers `done`, `failed`
@@ -730,9 +730,13 @@ messages; LOG, 2026-10-26, inbox page; low, designed)
 The target of `terminal` is the sender's own session as the transport recorded it, so the page
 offers no prefill when that session is gone or another session holds the sender's address. The page
 prefills the text in that session's terminal and never submits it; the human reads it there and
-presses Enter or not. The text authorizes only the act the message describes, never a standing
-grant, a setting change or an answer that stops later prompts. `nomos check` refuses a `terminal`
-that breaks the row above. (LOG, 2026-10-26, terminal field; low, one instance)
+presses Enter or not. The message shows the same text as a code span, which renders it literally
+with its edges visible, so what the human reads in the message is what the terminal gets; a text
+found only inside a word, in the footer or in plain prose a renderer may draw otherwise does not
+count, and a text that could look blank or shorter is refused. The text authorizes only the act the
+message describes, never a standing grant, a setting change or an answer that stops later prompts.
+`nomos check` refuses a `terminal` that breaks the row above. (LOG, 2026-10-26, terminal field; low,
+one instance and one blind review)
 
 **10.8** Silence never decides a `decision`. Its `if_silent` MUST be waiting or keeping things as
 they are, and it MUST NOT carry a `default`. A `choice` MAY name a `default` only when that option
