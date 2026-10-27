@@ -424,26 +424,30 @@ principal, and continues without trusting in a Codex hooks dialog. It takes to t
 once, on the principal's channel with the dialog's text and pane, only a dialog that none of these
 covers or one its own harness will not let it answer. A director MUST NOT leave a dialog to time
 out or to an automatic deny, since silence is not an answer. (N17; LOG, 2026-10-26, unanswered
-dialogs; low, one incident and a rule confirmed by four orchestrators)
+dialogs; low, one incident and a rule confirmed by three orchestrators)
 
 **9.2** After any spawn, relaunch or handover, the new incarnation MUST send its director a readback
 (its full address, role, task, authority and next action) before it acts, and the director compares
 it with what it sent. A launcher reporting the session ready is no evidence that the role, the brief
 and the authority reached it. (M34, L07, H07, S37; high for the problem, low for the readback)
-The optional [readback comparator](bin/compare-readback.rb) flags lexical differences for the
-director to review; a match never replaces the director's confirmation.
-The readback SHOULD use five labeled lines, `Address`, `Role`, `Task`, `Authority` and `Next action`
-(or their translation into the readback's language), with `Task` starting with the first
-request's first line. In `Authority`, restate each granted act and path, prohibition and reservation in
-the record's words or a faithful translation into the readback's language; in `Next action`, state the
-wait for confirmation and what follows. The comparator reads clauses beginning "I may", "I may not"
-and "Reserved to {party} are"; English is built in, and a readback in another language is compared
-with a local vocabulary file given through `--words`. The form helps readers
-and the optional comparator check the readback; following the protocol does not depend on the tool.
-(LOG, 2026-10-26, readback form; LOG, 2026-10-26, local vocabulary; low)
+The optional [readback comparator](bin/compare-readback.rb) flags lexical differences for the director
+to review; a match never replaces the director's confirmation. The readback SHOULD use five labeled
+lines, `Address`, `Role`, `Task`, `Authority` and `Next action` (or their translation into the
+readback's language), with `Task` starting with the first request's first line. In `Authority`,
+restate each granted act and path, prohibition and reservation in the record's words or a faithful
+translation into the readback's language; in `Next action`, state the wait for confirmation and what
+follows. The comparator reads clauses beginning "I may", "I may not" and "Reserved to {party} are";
+English is built in, and a readback in another language is compared with a local vocabulary file given
+through `--words`. Outside `Authority` it scans the readback for acts, skipping the part of the `Task`
+line that restates the task source, the brief's first line or the record's Task, and it gives send the
+paths of a message grant. The form helps readers and the optional comparator check the readback;
+following the protocol does not depend on the tool. (LOG, 2026-10-26, readback form; LOG, 2026-10-26,
+local vocabulary; low)
 
 **9.3** Before it leaves, a session answers or refuses every request it holds, hands over what it
-cannot finish, and says what it leaves running. (L06, S11; low)
+cannot finish, and says what it leaves running. A session leaves after its director's acceptance of
+its last delivery, not after its reply alone. (L06, S11; low; LOG, 2026-10-26, leave after acceptance;
+LOG, 2026-10-26, closing sequence; medium for leaving after the acceptance, two departures)
 
 **9.4** A handover is a transfer between two parties.
 
@@ -494,15 +498,15 @@ between pieces of work). The director measures it when the harness hides the fig
 more than one threshold, since some harnesses deliver them late. There is no universal number. (P05,
 P07, M19, M34, S20, S21, LOG; LOG, 2026-10-23 09:54, late notice; medium, one more late notice)
 
-The orchestrator keeps roster.md, roadmap.md and progress.md beside checkpoint.md,
-decisions.md and run-log.md, using the forms in `templates/`. One state file that holds the six forms
-as headed sections is an allowed equivalent, provided each form keeps its fields and its update
-points below. (LOG, 2026-10-26, one state file; low) Update the roster when membership,
-role, harness, model, ceiling, launch profile, pane or session state changes; the roadmap when a phase,
-the principal's ask or its decision changes; and progress when an ask arrives, its state changes or
-what it waits on changes. Save before reporting or handing over. Progress has one row per principal
-ask and links to the checkpoint's work items and decisions under 5.5; a transport reply alone does
-not finish that work. (N16; LOG, 2026-10-26, team files; low, one instance)
+The orchestrator keeps roster.md, roadmap.md and progress.md beside checkpoint.md, decisions.md and
+run-log.md, using the forms in `templates/`. One state file that holds the six forms as headed
+sections is an allowed equivalent, provided each form keeps its fields and its update points below.
+Update the roster when membership, role, harness, model, ceiling, launch profile, pane or session
+state changes; the roadmap when a phase, the principal's ask or its decision changes; and progress
+when an ask arrives, its state changes or what it waits on changes. Save before reporting or handing
+over. Progress has one row per principal ask and links to the checkpoint's work items and decisions
+under 5.5; a transport reply alone does not finish that work. (N16; LOG, 2026-10-26, team files; low,
+one instance; LOG, 2026-10-26, one state file; low, two departures, no field test of the equivalent)
 
 An orchestrator starts its own renewal on the ceiling's 80% notice, or at a planned boundary between
 steps as it approaches that point. It does not wait for the principal or ask how to swap. It finishes
@@ -534,15 +538,16 @@ transfer pending throughout. After a second successor fails, save the failures a
 do not start a third on this procedure. (LOG, 2026-10-23 about 08:45, orchestrator swap; low)
 
 When every check passes, the outgoing incarnation sends `[accept]` with an absolute cutover time,
-stops or hands over its background watchers with the new holder recorded, leaves the temporary
-address and starts nothing more. The successor records the cutover, tells peers with open work and
-ends the outgoing session by the playbook's Cleanup sequence, since leaving releases an address and
-only the harness's exit ends its process. It closes the outgoing pane after checking that process is
-gone and retires the temporary address. (LOG, 2026-10-26, closing sequence; medium for the successor
-ending the outgoing session, two handovers) Apply the playbook's Cleanup inventory. Renewals, handovers and context figures stay
-in the run log; tell the principal only when the change needs them, such as a question, a decision or
-a changed commitment. A changed record or two failed successors still require their decision; an
-unchanged record needs no renewed approval. (LOG, 2026-10-23 about 08:45, orchestrator swap; N17; low)
+stops or hands over its background watchers with the new holder recorded, leaves the temporary address
+and starts nothing more. The successor records the cutover, tells peers with open work and ends the
+outgoing session by the playbook's Cleanup sequence, since leaving releases an address and only the
+harness's exit ends its process. It closes the outgoing pane after checking that process is gone and
+retires the temporary address. Apply the playbook's Cleanup inventory. Renewals, handovers and context
+figures stay in the run log; tell the principal only when the change needs them, such as a question, a
+decision or a changed commitment. A changed record or two failed successors still require their
+decision; an unchanged record needs no renewed approval. (LOG, 2026-10-23 about 08:45, orchestrator
+swap; N17; low; LOG, 2026-10-26, closing sequence; medium for the successor ending the outgoing
+session, two handovers)
 
 Finishing beyond the ceiling requires the director's or principal's explicit yes for stated remaining
 work and a hard token cap, recorded with an absolute time. Apply the changed ceiling in the transport
@@ -659,15 +664,15 @@ cases, one partial answer and one ask sent as a note)
 **10.7** Every message an agent sends a human MUST carry a block that a reader's page draws as a
 component and MUST end with the human-message footer, `nomos v0 human message`; the two go together,
 notices, suggestions and results included. The human's answer under 10.9 keeps its block and has no
-footer, and the withdrawal of a request to a human is exempt, its body being the reason. (LOG,
-2026-10-26, footer and block; low) The body's first line is the title, in plain words, at most 80 characters, not
-a heading, list, quote or fence. The block starts on line 2, the only place a reader looks for it.
-It is a fenced code block with the info string `nomos`, holding one JSON object, at most 16 lines
-including the fences and 1,024 bytes. Both limits bind even when every field fits its own limit.
-It holds no HTML. Free-text fields (`blocks`, `meanwhile`, `if_silent` and labels) hold no time or
-date; paths, URLs and ids are exempt from that restriction. Unknown keys are ignored. A changed
-field meaning takes a new info string, such as `nomos-1`, with no version key. (LOG, 2026-10-26,
-inbox page; low, title placement observed on one page, block and limits designed)
+footer, and the withdrawal of a request to a human is exempt, its body being the reason. The body's
+first line is the title, in plain words, at most 80 characters, not a heading, list, quote or fence.
+The block starts on line 2, the only place a reader looks for it. It is a fenced code block with the
+info string `nomos`, holding one JSON object, at most 16 lines including the fences and 1,024 bytes.
+Both limits bind even when every field fits its own limit. It holds no HTML. Free-text fields
+(`blocks`, `meanwhile`, `if_silent` and labels) hold no time or date; paths, URLs and ids are exempt
+from that restriction. Unknown keys are ignored. A changed field meaning takes a new info string, such
+as `nomos-1`, with no version key. (LOG, 2026-10-26, inbox page; low, title placement observed on one
+page, block and limits designed; LOG, 2026-10-26, footer and block; low)
 
 A block that does not parse, is over a limit, names an unknown kind or breaks a field or ask rule
 stays in the body as a code box and the message renders as plain text, with no answer buttons. An
@@ -756,21 +761,21 @@ from one says so in its first prompts. (default, no outside team has claimed con
 what held was a check that every session runs (M10, M45). The transport refuses bad addresses and
 renames (3.3, 3.6, 3.8), spawn composes the first prompt and waits for the readback (4.3, 9.2), the
 transport's status lists overdue requests (5.6), the project layer tracks work items and decisions,
-kept in the requester's checkpoint until that layer holds them (5.5, N16), a stop hook reminds of unanswered mail
-(9.1, 9.3), and the transport notifies a session and its director as its context nears the criterion
-(9.5). The optional `hooks/pre-send.rb` flags relative dates, missing headings, leftover
+kept in the requester's checkpoint until that layer holds them (5.5, N16), a stop hook reminds of
+unanswered mail (9.1, 9.3), and the transport notifies a session and its director as its context nears
+the criterion (9.5). The optional `hooks/pre-send.rb` flags relative dates, missing headings, leftover
 placeholders and findings without a rank or evidence class (5.7, 6.4, 7.2, 8.1). It reads supported
 forms' own headings, outside code and quoted text, and refuses a MUST flag every time; an advisory
 flag it refuses once, then accepts the sender's confirmation through `NOMOS_PRESEND_CONFIRMED=1`. It
-never asks a human to approve what a literal match cannot judge. It also compares each absolute time in a body with the
-send time and flags one more than five minutes ahead of it for the sender to confirm; a future
-deadline can be valid. The third acceptance leader repeated the error despite 5.7 in its digest,
-following the second leader, the protocol director and the keryx team's orchestrators. A text rule
-alone has not held. The optional nomos hook implements this comparison; it is not a keryx feature.
-(LOG, 2026-10-23 04:25; LOG, acceptance 2, message times; LOG, field PR 26, context and times; LOG,
-acceptance 3, 2026-10-23, message times; LOG, field PR 24, message times; low for the check, seven
-more message lapses and a separate log case) `keryx.md` says where each check runs in keryx.
-`bootstrap.md` section 4 names the supported forms, parser limits and hook setup.
+never asks a human to approve what a literal match cannot judge. It also compares each absolute time
+in a body with the send time and flags one more than five minutes ahead of it for the sender to
+confirm; a future deadline can be valid. The third acceptance leader repeated the error despite 5.7 in
+its digest, following the second leader, the protocol director and the keryx team's orchestrators. A
+text rule alone has not held. The optional nomos hook implements this comparison; it is not a keryx
+feature. (LOG, 2026-10-23 04:25; LOG, acceptance 2, message times; LOG, field PR 26, context and
+times; LOG, acceptance 3, 2026-10-23, message times; LOG, field PR 24, message times; low for the
+check, seven more message lapses and a separate log case) `keryx.md` says where each check runs in
+keryx. `bootstrap.md` section 4 names the supported forms, parser limits and hook setup.
 
 The same optional hook is the pre-send check of a human message's block, request and deadline
 under 10.5 to 10.9, run before the page's own check after delivery. (LOG, 2026-10-26, bare block;
@@ -778,21 +783,23 @@ low, one message)
 
 For messages a text rule alone is not enough. Under the principal's decision (N18), keryx runs the
 command named in a root-owned system file before it writes any message, fail closed, with no
-environment or flag bypass, and that command is `nomos check`. It reads one keryx envelope on
-standard input; exit 0 accepts, exit 1 refuses with one reason per line as `SECTION reason`, and exit
-2 is an internal error that keryx treats as a refusal. A message that breaks a MUST that `nomos check` can judge from the envelope is refused every time,
-agent to agent included; the protocol's other MUSTs need state the envelope lacks and stay with the
-sender and its director. `nomos compose send|ask|reply --to ADDRESS` builds a body, for a human
-the title, block, text, deadline sentence and footer, and prints it without sending. The human's
-vocabulary is `/etc/nomos/words` or `--words FILE`, with English built in. A sender may compose with
-`nomos compose`, check with `nomos check` and send with keryx. The protocol's other rules still need no
-tool. (N18; low, decided and not yet run)
+environment or flag bypass, and that command is `nomos check`. It reads one keryx envelope on standard
+input; exit 0 accepts, exit 1 refuses with one reason per line as `SECTION reason (line N)`, and exit
+2 is an internal error that keryx treats as a refusal. A message that breaks a MUST that `nomos check`
+can judge from the envelope is refused every time: toward a human, the rules of 10.5 to 10.9 that the
+envelope settles; between agents, a rule is refused only once a trial over real mail shows it makes no
+false refusal, and none is in this version. The protocol's other MUSTs need state the envelope lacks
+and stay with the sender and its director. `nomos compose send|ask|reply --to ADDRESS` builds a body,
+for a human the title, block, text, deadline sentence and footer, and prints it without sending. The
+human's vocabulary is `/etc/nomos/words` or `--words FILE`, with English built in. A sender may
+compose with `nomos compose`, check with `nomos check` and send with keryx. The protocol's other rules
+still need no tool. (N18; low, decided and not yet run)
 
-**11.3** Each template names the protocol version in its title, and a filled form ends with a line that
-names the form and the version, such as "nomos v0 brief", since its first line belongs to the outcome.
-Version 0 makes no compatibility promise. A rule changes when a team meets counterevidence, and keeps
-its old trace beside the new one. `bootstrap.md` says how each harness loads these documents. (LOG, 2026-10-26, bare block; low for the
-footer, default for the version line)
+**11.3** Each template names the protocol version in its title, and a filled form ends with a line
+that names the form and the version, such as "nomos v0 brief", since its first line belongs to the
+outcome. Version 0 makes no compatibility promise. A rule changes when a team meets counterevidence,
+and keeps its old trace beside the new one. `bootstrap.md` says how each harness loads these
+documents. (LOG, 2026-10-26, bare block; low for the footer, default for the version line)
 
 ## 12. Open questions
 

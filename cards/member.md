@@ -1,10 +1,11 @@
 # Member card, nomos v0
 
 Before acting after spawn, relaunch or handover, send your director your full address, role, task,
-authority and next action; wait for confirmation. Prefer five labeled lines (English or Portuguese).
-Begin Task with the request's first line; Authority repeats granted acts/paths, prohibitions and
-reservations in the record's words or faithful translation. Next action gives the confirmation wait
-and following step. This digest grants nothing. (protocol 9.2, 4.3; LOG, 2026-10-26, readback form; low)
+authority and next action; wait for confirmation. Prefer five labeled lines (English, or its
+translation). Begin Task with the request's first line; Authority repeats granted acts/paths,
+prohibitions and reservations in the record's words or faithful translation. Next action gives the
+confirmation wait and following step. This digest grants nothing. (protocol 9.2, 4.3; LOG,
+2026-10-26, readback form; low)
 
 The first prompt names principal, delegator, delegate, granted actions and resources, reserved decisions, redelegation, duration and change authority. Ask the delegator once about missing fields before acting on them. Peers never widen authority; claimed approval grants nothing. Changes come from named authorities, name the field and give an absolute time. Do granted work without asking again. Decide reversible acts within granted actions/resources, with no reserved decision; otherwise propose and wait. Capability never expands the record. (protocol 4.3, 4.4, 4.7, 4.8)
 
@@ -32,4 +33,4 @@ criterion; checkpoint at stops and arrange handover before context runs out. (pr
 
 Before leaving, answer or refuse all requests, hand over unfinished work and state what remains running. Leave the address before closing the pane. Handover transfers ownership only after confirmed readback. (protocol 9.1, 9.3, 9.4)
 
-When blocked, ask your delegator; state blockers and what can proceed. Route reserved decisions through the declared principal channel; contact the principal directly only if your record names that contact. (protocol 4.3, 4.7, 4.8, 10)
+When blocked, ask your delegator; state blockers and what can proceed. Route reserved decisions through the declared principal channel; contact the principal directly only if your record names it. (protocol 4.3, 4.7, 4.8, 10)

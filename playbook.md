@@ -59,11 +59,12 @@ The orchestrator answers every dialog of a session it directs at once (protocol 
 session's record and the principal's standing rules, such as "Continue without trusting" for Codex
 hooks. It allows once what the record grants, never the option that changes a setting or stops later
 prompts, and declines what the record does not grant or reserves. It brings the principal, at once,
-only a dialog none of these covers or one its own harness will not let it answer, and never leaves
-one to time out. One director left a member's folder-trust and permission dialogs to the harness's
-automatic deny, reading a transport notice as a reason to wait for the principal, and told nobody;
-the principal called it an incident. Folder trust writes configuration outside the workspace, so name
-the effect and directories in the grant or reservation; folder work alone does not cover it. The
+only a dialog none of these covers or one its own harness will not let it answer, and never leaves one
+to time out. A relayed copy of the principal's word suffices for a dialog answer that narrows and
+grants nothing. One director left a member's folder-trust and permission dialogs to the harness's
+automatic deny, reading a transport notice as a reason to wait for the principal, and told nobody; the
+principal called it an incident. Folder trust writes configuration outside the workspace, so name the
+effect and directories in the grant or reservation; folder work alone does not cover it. The
 acceptance-test leader escalated Codex's dialog and reported an earlier Claude Code answer outside its
 record under protocol 4.9. (LOG, 2026-10-23 04:49 UTC-3; N17; LOG, 2026-10-26, unanswered dialogs;
 low; protocol 4.3, 4.7, 4.8, 9.1; harness notes HN02, HN20)
@@ -395,7 +396,7 @@ are verification commands, not a grant to remove anything. (protocol 7.3, 7.4; L
 
 | Resource | At swap, task end and run end | Check |
 |---|---|---|
-| Member and outgoing panes | Send the acceptance while the member still holds its address; it settles or transfers its obligations and leaves after that acceptance, never after its reply alone. Then close it in this order. Read its screen with `herdr pane read`, type `/exit` with `herdr pane send-text`, read the composer (again when the first read shows it empty), submit Enter with `herdr pane send-keys`, wait until `ps -p PID` shows the process gone, run `herdr pane close`, then `keryx retire` the address under the record. Leaving releases the address; only the exit ends the harness process. At swap retain working members; after the `[accept]` the outgoing orchestrator starts nothing, and the successor ends it by the same order and retires its temporary address. Retain a specialist only for named next work. Recheck all run panes at run end. A launcher that closes finished sessions is the later mechanism; until the team uses one, this order is the close. (LOG, 2026-10-26, closing sequence; LOG, 2026-10-26, leave after acceptance; high for the order, five closes; medium for the successor's close, two handovers) | `keryx who --all -o json \| jq '.addresses[]'` checks the address holder; `herdr pane process-info --pane PANE` and `ps -p PID -o pid=,lstart=,args=` check the recorded harness process; `herdr pane list` checks the pane is gone. An idle pane or released address alone does not prove process exit. |
+| Member and outgoing panes | Send the acceptance while the member still holds its address; it settles or transfers its obligations and leaves after that acceptance, never after its reply alone. Then close it in this order. Read its screen with `herdr pane read`, type `/exit` with `herdr pane send-text`, read the composer (again when the first read shows it empty), submit Enter with `herdr pane send-keys`, wait until `ps -p PID` shows the process gone, run `herdr pane close`, then `keryx retire` the address under the record. Leaving releases the address; only the exit ends the harness process. At swap retain working members; after the `[accept]` the outgoing orchestrator starts nothing, and the successor ends it by the same order and retires its temporary address. Retain a specialist only for named next work. Recheck all run panes at run end. A launcher that closes finished sessions is the later mechanism; until the team uses one, this order is the close. (LOG, 2026-10-26, closing sequence; LOG, 2026-10-26, leave after acceptance; high for the order, six closes; medium for the successor's close, two handovers) | `keryx who --all -o json \| jq '.addresses[]'` checks the address holder; `herdr pane process-info --pane PANE` and `ps -p PID -o pid=,lstart=,args=` check the recorded harness process; `herdr pane list` checks the pane is gone. An idle pane or released address alone does not prove process exit. |
 | Addresses created by the run | Retain the stable address through swaps. At task or run end, under the record, run `keryx retire ADDRESS` on the address's host after its live holder and open requests in either direction are gone. Keep the mailbox files; `keryx join MEMBER.TEAM --revive` restores the address with them. A purge that deletes them follows only the principal's confirmation and a verified full export, a byte-for-byte copy of every message of each address folder with a manifest of sha256 per file, checked before the purge against the current mailbox, with every id the team's records cite present and matching. (LOG, 2026-10-26, export before purge; low) Otherwise retain and record the reason and holder. | Before retirement compare `keryx who --all -o json \| jq '.addresses[]'` and `keryx status --all -o json` with the run's inventory. Keep the successful retirement output, then check the address is absent from both full lists. Absence alone is not proof. `keryx help retire` states the refusal conditions and restoration command; R07 is delivered in 0186dcd. |
 | Merged worktrees and branches | At swap keep those used by live work. At task end remove only merged, unused resources with the cleanup grant; otherwise propose the exact removals. At run end account for every retained tree and branch. | `git -C REPO worktree list --porcelain`, `git -C TREE status --porcelain`, `git -C TREE stash list` and `git -C REPO branch --merged BASE` establish registration, saved or unsaved work and merge state. Recheck the list and `git -C REPO branch --list BRANCH` after removal. A stash needs review, not deletion. |
 | Scratch directories and temporary files | Transfer required probes and handover evidence at swap. At task and run end remove the run's disposable paths when covered, keeping evidence until its report no longer depends on them. | `ls -ld -- PATH` and `test -L PATH` distinguish the recorded path and a symlink; `test ! -e PATH && test ! -L PATH` checks removal. Check the creation inventory before considering any existing path disposable. |
@@ -631,14 +632,17 @@ interval) The benchmark found the binding still describing this delivered featur
   was refused while the outgoing pane still held the same herdr agent name; inspect `herdr agent list`
   and `keryx who` before retrying, distinguishing a pane name from an occupied address. (protocol 9.5;
   LOG, 2026-10-23 04:59 UTC-3, swap name collision; LOG, 2026-10-23 about 08:45 UTC-3, orchestrator swap; low)
-- Send the timed `[accept]` only after all checks pass, stop or hand over your watchers and exit.
-  The successor records cutover, tells affected peers and closes your pane once your process is gone.
-  Renewals, handovers and context figures stay in the run log; tell the principal only when the change
-  needs them, such as a question, decision or changed commitment. Successful renewal with the same
-  record needs no principal decision. A changed record does. Finishing beyond the ceiling needs an
-  explicit yes for the remaining work and a hard cap with an absolute time, applied by rejoin as The
-  ceiling specifies; no answer extends nothing. (protocol 9.5; LOG, acceptance 1, stumble 13;
-  LOG, 2026-10-23 about 08:45 UTC-3, orchestrator swap; N17; low)
+- Send the timed `[accept]` only after all checks pass, stop or hand over your watchers, leave the
+  temporary address and start nothing more. The successor records cutover, tells affected peers, ends
+  your session by the Cleanup order, closes your pane once your process is gone and retires the
+  temporary address. Renewals, handovers and context figures stay in the run log; tell the principal
+  only when the change needs them, such as a question, decision or changed commitment. Successful
+  renewal with the same record needs no principal decision. A changed record does. Finishing beyond
+  the ceiling needs an explicit yes for the remaining work and a hard cap with an absolute time,
+  applied by rejoin as The ceiling specifies; no answer extends nothing. (protocol 9.5; LOG,
+  acceptance 1, stumble 13; LOG, 2026-10-23 about 08:45 UTC-3, orchestrator swap; N17; low; LOG,
+  2026-10-26, temporary outgoing address; LOG, 2026-10-26, closing sequence; medium for the
+  successor's close)
 - Decide whether the orchestrator holds its address. Holding it gives native bells and the stop hook.
   An orchestrator whose harness would turn every bell into an approval dialog (HN10) can run without
   holding it, and then every keryx command it runs names the address, as in `keryx inbox --as ORQ`,

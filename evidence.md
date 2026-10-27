@@ -2045,6 +2045,11 @@ the director had confirmed all three by reading. Passing synthetic tests had not
 tool could compare the readbacks members actually sent. After the first fix round, the three member
 pairs flagged task without a brief and authority on summarized paths. The later review also required
 omitted acts and unknown wording to remain visible; a labeled form alone does not guarantee a match.
+A later round ran four real pairs in the labeled form through the comparator. It flagged acts in a
+`Task` line that only restated the brief's first line, and a path the record granted to the message
+act when the readback named it beside a send. The act scan outside `Authority` now skips the restated
+task source, and send takes a message grant's paths; after the change three pairs matched on every
+field, and the fourth readback had no `Address` line.
 
 The proposed remedy is five labeled lines. The task begins with the first request's first line, authority
 repeats granted acts and paths, prohibitions and reservations in the record's words or a faithful
@@ -2649,15 +2654,15 @@ keeps the flag for the second. Confidence low, one case.
 handovers; the idle panes were another team's, and the protocol team's own close order was wrong,
 since it closed a pane on an idle screen instead of after the harness exited. The principal decided
 that a launcher's own close of finished sessions is the later mechanism, not the transport, and that
-each team cleans its leftovers now. The team then closed five sessions in one order, an auditor, two
-outgoing orchestrators, a reviewer and a second auditor, each gone within about four seconds of
+each team cleans its leftovers now. The team then closed six sessions in one order, an auditor, two
+outgoing orchestrators, two reviewers and a second auditor, each gone within about four seconds of
 Enter. The order is the acceptance while the member holds its address; after it leaves, a screen read,
 `/exit` typed into the composer, a composer read, Enter, a wait until the process is gone, the pane
 close and the address's retirement. Another team asked who ends an outgoing orchestrator; the adopted
 answer is that after `[accept]` the outgoing side starts nothing and the successor ends it by the same
-order, since leaving releases an address and only the exit ends the harness process. It taught that
-an idle pane or a released address proves no exit. Confidence high for the order, five closes in one
-team; medium for the successor's close, two handovers. The playbook's Cleanup and protocol 9.5 carry it.
+order, since leaving releases an address and only the exit ends the harness process. It taught that an
+idle pane or a released address proves no exit. Confidence high for the order, six closes in one team;
+medium for the successor's close, two handovers. The playbook's Cleanup and protocol 9.5 carry it.
 
 **2026-10-26, leave after acceptance.** An auditor and later a reviewer left right after their
 replies, before the director's acceptance, because their briefs said "leave after your reply". The
@@ -2694,8 +2699,8 @@ Protocol 10.7 and the human-message template carry it.
 of the six team files that protocol 9.5 requires, and an audit ranked that a must-fix; another team
 kept one state file with the forms as sections. The protocol team created the six files, and the
 orchestrator ruled that six files are the rule and one file holding the six forms as headed sections
-is an allowed equivalent when each form keeps its fields and update points. Confidence low, two teams
-and a ruling. Protocol 9.5 and bootstrap 6 carry it.
+is an allowed equivalent when each form keeps its fields and update points. Confidence low, two
+departures, no field test of the equivalent. Protocol 9.5 and bootstrap 6 carry it.
 
 **2026-10-26, run-start readback.** An orchestrator asked whether the card's "Give the principal a
 readback before spawning" meant before every member's spawn. The answer traced it to bootstrap 6 step
@@ -2713,13 +2718,13 @@ later at a permission dialog for removing a copy in its own scratch. Its directo
 notices, left them to the harness's automatic deny, told no one, and cited a skill clause saying the
 human's word was still needed; someone else answered the second. The principal called it an incident
 under the standing instruction of N17. A second director's own answer to a member's dialog was refused
-by its harness's classifier, and it reported that late. The protocol team stated the rule, the director
-answers every dialog at once by the record and standing rules, allows once what is granted, never the
-option that changes a setting or stops later prompts, declines the rest, continues without trusting a
-Codex hooks dialog and takes to the principal at once only what none of these covers or its harness
-blocks. Four orchestrators confirmed it, and the transport changed its notice and skill to match. This
-replaced the ruling in N17 that trust, permission or setting answers still need the principal's word.
-Confidence low, one incident. Protocol 9.1 carries it.
+by its harness's classifier, and it reported that late. The protocol team stated the rule, the
+director answers every dialog at once by the record and standing rules, allows once what is granted,
+never the option that changes a setting or stops later prompts, declines the rest, continues without
+trusting a Codex hooks dialog and takes to the principal at once only what none of these covers or its
+harness blocks. Three orchestrators confirmed it, and the transport changed its notice and skill to
+match. This replaced the ruling in N17 that trust, permission or setting answers still need the
+principal's word. Confidence low, one incident. Protocol 9.1 carries it.
 
 **2026-10-26, ceiling rejoin.** An audit found a member's director column empty after its ceiling was
 changed by a rejoin, while every other working member showed its director. At keryx 37056f1 a join
@@ -2731,7 +2736,10 @@ playbook's ceiling paragraph carries it.
 **2026-10-26, rules without traces.** An audit found eight playbook rules and two protocol rules with
 no trace or confidence, although the package promises both for every rule, and the evidence check
 resolved cited ids without requiring any. The rules gained traces, and the check now requires a
-confidence label on every protocol rule and playbook practice. Confidence low, one audit.
+confidence word in a parenthesis of every protocol rule block and of every playbook prose paragraph of
+two lines or more. It leaves out list items, a later paragraph of a rule block, which passes on
+another paragraph's trace, and the kind of parenthesis, so a confidence word in any parenthesis
+passes. Confidence low, one audit.
 
 ## Decisions, requirements and rulings
 
@@ -2987,5 +2995,8 @@ ruby tool/check-evidence.rb
 It resolves cited ids and ranges against entries here and HN entries in `harness-notes.md`, rejects
 unknown id families, and checks LOG labels against dated entries and field headings or their item
 labels. A bare LOG refers to the incident collection. It prints each unresolved citation with its
-file, exits 1 on failure and prints nothing on success. This checks references, not the truth of a
-case or the absence of private facts.
+file, exits 1 on failure and prints nothing on success. It also requires a confidence word in a
+parenthesis of every protocol rule block and of every playbook prose paragraph of two lines or more
+outside the playbook's "How to read the traces" and "Open", and does not read list items, the later
+paragraphs of a rule block or whether the parenthesis is a trace. This checks references and labels,
+not the truth of a case or the absence of private facts.
